@@ -51,6 +51,9 @@ nicht mehr erreichbar.
 | `anmeldung_offen` | Hauptschalter. Aus = keine Anmeldung möglich |
 | `datenschutz_hinweis` | Kleingedrucktes unter dem Absende-Knopf |
 | `sensor_erstellen` | Legt `sensor.gedenkveranstaltung_freie_plaetze` an |
+| `benachrichtigung_dienst` | Notify-Dienst für Nachrichten, leer = aus |
+| `benachrichtigung_jede_anmeldung` | Nachricht bei jeder einzelnen Anmeldung |
+| `benachrichtigung_schwellen` | Belegte Plätze, bei denen zusätzlich gemeldet wird |
 
 Leere Felder werden auf der Seite weggelassen — es steht also nie ein leerer
 Platzhalter herum. Änderungen an den Optionen greifen nach dem Neustart des
@@ -69,6 +72,91 @@ Summen auf. Vor dem ersten Aushang die Liste also festzurren.
 * **Anmeldung schließen** — sofort wirksam, jederzeit wieder zu öffnen. Der
   Schalter ist unabhängig von der Option `anmeldung_offen`.
 * **Löschen** — für Absagen. Der Platz wird sofort wieder frei.
+
+## Benachrichtigungen
+
+Zwei Wege, die sich auch kombinieren lassen.
+
+### Direkt aus dem Add-on
+
+In `benachrichtigung_dienst` den Namen eines Notify-Dienstes eintragen, etwa
+`notify.mobile_app_dein_handy` oder `persistent_notification.create`. Den
+genauen Namen zeigt **Entwicklerwerkzeuge → Aktionen**. Leer lassen schaltet
+die Nachrichten ab.
+
+```yaml
+benachrichtigung_dienst: notify.mobile_app_dein_handy
+benachrichtigung_jede_anmeldung: true
+benachrichtigung_schwellen:
+  - 60
+  - 100
+```
+
+* `benachrichtigung_jede_anmeldung` meldet jede einzelne Anmeldung mit Name,
+  Personenzahl, Bestellung und den verbleibenden Plätzen.
+* `benachrichtigung_schwellen` meldet zusätzlich, sobald die Zahl der belegten
+  Plätze eine dieser Marken überschreitet — je Marke genau einmal.
+* Ist der letzte Platz vergeben, kommt immer eine Nachricht, unabhängig von
+  den beiden Schaltern.
+
+Schlägt der Versand fehl, steht das im Log des Add-ons. Die Anmeldung des
+Gastes geht trotzdem durch — der Versand läuft im Hintergrund.
+
+### Über eigene Automatisierungen
+
+Das Add-on löst zwei Events aus:
+
+| Event | Daten |
+| --- | --- |
+| `gedenkveranstaltung_anmeldung` | `name`, `personen`, `essen`, `getraenke`, `anmerkung`, `anmeldungen`, `belegte_plaetze`, `freie_plaetze`, `ausgebucht` |
+| `gedenkveranstaltung_absage` | `name`, `personen` |
+
+Nachricht bei jeder Anmeldung:
+
+```yaml
+automation:
+  - alias: Neue Anmeldung
+    triggers:
+      - trigger: event
+        event_type: gedenkveranstaltung_anmeldung
+    actions:
+      - action: notify.mobile_app_dein_handy
+        data:
+          title: Neue Anmeldung
+          message: >-
+            {{ trigger.event.data.name }} mit {{ trigger.event.data.personen }}
+            Personen. Noch {{ trigger.event.data.freie_plaetze }} Plätze frei.
+```
+
+Für Schwellen ist der Sensor der bessere Auslöser — `numeric_state` meldet sich
+nur beim Überschreiten, nicht bei jeder weiteren Anmeldung:
+
+```yaml
+  - alias: Nur noch 20 Plätze
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.gedenkveranstaltung_freie_plaetze
+        below: 20
+    actions:
+      - action: notify.mobile_app_dein_handy
+        data:
+          message: "Nur noch 20 Plätze frei."
+```
+
+Absage, damit jemand hinterhertelefonieren kann:
+
+```yaml
+  - alias: Absage eingegangen
+    triggers:
+      - trigger: event
+        event_type: gedenkveranstaltung_absage
+    actions:
+      - action: notify.mobile_app_dein_handy
+        data:
+          message: >-
+            Absage: {{ trigger.event.data.name }},
+            {{ trigger.event.data.personen }} Personen.
+```
 
 ## Sensor
 

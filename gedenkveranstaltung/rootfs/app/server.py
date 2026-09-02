@@ -37,6 +37,9 @@ STORE_FILE = DATA_DIR / "anmeldungen.json"
 
 SENSOR_ID = "sensor.gedenkveranstaltung_freie_plaetze"
 SUPERVISOR_TOKEN = os.environ.get("SUPERVISOR_TOKEN")
+# Im Add-on immer http://supervisor; die Variable gibt es nur, damit sich der
+# Weg nach Home Assistant ausserhalb testen laesst.
+SUPERVISOR_URL = os.environ.get("SUPERVISOR_URL", "http://supervisor").rstrip("/")
 
 STANDARD_OPTIONEN = {
     "untertitel": "Gedenkveranstaltung",
@@ -54,6 +57,9 @@ STANDARD_OPTIONEN = {
     "anmeldung_offen": True,
     "datenschutz_hinweis": "Die Angaben werden nur fuer die Planung der Veranstaltung verwendet.",
     "sensor_erstellen": True,
+    "benachrichtigung_dienst": "",
+    "benachrichtigung_jede_anmeldung": True,
+    "benachrichtigung_schwellen": [],
 }
 
 
@@ -169,6 +175,29 @@ def nachfrage(anmeldungen, auswahl):
 # --------------------------------------------------------------------------
 
 
+def _an_supervisor(pfad, nutzlast):
+    """POST an die Home-Assistant-Kernschnittstelle ueber den Supervisor.
+    Schlaegt es fehl, wird das nur geloggt - eine Anmeldung darf daran nicht
+    scheitern."""
+    if not SUPERVISOR_TOKEN:
+        return False
+    anfrage = urllib.request.Request(
+        f"{SUPERVISOR_URL}/{pfad}",
+        data=json.dumps(nutzlast).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {SUPERVISOR_TOKEN}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(anfrage, timeout=10):
+            return True
+    except (urllib.error.URLError, OSError) as fehler:
+        print(f"[anmeldung] {pfad} fehlgeschlagen: {fehler}", flush=True)
+        return False
+
+
 def sensor_aktualisieren():
     stand = lage()
     if not stand["opt"].get("sensor_erstellen") or not SUPERVISOR_TOKEN:
@@ -189,20 +218,44 @@ def sensor_aktualisieren():
             ),
         },
     }
-    anfrage = urllib.request.Request(
-        f"http://supervisor/core/api/states/{SENSOR_ID}",
-        data=json.dumps(nutzlast).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {SUPERVISOR_TOKEN}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
+    _an_supervisor(f"core/api/states/{SENSOR_ID}", nutzlast)
+
+
+def ereignis_senden(name, daten):
+    """Loest ein Event auf dem Home-Assistant-Bus aus. Damit lassen sich
+    beliebige Automatisierungen bauen."""
+    _an_supervisor(f"core/api/events/{name}", daten)
+
+
+def nachricht_senden(text):
+    """Schickt eine Nachricht ueber den in den Optionen hinterlegten Dienst,
+    z. B. notify.mobile_app_pixel oder persistent_notification.create."""
+    dienst = (optionen().get("benachrichtigung_dienst") or "").strip()
+    if dienst.count(".") != 1:
+        return
+    bereich, name = dienst.split(".")
+    _an_supervisor(
+        f"core/api/services/{bereich}/{name}",
+        {"title": "Gedenkveranstaltung", "message": text},
     )
-    try:
-        with urllib.request.urlopen(anfrage, timeout=10):
-            pass
-    except (urllib.error.URLError, OSError) as fehler:
-        print(f"[anmeldung] Sensor konnte nicht aktualisiert werden: {fehler}", flush=True)
+
+
+def _nachbereiten(arbeit):
+    """Sensor, Events und Nachrichten laufen im Hintergrund - der Gast soll
+    nicht warten, bis Home Assistant geantwortet hat."""
+    threading.Thread(target=arbeit, daemon=True).start()
+
+
+def _beschreibung(eintrag):
+    teile = [f"{eintrag['name']}, {eintrag['personen']} "
+             f"{'Person' if eintrag['personen'] == 1 else 'Personen'}"]
+    essen = als_mengen(eintrag.get("essen"))
+    if essen:
+        teile.append(", ".join(f"{menge} {name}" for name, menge in essen.items()))
+    getraenke = als_liste(eintrag.get("getraenke"))
+    if getraenke:
+        teile.append(", ".join(getraenke))
+    return ". ".join(teile)
 
 
 # --------------------------------------------------------------------------
@@ -363,21 +416,69 @@ def anmelden():
 
     # Zweite Pruefung unter Sperre: zwischen Anzeige und Absenden koennen
     # andere Anmeldungen die letzten Plaetze belegt haben.
+    anzahl = 0
     with _lock:
         daten = _lesen()
-        frei_jetzt = opt["plaetze_gesamt"] - belegte_plaetze(daten)
-        if daten["geschlossen"] or personen > frei_jetzt:
+        belegt_vorher = belegte_plaetze(daten)
+        if daten["geschlossen"] or personen > opt["plaetze_gesamt"] - belegt_vorher:
             zu_spaet = True
         else:
             zu_spaet = False
             daten["anmeldungen"].append(eintrag)
             _schreiben(daten)
+            anzahl = len(daten["anmeldungen"])
 
     if zu_spaet:
         return redirect(url_for("start"))
 
-    sensor_aktualisieren()
+    _nachbereiten(
+        lambda: _melden(eintrag, belegt_vorher, belegt_vorher + personen, anzahl)
+    )
     return redirect(url_for("danke", anmeldung_id=eintrag["id"]))
+
+
+def _melden(eintrag, belegt_vorher, belegt_nachher, anzahl):
+    """Sensor schreiben, Event ausloesen, Nachricht schicken."""
+    sensor_aktualisieren()
+    opt = optionen()
+    gesamt = opt["plaetze_gesamt"]
+    frei = max(0, gesamt - belegt_nachher)
+
+    ereignis_senden(
+        "gedenkveranstaltung_anmeldung",
+        {
+            "name": eintrag["name"],
+            "personen": eintrag["personen"],
+            "essen": eintrag["essen"],
+            "getraenke": eintrag["getraenke"],
+            "anmerkung": eintrag["anmerkung"],
+            "anmeldungen": anzahl,
+            "belegte_plaetze": belegt_nachher,
+            "freie_plaetze": frei,
+            "ausgebucht": frei <= 0,
+        },
+    )
+
+    if opt.get("benachrichtigung_jede_anmeldung"):
+        nachricht_senden(
+            f"Neue Anmeldung: {_beschreibung(eintrag)}. "
+            f"Noch {frei} von {gesamt} Plätzen frei."
+        )
+
+    if frei <= 0:
+        nachricht_senden(
+            f"Alle {gesamt} Plätze sind vergeben — die Anmeldung ist geschlossen."
+        )
+    else:
+        for schwelle in sorted(
+            int(s)
+            for s in (opt.get("benachrichtigung_schwellen") or [])
+            if belegt_vorher < int(s) <= belegt_nachher
+        ):
+            nachricht_senden(
+                f"{belegt_nachher} von {gesamt} Plätzen sind belegt "
+                f"(Schwelle {schwelle} erreicht). Noch {frei} frei."
+            )
 
 
 @app.get("/danke/<anmeldung_id>")
@@ -415,11 +516,23 @@ def verwaltung():
 def loeschen(anmeldung_id):
     with _lock:
         daten = _lesen()
+        entfernt = next(
+            (a for a in daten["anmeldungen"] if a["id"] == anmeldung_id), None
+        )
         daten["anmeldungen"] = [
             a for a in daten["anmeldungen"] if a["id"] != anmeldung_id
         ]
         _schreiben(daten)
-    sensor_aktualisieren()
+
+    def melden():
+        sensor_aktualisieren()
+        if entfernt:
+            ereignis_senden(
+                "gedenkveranstaltung_absage",
+                {"name": entfernt["name"], "personen": entfernt["personen"]},
+            )
+
+    _nachbereiten(melden)
     return redirect(url_for("verwaltung"))
 
 

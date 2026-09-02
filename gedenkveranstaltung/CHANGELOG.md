@@ -1,5 +1,16 @@
 # Änderungen
 
+## 1.3.0
+
+- Benachrichtigungen: Das Add-on kann bei jeder Anmeldung und beim Erreichen
+  eingestellter Schwellen eine Nachricht über einen Notify-Dienst schicken.
+  Neue Optionen `benachrichtigung_dienst`, `benachrichtigung_jede_anmeldung`
+  und `benachrichtigung_schwellen`.
+- Neue Events `gedenkveranstaltung_anmeldung` und `gedenkveranstaltung_absage`
+  für eigene Automatisierungen.
+- Sensor, Events und Nachrichten laufen im Hintergrund — der Gast wartet nicht
+  mehr auf Home Assistant.
+
 ## 1.2.0
 
 - Startseite: Termin und Ort stehen in einer eigenen Karte, der Anmeldeschluss
