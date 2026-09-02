@@ -1,5 +1,14 @@
 # Änderungen
 
+## 1.2.0
+
+- Startseite: Termin und Ort stehen in einer eigenen Karte, der Anmeldeschluss
+  als hervorgehobener Block darunter, dazu die Kontaktzeile.
+- Neuer Standardtext, passend zum Vormittag mit gemeinsamem Frühstück.
+- Voreingestellte Uhrzeit 9:30, Anzeige als `ab 9:30 Uhr`.
+- Essen wird in **Stück** abgefragt. Die Zahl ist nicht mehr an die
+  Personenzahl gekoppelt — zwei Weißwürste für eine Person gehen also.
+
 ## 1.1.0
 
 - Essen wird mit Anzahl je Gericht abgefragt, Getränke nur noch als Häkchen

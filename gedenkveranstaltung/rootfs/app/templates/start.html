@@ -5,7 +5,25 @@
 <main class="seite">
 
   {{ teile.kopf(opt) }}
-  {{ teile.eckdaten(opt) }}
+
+  {% if opt.datum or opt.ort %}
+  <div class="termin">
+    {% if opt.datum %}
+    <div class="termin__block">
+      <div class="termin__label">Wann</div>
+      <div class="termin__wert">{{ opt.datum }}</div>
+      {% if opt.uhrzeit %}<div class="termin__zusatz">ab {{ opt.uhrzeit }} Uhr</div>{% endif %}
+    </div>
+    {% endif %}
+    {% if opt.datum and opt.ort %}<div class="trenner"></div>{% endif %}
+    {% if opt.ort %}
+    <div class="termin__block">
+      <div class="termin__label">Wo</div>
+      <div class="termin__wert">{{ opt.ort }}</div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
 
   {% if opt.text %}
   <div>{{ teile.absaetze(opt.text) }}</div>
@@ -28,7 +46,14 @@
       <a class="knopf" href="{{ url_for('formular') }}">Jetzt anmelden</a>
 
       {% if opt.anmeldeschluss %}
-      <div class="hinweis-klein">Anmeldeschluss: {{ opt.anmeldeschluss }}</div>
+      <div class="schluss">
+        <div class="schluss__label">Anmeldeschluss</div>
+        <div class="schluss__datum">{{ opt.anmeldeschluss }}</div>
+      </div>
+      {% endif %}
+
+      {% if opt.kontakt %}
+      <div class="hinweis-klein">Fragen? {{ opt.kontakt }}</div>
       {% endif %}
 
     {% else %}

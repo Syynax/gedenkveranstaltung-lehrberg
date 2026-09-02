@@ -1,5 +1,5 @@
 name: Gedenkveranstaltung Anmeldung
-version: "1.1.0"
+version: "1.2.0"
 slug: gedenkveranstaltung
 description: Anmeldeseite mit begrenzter Platzzahl für eine Gedenkveranstaltung
 arch:
@@ -30,12 +30,12 @@ options:
   untertitel: Gedenkveranstaltung
   titel: 20. Jahrestag der Gasexplosion in Lehrberg
   datum: ""
-  uhrzeit: ""
+  uhrzeit: "9:30"
   ort: ""
-  text: >-
-    Vor zwanzig Jahren hat das Unglück unser Dorf getroffen. Zum Jahrestag
-    kommen wir zusammen, um zu gedenken, den Helferinnen und Helfern zu danken
-    und den Abend gemeinsam ausklingen zu lassen.
+  text: |-
+    Vor zwanzig Jahren hat die Gasexplosion unser Dorf getroffen. Zum Jahrestag kommen wir am Vormittag zusammen — zuerst zum Gedenken, danach zu einem gemeinsamen Frühstück.
+
+    Wir danken allen, die damals geholfen haben, und nehmen uns Zeit füreinander. Die Plätze sind begrenzt, deshalb bitte vorher anmelden.
   plaetze_gesamt: 120
   max_personen_pro_anmeldung: 10
   anmeldeschluss: ""

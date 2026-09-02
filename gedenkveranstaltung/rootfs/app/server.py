@@ -324,10 +324,14 @@ def anmelden():
                 f"Es sind nur noch {stand['frei']} Plätze frei. "
                 "Bitte passen Sie die Personenzahl an."
             )
-        elif sum(essen.values()) > personen:
+        elif sum(essen.values()) > personen * 10:
+            # Die Zahl sind Stueck, nicht Portionen je Person - eine Person
+            # nimmt durchaus zwei Weisswuerste. Die Grenze faengt nur
+            # Zahlendreher ab.
             fehler = (
-                "Es wurde mehr Essen gewählt, als Personen angemeldet sind. "
-                "Bitte gleichen Sie das an."
+                f"Das sind {sum(essen.values())} Stück für {personen} "
+                f"{'Person' if personen == 1 else 'Personen'}. "
+                "Bitte prüfen Sie die Zahlen noch einmal."
             )
 
     if fehler:

@@ -49,14 +49,14 @@
       <span class="kennzahl__wert">{{ frei }}</span>
     </div>
     <div class="kennzahl">
-      <span class="kennzahl__label">Portionen Essen</span>
+      <span class="kennzahl__label">Essen (Stück)</span>
       <span class="kennzahl__wert">{{ portionen_gesamt }}</span>
     </div>
   </div>
 
   {% if essen_summe %}
   <div class="karte" style="gap: 8px;">
-    <div style="font-size: 14px; color: var(--grau-2);">Bestellte Portionen</div>
+    <div style="font-size: 14px; color: var(--grau-2);">Bestellte Stückzahlen</div>
     <div class="summenliste">
       {% for gericht, menge in essen_summe.items() %}<span><b>{{ menge }}×</b> {{ gericht }}</span>{% endfor %}
     </div>

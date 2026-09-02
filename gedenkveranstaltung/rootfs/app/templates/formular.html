@@ -51,6 +51,7 @@
         <span class="feld__label" id="essen-titel">Was möchten Sie essen?</span>
         <span class="wahl__zaehler" data-zaehler></span>
       </div>
+      <div class="feld__hilfe">Angabe in Stück.</div>
       <div class="wahl__liste" role="group" aria-labelledby="essen-titel">
         {% for gericht in opt.essen %}
         <div class="zeile zeile--menge">
@@ -63,7 +64,6 @@
         </div>
         {% endfor %}
       </div>
-      <div class="feld__hilfe">Nicht jede Person muss etwas bestellen.</div>
     </div>
     {% endif %}
 
@@ -120,7 +120,6 @@
 
   function auffrischen() {
     personen.value = Math.min(Math.max(zahl(personen), 1), maxPersonen);
-    var koepfe = zahl(personen);
     var summe = 0;
 
     document.querySelectorAll('.menge').forEach(function (feld) {
@@ -130,8 +129,7 @@
     });
 
     if (anzeige) {
-      anzeige.textContent = summe + ' von ' + koepfe + ' verteilt';
-      anzeige.classList.toggle('warnung', summe > koepfe);
+      anzeige.textContent = summe === 0 ? '' : summe + ' Stück';
     }
   }
 

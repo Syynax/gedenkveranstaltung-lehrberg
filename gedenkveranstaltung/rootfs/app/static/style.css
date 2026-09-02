@@ -37,10 +37,10 @@ a:hover { color: var(--bronze-dunkel); }
 .seite {
   max-width: 440px;
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: 32px 24px 36px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
 }
 
 .seite--weit { max-width: 1040px; padding: 32px 28px 40px; }
@@ -76,7 +76,57 @@ h1.klein { font-size: clamp(27px, 7.5vw, 32px); line-height: 1.1; }
 .eckdaten svg { flex-shrink: 0; }
 
 .fliess { margin: 0; line-height: 1.62; color: var(--tinte-2); text-wrap: pretty; }
-.fliess + .fliess { margin-top: 12px; }
+.fliess + .fliess { margin-top: 14px; }
+
+/* Termin-Karte auf der Startseite */
+.termin {
+  background: var(--karte);
+  border: 1px solid var(--linie);
+  border-radius: 4px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.termin__block { display: flex; flex-direction: column; gap: 3px; }
+.termin__label {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grau-3);
+}
+.termin__wert {
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1.25;
+  color: var(--tinte);
+}
+.termin__zusatz { font-size: 16px; color: var(--grau); }
+
+/* Anmeldeschluss */
+.schluss {
+  margin-top: 6px;
+  padding-top: 20px;
+  border-top: 1px solid var(--linie);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.schluss__label {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--bronze);
+}
+.schluss__datum {
+  font-family: var(--serif);
+  font-size: 26px;
+  line-height: 1.2;
+  color: var(--tinte);
+}
 
 /* Fruehere Fassung hat diesen Block ans Seitenende geschoben (margin-top: auto,
    Seite auf 100vh). Auf Handys riss das eine Luecke in die Mitte und schob den

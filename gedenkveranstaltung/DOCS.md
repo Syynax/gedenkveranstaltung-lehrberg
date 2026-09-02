@@ -21,8 +21,9 @@ Die Verwaltung ist **nur** über Ingress erreichbar. Wer die Adresse auf Port
 
 Essen und Getränke werden unterschiedlich abgefragt:
 
-* **Essen** mit Anzahl je Gericht — für den Einkauf. Die Summe darf die
-  Personenzahl nicht überschreiten.
+* **Essen** in Stück je Gericht — für den Einkauf. Zwei Weißwürste für eine
+  Person sind also ausdrücklich möglich; abgelehnt werden erst offensichtliche
+  Zahlendreher (mehr als zehn Stück je angemeldeter Person).
 * **Getränke** nur als Häkchen, für den groben Überblick. Keine Mengen.
 
 Auf die Platzzahl zählt allein die Anzahl der Personen.
@@ -38,7 +39,7 @@ nicht mehr erreichbar.
 | `untertitel` | Kleine Zeile über der Überschrift |
 | `titel` | Überschrift der Seite |
 | `datum` | Frei formulierbar, z. B. `Samstag, 14. September 2026` |
-| `uhrzeit` | Z. B. `17:00` — wird als `17:00 Uhr` angezeigt |
+| `uhrzeit` | Z. B. `9:30` — wird als `ab 9:30 Uhr` angezeigt |
 | `ort` | Z. B. `Schulturnhalle, Lehrberg` |
 | `text` | Gedenktext. Leerzeilen ergeben Absätze |
 | `plaetze_gesamt` | Obergrenze über alle Anmeldungen zusammen |
@@ -63,7 +64,7 @@ Summen auf. Vor dem ersten Aushang die Liste also festzurren.
 ## Verwaltung
 
 * **CSV herunterladen** — Semikolon-getrennt und mit BOM, öffnet sich in Excel
-  ohne Umlautsalat. Je Gericht eine Spalte mit der Anzahl, je Getränk eine
+  ohne Umlautsalat. Je Gericht eine Spalte mit der Stückzahl, je Getränk eine
   Spalte mit `ja` wo angekreuzt.
 * **Anmeldung schließen** — sofort wirksam, jederzeit wieder zu öffnen. Der
   Schalter ist unabhängig von der Option `anmeldung_offen`.
@@ -75,7 +76,7 @@ Bei `sensor_erstellen: true` schreibt das Add-on nach jeder Änderung
 `sensor.gedenkveranstaltung_freie_plaetze` in Home Assistant. Zustand ist die
 Zahl der freien Plätze, dazu kommen als Attribute `plaetze_gesamt`,
 `belegte_plaetze`, `anmeldungen`, `anmeldung_offen`, `essen` und `getraenke`.
-`essen` zählt die bestellten Portionen, `getraenke` die Personen, in deren
+`essen` zählt die bestellten Stück, `getraenke` die Personen, in deren
 Anmeldung das Getränk angekreuzt ist.
 
 Damit lässt sich zum Beispiel eine Benachrichtigung bauen:
