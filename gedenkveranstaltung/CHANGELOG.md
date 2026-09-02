@@ -1,5 +1,11 @@
 # Änderungen
 
+## 1.3.3
+
+- Das Add-on schreibt bei jeder Anmeldung eine Logzeile mit belegten Plätzen,
+  eingestellten Schwellen und den davon erreichten. Vorher war nicht zu sehen,
+  ob eine Schwelle einfach noch nicht erreicht war.
+
 ## 1.3.2
 
 - Nachrichten gehen jetzt auch an eine **Notify-Entität** (`notify.send_message`),

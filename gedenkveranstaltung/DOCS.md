@@ -102,6 +102,16 @@ benachrichtigung_schwellen: "60, 100"
   oder Leerzeichen getrennt. Gemeldet wird, sobald die Zahl der **belegten
   Plätze** eine dieser Marken überschreitet — je Marke genau einmal. Leer
   lassen heißt: keine Schwellenmeldungen.
+
+  Gezählt werden Personen über alle Anmeldungen hinweg, nicht die Anzahl der
+  Anmeldungen. Bei `60, 100` und 200 Plätzen kommt die erste Meldung also erst,
+  wenn die 60. Person angemeldet ist. Eine Marke, die schon überschritten war
+  als du sie eingetragen hast, meldet sich nicht mehr. Zum Ausprobieren kurz
+  eine `1` eintragen, Add-on neu starten, eine Testanmeldung machen.
+
+  Bei jeder Anmeldung schreibt das Add-on eine Zeile ins Log, etwa
+  `belegte Plätze 57 -> 67, Schwellen [60, 100], davon erreicht: [60]`. Damit
+  ist immer klar, ob eine Marke bloß noch nicht erreicht ist.
 * Ist der letzte Platz vergeben, kommt immer eine Nachricht, unabhängig von
   den beiden Schaltern.
 
