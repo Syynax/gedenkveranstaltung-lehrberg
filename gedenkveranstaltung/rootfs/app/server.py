@@ -129,29 +129,39 @@ def lage():
     }
 
 
+def als_mengen(wert):
+    """Das Essen einer Anmeldung als {Gericht: Anzahl}. Faengt auch Eintraege
+    ab, die noch als reine Liste gespeichert wurden."""
+    if isinstance(wert, dict):
+        return {name: int(menge) for name, menge in wert.items() if int(menge) > 0}
+    return {str(name): 1 for name in (wert or [])}
+
+
 def als_liste(wert):
-    """Die Auswahl einer Anmeldung als Liste. Faengt auch Eintraege ab, die
-    noch als Mengen-Dict gespeichert wurden."""
+    """Die Getraenke-Auswahl einer Anmeldung als Liste. Faengt auch Eintraege
+    ab, die noch als Mengen-Dict gespeichert wurden."""
     if isinstance(wert, dict):
         return [name for name, menge in wert.items() if menge]
     return [str(x) for x in (wert or [])]
 
 
-def summen(anmeldungen, schluessel, auswahl):
-    """Wie viele Personen wollen welches Gericht bzw. Getraenk. Gezaehlt wird
-    die ganze Anmeldung: wer zu dritt kommt und Weisswuerste ankreuzt, zaehlt
-    dort mit drei Personen."""
+def portionen(anmeldungen, auswahl):
+    """Bestellte Portionen je Gericht."""
     ergebnis = {name: 0 for name in auswahl}
     for a in anmeldungen:
-        for name in als_liste(a.get(schluessel)):
-            ergebnis[name] = ergebnis.get(name, 0) + int(a.get("personen", 0))
+        for name, menge in als_mengen(a.get("essen")).items():
+            ergebnis[name] = ergebnis.get(name, 0) + menge
     return {name: menge for name, menge in ergebnis.items() if menge > 0}
 
 
-def personen_mit_essen(anmeldungen):
-    return sum(
-        int(a.get("personen", 0)) for a in anmeldungen if als_liste(a.get("essen"))
-    )
+def nachfrage(anmeldungen, auswahl):
+    """Wie viele Personen wollen welches Getraenk. Gezaehlt wird die ganze
+    Anmeldung: wer zu dritt kommt und Helles ankreuzt, zaehlt mit drei."""
+    ergebnis = {name: 0 for name in auswahl}
+    for a in anmeldungen:
+        for name in als_liste(a.get("getraenke")):
+            ergebnis[name] = ergebnis.get(name, 0) + int(a.get("personen", 0))
+    return {name: menge for name, menge in ergebnis.items() if menge > 0}
 
 
 # --------------------------------------------------------------------------
@@ -173,9 +183,9 @@ def sensor_aktualisieren():
             "belegte_plaetze": stand["belegt"],
             "anmeldungen": len(stand["daten"]["anmeldungen"]),
             "anmeldung_offen": stand["offen"],
-            "essen": summen(stand["daten"]["anmeldungen"], "essen", stand["opt"]["essen"]),
-            "getraenke": summen(
-                stand["daten"]["anmeldungen"], "getraenke", stand["opt"]["getraenke"]
+            "essen": portionen(stand["daten"]["anmeldungen"], stand["opt"]["essen"]),
+            "getraenke": nachfrage(
+                stand["daten"]["anmeldungen"], stand["opt"]["getraenke"]
             ),
         },
     }
@@ -288,10 +298,14 @@ def anmelden():
 
     fehler = None
     personen = 0
-    essen = _auswahl("essen", opt["essen"])
+    essen = {}
     getraenke = _auswahl("getraenke", opt["getraenke"])
     try:
         personen = _menge("personen")
+        for i, gericht in enumerate(opt["essen"]):
+            anzahl = _menge(f"essen_{i}")
+            if anzahl > 0:
+                essen[gericht] = anzahl
     except ValueError as problem:
         fehler = str(problem)
 
@@ -309,6 +323,11 @@ def anmelden():
             fehler = (
                 f"Es sind nur noch {stand['frei']} Plätze frei. "
                 "Bitte passen Sie die Personenzahl an."
+            )
+        elif sum(essen.values()) > personen:
+            fehler = (
+                "Es wurde mehr Essen gewählt, als Personen angemeldet sind. "
+                "Bitte gleichen Sie das an."
             )
 
     if fehler:
@@ -377,12 +396,13 @@ def verwaltung():
     anmeldungen = sorted(
         stand["daten"]["anmeldungen"], key=lambda a: a.get("zeit", ""), reverse=True
     )
+    essen_summe = portionen(anmeldungen, stand["opt"]["essen"])
     return render_template(
         "verwaltung.html",
         anmeldungen=anmeldungen,
-        essen_summe=summen(anmeldungen, "essen", stand["opt"]["essen"]),
-        getraenke_summe=summen(anmeldungen, "getraenke", stand["opt"]["getraenke"]),
-        essenwuensche=personen_mit_essen(anmeldungen),
+        essen_summe=essen_summe,
+        getraenke_summe=nachfrage(anmeldungen, stand["opt"]["getraenke"]),
+        portionen_gesamt=sum(essen_summe.values()),
         **stand,
     )
 
@@ -418,11 +438,11 @@ def csv_export():
     kopf = ["Name", "Personen"] + opt["essen"] + opt["getraenke"] + ["Anmerkung", "Eingang"]
     schreiber.writerow(kopf)
     for a in sorted(stand["daten"]["anmeldungen"], key=lambda x: x.get("zeit", "")):
-        gewaehlt_essen = als_liste(a.get("essen"))
+        gewaehlt_essen = als_mengen(a.get("essen"))
         gewaehlt_trinken = als_liste(a.get("getraenke"))
         schreiber.writerow(
             [a["name"], a["personen"]]
-            + ["ja" if g in gewaehlt_essen else "" for g in opt["essen"]]
+            + [gewaehlt_essen.get(g, 0) for g in opt["essen"]]
             + ["ja" if g in gewaehlt_trinken else "" for g in opt["getraenke"]]
             + [a.get("anmerkung", ""), a.get("zeit", "")]
         )

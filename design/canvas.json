@@ -1,7 +1,7 @@
 {
   "artboards": [
     { "file": "Main.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "1 – Startseite" },
-    { "file": "Formular.dc.html", "x": 470, "y": 0, "w": 390, "h": 1220, "title": "2 – Anmeldung" },
+    { "file": "Formular.dc.html", "x": 470, "y": 0, "w": 390, "h": 1200, "title": "2 – Anmeldung" },
     { "file": "Bestaetigung.dc.html", "x": 940, "y": 0, "w": 390, "h": 844, "title": "3 – Bestätigung" },
     { "file": "Ausgebucht.dc.html", "x": 1410, "y": 0, "w": 390, "h": 844, "title": "4 – Ausgebucht" },
     { "file": "Verwaltung.dc.html", "x": 0, "y": 1460, "w": 900, "h": 760, "title": "5 – Verwaltung (nur Orga)" }
@@ -12,7 +12,7 @@
       "x": 0,
       "y": -190,
       "w": 800,
-      "text": "Alles in eckigen Klammern ist ein Platzhalter: Datum, Uhrzeit, Ort, Kontakt.\nEssen und Getränke sind eine Mehrfachauswahl ohne Mengen: angekreuzt wird, was gewünscht ist, nicht wie viel.\nPlatzzahlen und die Namen in der Tabelle sind Beispieldaten."
+      "text": "Alles in eckigen Klammern ist ein Platzhalter: Datum, Uhrzeit, Ort, Kontakt.\nEssen wird mit Anzahl je Gericht abgefragt (für den Einkauf), Getränke nur als Häkchen (grober Überblick).\nPlatzzahlen und die Namen in der Tabelle sind Beispieldaten."
     }
   ],
   "launch": { "view": "canvas" }

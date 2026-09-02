@@ -37,11 +37,10 @@ a:hover { color: var(--bronze-dunkel); }
 .seite {
   max-width: 440px;
   margin: 0 auto;
-  padding: 40px 24px 40px;
+  padding: 40px 24px;
   display: flex;
   flex-direction: column;
   gap: 28px;
-  min-height: 100vh;
 }
 
 .seite--weit { max-width: 1040px; padding: 32px 28px 40px; }
@@ -59,13 +58,13 @@ a:hover { color: var(--bronze-dunkel); }
 h1 {
   margin: 0;
   font-family: var(--serif);
-  font-size: 40px;
+  font-size: clamp(31px, 9vw, 40px);
   line-height: 1.08;
   font-weight: 500;
   color: var(--tinte);
   text-wrap: pretty;
 }
-h1.klein { font-size: 32px; line-height: 1.1; }
+h1.klein { font-size: clamp(27px, 7.5vw, 32px); line-height: 1.1; }
 
 .eckdaten {
   display: flex;
@@ -79,7 +78,10 @@ h1.klein { font-size: 32px; line-height: 1.1; }
 .fliess { margin: 0; line-height: 1.62; color: var(--tinte-2); text-wrap: pretty; }
 .fliess + .fliess { margin-top: 12px; }
 
-.unten { margin-top: auto; display: flex; flex-direction: column; gap: 16px; }
+/* Fruehere Fassung hat diesen Block ans Seitenende geschoben (margin-top: auto,
+   Seite auf 100vh). Auf Handys riss das eine Luecke in die Mitte und schob den
+   Knopf unter die Falz. Jetzt laeuft alles einfach untereinander. */
+.unten { display: flex; flex-direction: column; gap: 16px; }
 
 /* Karten */
 .karte {
@@ -196,6 +198,14 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visib
 }
 .schritt-gross:hover { background: var(--karte-2); }
 
+.wahl__kopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.wahl__zaehler { font-size: 14px; color: var(--grau-2); white-space: nowrap; }
+.wahl__zaehler.warnung { color: var(--rot); font-weight: 600; }
 .wahl__liste { display: flex; flex-direction: column; gap: 8px; }
 
 .zeile {
@@ -225,6 +235,38 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visib
 }
 .zeile:has(input:checked) .zeile__name { color: var(--tinte); font-weight: 600; }
 .zeile:has(input:focus-visible) { outline: 2px solid var(--bronze); outline-offset: 2px; }
+
+/* Zeile mit Mengenzaehler (nur beim Essen) */
+.zeile--menge { padding: 8px 10px 8px 16px; gap: 12px; cursor: default; }
+.zeile--menge:hover { border-color: var(--linie); }
+.schritt {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--karte-2);
+  border: 1px solid var(--linie-2);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.schritt:hover { background: var(--bronze-hell); border-color: var(--linie); }
+.menge {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  text-align: center;
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--tinte);
+  background: transparent;
+  border: none;
+}
+.menge.null { color: var(--grau-3); }
+.js-aus .schritt { display: none; }
+.js-aus .menge { width: 64px; border: 1px solid var(--linie); background: var(--karte); }
 
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 input[type="number"]::-webkit-outer-spin-button,

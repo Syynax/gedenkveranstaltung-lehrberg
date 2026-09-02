@@ -47,23 +47,30 @@
 
     {% if opt.essen %}
     <div class="feld">
-      <div class="feld__label" id="essen-titel">Was möchten Sie essen?</div>
-      <div class="feld__hilfe">Mehrfachauswahl. Auf die Menge kommt es nicht an.</div>
+      <div class="wahl__kopf">
+        <span class="feld__label" id="essen-titel">Was möchten Sie essen?</span>
+        <span class="wahl__zaehler" data-zaehler></span>
+      </div>
       <div class="wahl__liste" role="group" aria-labelledby="essen-titel">
         {% for gericht in opt.essen %}
-        <label class="zeile">
-          <input type="checkbox" name="essen" value="{{ gericht }}"
-                 {% if gericht in (eingaben.essen or []) %}checked{% endif %}>
-          <span class="zeile__name">{{ gericht }}</span>
-        </label>
+        <div class="zeile zeile--menge">
+          <label class="zeile__name" for="essen_{{ loop.index0 }}">{{ gericht }}</label>
+          <button type="button" class="schritt" data-schritt="-1" data-ziel="essen_{{ loop.index0 }}" aria-label="{{ gericht }}: eine Portion weniger">{{ teile.minus(18) }}</button>
+          <input class="menge" id="essen_{{ loop.index0 }}" name="essen_{{ loop.index0 }}"
+                 type="number" inputmode="numeric" min="0" max="99"
+                 value="{{ (eingaben.essen or {}).get(gericht, 0) }}">
+          <button type="button" class="schritt" data-schritt="1" data-ziel="essen_{{ loop.index0 }}" aria-label="{{ gericht }}: eine Portion mehr">{{ teile.plus(18) }}</button>
+        </div>
         {% endfor %}
       </div>
+      <div class="feld__hilfe">Nicht jede Person muss etwas bestellen.</div>
     </div>
     {% endif %}
 
     {% if opt.getraenke %}
     <div class="feld">
       <div class="feld__label" id="getraenke-titel">Was möchten Sie trinken?</div>
+      <div class="feld__hilfe">Nur zum groben Überblick — die Menge spielt keine Rolle.</div>
       <div class="wahl__liste" role="group" aria-labelledby="getraenke-titel">
         {% for getraenk in opt.getraenke %}
         <label class="zeile">
@@ -104,25 +111,41 @@
   var personen = document.getElementById('personen');
   var maxPersonen = parseInt(formular.dataset.maxPersonen, 10) || 1;
 
-  function zahl() {
-    var wert = parseInt(personen.value, 10);
+  var anzeige = document.querySelector('[data-zaehler]');
+
+  function zahl(feld) {
+    var wert = parseInt(feld.value, 10);
     return isNaN(wert) ? 0 : wert;
   }
 
-  function begrenzen() {
-    personen.value = Math.min(Math.max(zahl(), 1), maxPersonen);
+  function auffrischen() {
+    personen.value = Math.min(Math.max(zahl(personen), 1), maxPersonen);
+    var koepfe = zahl(personen);
+    var summe = 0;
+
+    document.querySelectorAll('.menge').forEach(function (feld) {
+      feld.value = Math.max(0, zahl(feld));
+      feld.classList.toggle('null', zahl(feld) === 0);
+      summe += zahl(feld);
+    });
+
+    if (anzeige) {
+      anzeige.textContent = summe + ' von ' + koepfe + ' verteilt';
+      anzeige.classList.toggle('warnung', summe > koepfe);
+    }
   }
 
   formular.addEventListener('click', function (ereignis) {
     var knopf = ereignis.target.closest('[data-schritt]');
     if (!knopf) { return; }
-    personen.value = zahl() + parseInt(knopf.dataset.schritt, 10);
-    begrenzen();
+    var feld = knopf.dataset.ziel ? document.getElementById(knopf.dataset.ziel) : personen;
+    feld.value = zahl(feld) + parseInt(knopf.dataset.schritt, 10);
+    auffrischen();
   });
 
   // Erst beim Verlassen des Feldes begrenzen, damit Tippen nicht stoert.
-  personen.addEventListener('change', begrenzen);
-  begrenzen();
+  formular.addEventListener('change', auffrischen);
+  auffrischen();
 })();
 </script>
 {% endblock %}
