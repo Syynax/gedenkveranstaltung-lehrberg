@@ -53,7 +53,7 @@ nicht mehr erreichbar.
 | `sensor_erstellen` | Legt `sensor.gedenkveranstaltung_freie_plaetze` an |
 | `benachrichtigung_dienst` | Notify-Dienst für Nachrichten, leer = aus |
 | `benachrichtigung_jede_anmeldung` | Nachricht bei jeder einzelnen Anmeldung |
-| `benachrichtigung_schwellen` | Belegte Plätze, bei denen zusätzlich gemeldet wird |
+| `benachrichtigung_schwellen` | Belegte Plätze als Text, z. B. `60, 100`. Leer = aus |
 
 Leere Felder werden auf der Seite weggelassen — es steht also nie ein leerer
 Platzhalter herum. Änderungen an den Optionen greifen nach dem Neustart des
@@ -87,15 +87,15 @@ die Nachrichten ab.
 ```yaml
 benachrichtigung_dienst: notify.mobile_app_dein_handy
 benachrichtigung_jede_anmeldung: true
-benachrichtigung_schwellen:
-  - 60
-  - 100
+benachrichtigung_schwellen: "60, 100"
 ```
 
 * `benachrichtigung_jede_anmeldung` meldet jede einzelne Anmeldung mit Name,
   Personenzahl, Bestellung und den verbleibenden Plätzen.
-* `benachrichtigung_schwellen` meldet zusätzlich, sobald die Zahl der belegten
-  Plätze eine dieser Marken überschreitet — je Marke genau einmal.
+* `benachrichtigung_schwellen` ist ein einfaches Textfeld: Zahlen mit Komma
+  oder Leerzeichen getrennt. Gemeldet wird, sobald die Zahl der **belegten
+  Plätze** eine dieser Marken überschreitet — je Marke genau einmal. Leer
+  lassen heißt: keine Schwellenmeldungen.
 * Ist der letzte Platz vergeben, kommt immer eine Nachricht, unabhängig von
   den beiden Schaltern.
 

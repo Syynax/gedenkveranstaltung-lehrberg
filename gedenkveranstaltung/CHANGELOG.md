@@ -1,5 +1,12 @@
 # Änderungen
 
+## 1.3.1
+
+- `benachrichtigung_schwellen` ist jetzt ein Textfeld (`60, 100`) statt einer
+  Zahlenliste. Die Liste ließ sich in der Add-on-Konfiguration nicht speichern
+  ("Invalid list for option"). Eine bereits gespeicherte Liste wird weiterhin
+  verstanden.
+
 ## 1.3.0
 
 - Benachrichtigungen: Das Add-on kann bei jeder Anmeldung und beim Erreichen

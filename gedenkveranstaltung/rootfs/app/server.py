@@ -59,7 +59,7 @@ STANDARD_OPTIONEN = {
     "sensor_erstellen": True,
     "benachrichtigung_dienst": "",
     "benachrichtigung_jede_anmeldung": True,
-    "benachrichtigung_schwellen": [],
+    "benachrichtigung_schwellen": "",
 }
 
 
@@ -238,6 +238,14 @@ def nachricht_senden(text):
         f"core/api/services/{bereich}/{name}",
         {"title": "Gedenkveranstaltung", "message": text},
     )
+
+
+def schwellen(opt):
+    """Die Marken aus den Optionen als sortierte Zahlen. Erlaubt ist alles,
+    was man dort hinschreibt: "60, 100" ebenso wie "60 100" - und eine Liste
+    aus einer aelteren Fassung der Optionen."""
+    roh = opt.get("benachrichtigung_schwellen") or ""
+    return sorted({int(zahl) for zahl in re.findall(r"\d+", str(roh))})
 
 
 def _nachbereiten(arbeit):
@@ -470,11 +478,9 @@ def _melden(eintrag, belegt_vorher, belegt_nachher, anzahl):
             f"Alle {gesamt} Plätze sind vergeben — die Anmeldung ist geschlossen."
         )
     else:
-        for schwelle in sorted(
-            int(s)
-            for s in (opt.get("benachrichtigung_schwellen") or [])
-            if belegt_vorher < int(s) <= belegt_nachher
-        ):
+        for schwelle in schwellen(opt):
+            if not belegt_vorher < schwelle <= belegt_nachher:
+                continue
             nachricht_senden(
                 f"{belegt_nachher} von {gesamt} Plätzen sind belegt "
                 f"(Schwelle {schwelle} erreicht). Noch {frei} frei."
