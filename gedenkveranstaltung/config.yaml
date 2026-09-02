@@ -41,15 +41,14 @@ options:
   anmeldeschluss: ""
   kontakt: ""
   essen:
-    - Bratwurst mit Brot
-    - Käsespätzle, vegetarisch
-    - Gemüsepfanne, vegan
-    - Kuchen
+    - Weißwürste
+    - Wiener
   getraenke:
-    - Wasser und Saft
-    - Bier
-    - Wein
-    - Kaffee
+    - Weizen
+    - Weizen, alkoholfrei
+    - Helles
+    - Helles, alkoholfrei
+    - Alkoholfreies Getränk
   anmeldung_offen: true
   datenschutz_hinweis: Die Angaben werden nur für die Planung der Veranstaltung verwendet.
   sensor_erstellen: true

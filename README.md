@@ -42,7 +42,7 @@ Alles Weitere — Optionen, Sensor, CSV-Export, Daten und Backups — steht in
 
 * Datum, Uhrzeit, Ort, Anmeldeschluss und Kontakt sind absichtlich leer
   vorbelegt und müssen in den Add-on-Optionen gesetzt werden.
-* Gerichte und Getränke sind Vorschläge und gehören vor dem ersten Aushang
-  festgelegt.
-* Für einen Aushang mit QR-Code muss Port 8080 von außen erreichbar sein —
-  siehe DOCS.md.
+* Essen (Weißwürste, Wiener) und Getränke (Weizen, Helles, beide auch
+  alkoholfrei, dazu alkoholfreie Getränke) sind bereits eingetragen.
+* Veröffentlicht wird über das Cloudflare-Tunnel-Add-on auf Port 8080 —
+  siehe [DOCS.md](gedenkveranstaltung/DOCS.md).
