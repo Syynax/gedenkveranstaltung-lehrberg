@@ -44,5 +44,6 @@ Alles Weitere — Optionen, Sensor, CSV-Export, Daten und Backups — steht in
   vorbelegt und müssen in den Add-on-Optionen gesetzt werden.
 * Essen (Weißwürste, Wiener) und Getränke (Weizen, Helles, beide auch
   alkoholfrei, dazu alkoholfreie Getränke) sind bereits eingetragen.
-* Veröffentlicht wird über das Cloudflare-Tunnel-Add-on auf Port 8080 —
+* Veröffentlicht wird über das Cloudflare-Tunnel-Add-on auf Port 8080; der
+  Servicename dort ist der volle Add-on-Slug mit Bindestrichen —
   siehe [DOCS.md](gedenkveranstaltung/DOCS.md).

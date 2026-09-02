@@ -110,14 +110,32 @@ einen zusätzlichen Hostname auf dieses Add-on zeigen lassen:
 ```yaml
 additional_hosts:
   - hostname: anmeldung.deine-domain.de
-    service: http://ADDON_SLUG_gedenkveranstaltung:8080
+    service: http://1a2b3c4d-gedenkveranstaltung:8080
 ```
 
-Der Servicename ist der interne Docker-Name des Add-ons. Bei einem lokal
-installierten Add-on („Lokale Add-ons") heißt er `local_gedenkveranstaltung`,
-bei einem aus einem Repository installierten steht der Präfix in der URL der
-Add-on-Seite. Notfalls tut es auch die IP von Home Assistant:
-`http://<ip-von-home-assistant>:8080`.
+`1a2b3c4d-gedenkveranstaltung` ist ein **Beispiel** und muss ersetzt werden.
+Der Servicename ist der volle Slug dieses Add-ons, mit Bindestrichen statt
+Unterstrichen. Den vollen Slug zeigt die Adresszeile, wenn die Add-on-Seite
+geöffnet ist:
+
+```
+http://homeassistant.local:8123/hassio/addon/1a2b3c4d_gedenkveranstaltung/info
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+```
+
+Aus `1a2b3c4d_gedenkveranstaltung` wird also `1a2b3c4d-gedenkveranstaltung`.
+Bei einem lokal installierten Add-on (Ordner unter `/addons`) lautet der Slug
+`local_gedenkveranstaltung` und der Servicename `local-gedenkveranstaltung`.
+
+Funktioniert das nicht, tut es auch die IP von Home Assistant — Port 8080 ist
+auf dem Host veröffentlicht:
+
+```yaml
+    service: http://192.168.1.10:8080
+```
+
+Das Add-on muss dabei **laufen**. Ist es gestoppt, gibt es keinen DNS-Eintrag
+und cloudflared meldet `no such host`.
 
 Danach im Cloudflare-Dashboard prüfen, dass der Hostname auf den Tunnel zeigt,
 und das Tunnel-Add-on neu starten. Die Verwaltung bleibt außen vor: sie hängt
