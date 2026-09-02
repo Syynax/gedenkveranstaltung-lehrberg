@@ -79,10 +79,16 @@ Zwei Wege, die sich auch kombinieren lassen.
 
 ### Direkt aus dem Add-on
 
-In `benachrichtigung_dienst` den Namen eines Notify-Dienstes eintragen, etwa
-`notify.mobile_app_dein_handy` oder `persistent_notification.create`. Den
-genauen Namen zeigt **Entwicklerwerkzeuge → Aktionen**. Leer lassen schaltet
+In `benachrichtigung_dienst` den Namen eintragen, unter dem dein Handy in Home
+Assistant erreichbar ist — etwa `notify.mobile_app_dein_handy`,
+`notify.handy_cedric` oder `persistent_notification.create`. Beides geht: eine
+klassische Aktion und eine Notify-Entität neuerer Installationen; das Add-on
+probiert erst die Aktion und dann `notify.send_message`. Leer lassen schaltet
 die Nachrichten ab.
+
+Kommt nichts an, steht der Grund im Log des Add-ons. Den richtigen Namen zeigt
+**Entwicklerwerkzeuge → Aktionen** (dort nach `notify` suchen); dort lässt sich
+auch gleich eine Testnachricht schicken.
 
 ```yaml
 benachrichtigung_dienst: notify.mobile_app_dein_handy

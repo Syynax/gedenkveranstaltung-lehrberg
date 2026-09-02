@@ -1,5 +1,13 @@
 # Änderungen
 
+## 1.3.2
+
+- Nachrichten gehen jetzt auch an eine **Notify-Entität** (`notify.send_message`),
+  nicht nur an eine klassische Aktion. Vorher gab es in dem Fall nur ein
+  `HTTP Error 400` im Log.
+- Fehler von Home Assistant werden mit Begründung geloggt statt nur mit dem
+  Statuscode.
+
 ## 1.3.1
 
 - `benachrichtigung_schwellen` ist jetzt ein Textfeld (`60, 100`) statt einer

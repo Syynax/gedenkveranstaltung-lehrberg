@@ -175,7 +175,7 @@ def nachfrage(anmeldungen, auswahl):
 # --------------------------------------------------------------------------
 
 
-def _an_supervisor(pfad, nutzlast):
+def _an_supervisor(pfad, nutzlast, leise=False):
     """POST an die Home-Assistant-Kernschnittstelle ueber den Supervisor.
     Schlaegt es fehl, wird das nur geloggt - eine Anmeldung darf daran nicht
     scheitern."""
@@ -193,8 +193,19 @@ def _an_supervisor(pfad, nutzlast):
     try:
         with urllib.request.urlopen(anfrage, timeout=10):
             return True
+    except urllib.error.HTTPError as fehler:
+        # Home Assistant schreibt den Grund in den Rumpf - ohne den ist ein
+        # "400 Bad Request" im Log wertlos.
+        try:
+            grund = fehler.read().decode("utf-8", "replace").strip()[:300]
+        except OSError:
+            grund = ""
+        if not leise:
+            print(f"[anmeldung] {pfad} fehlgeschlagen: {fehler} {grund}", flush=True)
+        return False
     except (urllib.error.URLError, OSError) as fehler:
-        print(f"[anmeldung] {pfad} fehlgeschlagen: {fehler}", flush=True)
+        if not leise:
+            print(f"[anmeldung] {pfad} fehlgeschlagen: {fehler}", flush=True)
         return False
 
 
@@ -228,15 +239,38 @@ def ereignis_senden(name, daten):
 
 
 def nachricht_senden(text):
-    """Schickt eine Nachricht ueber den in den Optionen hinterlegten Dienst,
-    z. B. notify.mobile_app_pixel oder persistent_notification.create."""
+    """Schickt eine Nachricht ueber den in den Optionen hinterlegten Dienst.
+
+    Erlaubt ist beides, was in Home Assistant "notify.irgendwas" heissen kann:
+    eine klassische Aktion (notify.mobile_app_handy, persistent_notification.
+    create) und eine Notify-Entitaet neuerer Installationen, die ueber
+    notify.send_message angesprochen wird. Welches von beidem es ist, sieht man
+    dem Namen nicht an - deshalb wird der zweite Weg nur versucht, wenn der
+    erste nicht klappt.
+    """
     dienst = (optionen().get("benachrichtigung_dienst") or "").strip()
     if dienst.count(".") != 1:
         return
     bereich, name = dienst.split(".")
-    _an_supervisor(
+
+    als_aktion = _an_supervisor(
         f"core/api/services/{bereich}/{name}",
         {"title": "Gedenkveranstaltung", "message": text},
+        leise=(bereich == "notify"),
+    )
+    if als_aktion or bereich != "notify":
+        return
+
+    if _an_supervisor(
+        "core/api/services/notify/send_message",
+        {"entity_id": dienst, "message": text},
+    ):
+        return
+
+    print(
+        f"[anmeldung] {dienst} ist weder eine Aktion noch eine Notify-Entität. "
+        "Den richtigen Namen zeigt Entwicklerwerkzeuge > Aktionen.",
+        flush=True,
     )
 
 
