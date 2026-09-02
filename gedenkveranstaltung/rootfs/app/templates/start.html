@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% import "teile.html" as teile %}
+
+{% block inhalt %}
+<main class="seite">
+
+  {{ teile.kopf(opt) }}
+  {{ teile.eckdaten(opt) }}
+
+  {% if opt.text %}
+  <div>{{ teile.absaetze(opt.text) }}</div>
+  {% endif %}
+
+  <div class="unten">
+
+    {% if offen %}
+
+      <div class="karte">
+        <div class="plaetze__zeile">
+          <span class="plaetze__label">Noch freie Plätze</span>
+          <span class="plaetze__zahl">{{ frei }}<span> von {{ gesamt }}</span></span>
+        </div>
+        <div class="balken">
+          <div class="balken__fuell" style="width: {{ (100 * frei / gesamt) | round(1) }}%"></div>
+        </div>
+      </div>
+
+      <a class="knopf" href="{{ url_for('formular') }}">Jetzt anmelden</a>
+
+      {% if opt.anmeldeschluss %}
+      <div class="hinweis-klein">Anmeldeschluss: {{ opt.anmeldeschluss }}</div>
+      {% endif %}
+
+    {% else %}
+
+      <div class="karte karte--ruhig">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A5F3A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+          <span style="font-family: var(--serif); font-size: 25px;">Die Anmeldung ist geschlossen</span>
+        </div>
+        <div style="font-size: 16px; color: var(--grau);">
+          {% if ausgebucht %}
+            Alle {{ gesamt }} Plätze sind vergeben. Neue Anmeldungen sind über diese Seite nicht mehr möglich.
+          {% else %}
+            Über diese Seite sind derzeit keine Anmeldungen möglich.
+          {% endif %}
+        </div>
+      </div>
+
+      {% if opt.kontakt %}
+      <div class="karte">
+        <div style="font-size: 15px; color: var(--grau-2);">
+          {% if ausgebucht %}Falls doch noch ein Platz frei wird{% else %}Ihre Ansprechperson{% endif %}
+        </div>
+        <div style="font-size: 17px; color: var(--tinte);">{{ opt.kontakt }}</div>
+      </div>
+      {% endif %}
+
+    {% endif %}
+
+  </div>
+
+</main>
+{% endblock %}

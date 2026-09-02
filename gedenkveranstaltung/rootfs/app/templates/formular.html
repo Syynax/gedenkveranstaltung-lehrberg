@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% import "teile.html" as teile %}
+
+{% block titel %}Anmeldung – {{ opt.titel }}{% endblock %}
+
+{% block inhalt %}
+<main class="seite">
+
+  <div class="kopf">
+    <a class="zurueck" href="{{ url_for('start') }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+      Zurück
+    </a>
+    <h1 class="klein">Anmeldung</h1>
+    <div style="font-size: 15px; color: var(--grau-2);">Noch {{ frei }} von {{ gesamt }} Plätzen frei</div>
+  </div>
+
+  {% if fehler %}
+  <div class="meldung meldung--fehler" role="alert">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span>{{ fehler }}</span>
+  </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('anmelden') }}"
+        data-max-personen="{{ [opt.max_personen_pro_anmeldung, frei] | min }}">
+
+    <div class="feld">
+      <label class="feld__label" for="name">Wer kommt?</label>
+      <div class="feld__hilfe">Name, unter dem die Anmeldung geführt wird.</div>
+      <input id="name" name="name" type="text" required maxlength="80"
+             autocomplete="name" placeholder="Vor- und Nachname"
+             value="{{ eingaben.name or '' }}">
+    </div>
+
+    <div class="feld">
+      <label class="feld__label" for="personen">Wie viele Personen?</label>
+      <div class="personen">
+        <button type="button" class="schritt-gross" data-schritt="-1" data-ziel="personen" aria-label="Eine Person weniger">{{ teile.minus(20) }}</button>
+        <input class="personen__anzeige" id="personen" name="personen" type="number"
+               inputmode="numeric" min="1" max="{{ [opt.max_personen_pro_anmeldung, frei] | min }}"
+               required value="{{ eingaben.personen or 1 }}">
+        <button type="button" class="schritt-gross" data-schritt="1" data-ziel="personen" aria-label="Eine Person mehr">{{ teile.plus(20) }}</button>
+      </div>
+      <div class="feld__hilfe">Höchstens {{ [opt.max_personen_pro_anmeldung, frei] | min }} Personen pro Anmeldung.</div>
+    </div>
+
+    {% if opt.essen %}
+    <div class="feld">
+      <div class="wahl__kopf">
+        <span class="feld__label">Was möchten Sie essen?</span>
+        <span class="wahl__zaehler" data-zaehler="essen"></span>
+      </div>
+      <div class="wahl__liste">
+        {% for gericht in opt.essen %}
+        <div class="zeile">
+          <label class="zeile__name" for="essen_{{ loop.index0 }}">{{ gericht }}</label>
+          <button type="button" class="schritt" data-schritt="-1" data-ziel="essen_{{ loop.index0 }}" aria-label="{{ gericht }}: weniger">{{ teile.minus(18) }}</button>
+          <input class="menge" id="essen_{{ loop.index0 }}" name="essen_{{ loop.index0 }}"
+                 type="number" inputmode="numeric" min="0" max="99" data-gruppe="essen"
+                 value="{{ (eingaben.essen or {}).get(gericht, 0) }}">
+          <button type="button" class="schritt" data-schritt="1" data-ziel="essen_{{ loop.index0 }}" aria-label="{{ gericht }}: mehr">{{ teile.plus(18) }}</button>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="feld__hilfe">Nicht jede Person muss etwas auswählen.</div>
+    </div>
+    {% endif %}
+
+    {% if opt.getraenke %}
+    <div class="feld">
+      <div class="wahl__kopf">
+        <span class="feld__label">Was möchten Sie trinken?</span>
+        <span class="wahl__zaehler" data-zaehler="getraenke"></span>
+      </div>
+      <div class="wahl__liste">
+        {% for getraenk in opt.getraenke %}
+        <div class="zeile">
+          <label class="zeile__name" for="getraenk_{{ loop.index0 }}">{{ getraenk }}</label>
+          <button type="button" class="schritt" data-schritt="-1" data-ziel="getraenk_{{ loop.index0 }}" aria-label="{{ getraenk }}: weniger">{{ teile.minus(18) }}</button>
+          <input class="menge" id="getraenk_{{ loop.index0 }}" name="getraenk_{{ loop.index0 }}"
+                 type="number" inputmode="numeric" min="0" max="99" data-gruppe="getraenke"
+                 value="{{ (eingaben.getraenke or {}).get(getraenk, 0) }}">
+          <button type="button" class="schritt" data-schritt="1" data-ziel="getraenk_{{ loop.index0 }}" aria-label="{{ getraenk }}: mehr">{{ teile.plus(18) }}</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="feld">
+      <label class="feld__label" for="anmerkung">Anmerkung <span class="optional">(optional)</span></label>
+      <textarea id="anmerkung" name="anmerkung" rows="3" maxlength="500"
+                placeholder="Allergien, Rollstuhl, Sitzwunsch">{{ eingaben.anmerkung or '' }}</textarea>
+    </div>
+
+    <div aria-hidden="true" style="position: absolute; left: -9999px;">
+      <label for="webseite">Bitte leer lassen</label>
+      <input id="webseite" name="webseite" type="text" tabindex="-1" autocomplete="off">
+    </div>
+
+    <div class="feld">
+      <button type="submit" class="knopf">Anmeldung absenden</button>
+      {% if opt.datenschutz_hinweis %}
+      <div class="hinweis-klein">{{ opt.datenschutz_hinweis }}</div>
+      {% endif %}
+    </div>
+
+  </form>
+
+</main>
+
+<script>
+(function () {
+  var formular = document.querySelector('form');
+  var personen = document.getElementById('personen');
+  var maxPersonen = parseInt(formular.dataset.maxPersonen, 10) || 1;
+
+  function zahl(feld) {
+    var wert = parseInt(feld.value, 10);
+    return isNaN(wert) ? 0 : wert;
+  }
+
+  function gruppeSumme(name) {
+    var summe = 0;
+    document.querySelectorAll('.menge[data-gruppe="' + name + '"]').forEach(function (feld) {
+      summe += zahl(feld);
+    });
+    return summe;
+  }
+
+  function auffrischen() {
+    personen.value = Math.min(Math.max(zahl(personen), 1), maxPersonen);
+    var koepfe = zahl(personen);
+
+    document.querySelectorAll('.menge').forEach(function (feld) {
+      feld.value = Math.max(0, zahl(feld));
+      feld.classList.toggle('null', zahl(feld) === 0);
+    });
+
+    document.querySelectorAll('[data-zaehler]').forEach(function (anzeige) {
+      var summe = gruppeSumme(anzeige.dataset.zaehler);
+      anzeige.textContent = summe + ' von ' + koepfe + ' verteilt';
+      anzeige.classList.toggle('warnung', summe > koepfe);
+    });
+  }
+
+  formular.addEventListener('click', function (ereignis) {
+    var knopf = ereignis.target.closest('[data-schritt]');
+    if (!knopf) { return; }
+    var feld = document.getElementById(knopf.dataset.ziel);
+    feld.value = zahl(feld) + parseInt(knopf.dataset.schritt, 10);
+    auffrischen();
+  });
+
+  formular.addEventListener('input', auffrischen);
+  auffrischen();
+})();
+</script>
+{% endblock %}

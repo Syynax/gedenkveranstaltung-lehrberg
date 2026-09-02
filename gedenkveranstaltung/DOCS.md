@@ -1,0 +1,100 @@
+# Gedenkveranstaltung Anmeldung
+
+Eine schlichte Anmeldeseite mit begrenzter Platzzahl. Gäste tragen sich ohne
+Login ein, die Organisation sieht die Liste in Home Assistant.
+
+## Was das Add-on startet
+
+| Zweck | Erreichbar über |
+| --- | --- |
+| Öffentliche Anmeldeseite | `http://<home-assistant>:8080` |
+| Verwaltung (Liste, CSV, öffnen/schließen) | Seitenleiste in Home Assistant |
+
+Die Verwaltung ist **nur** über Ingress erreichbar. Wer die Adresse auf Port
+8080 aufruft, bekommt für `/verwaltung` eine 404 zurück.
+
+## Ablauf für die Gäste
+
+1. Startseite: Titel, Datum, Ort, Gedenktext und wie viele Plätze noch frei sind.
+2. Anmeldung: Name, Anzahl Personen, Essen und Getränke, optionale Anmerkung.
+3. Bestätigung mit Zusammenfassung der Anmeldung.
+
+Sind alle Plätze vergeben oder ist die Anmeldung geschlossen, zeigt die
+Startseite das statt des Formulars an — das Formular ist dann auch direkt
+nicht mehr erreichbar.
+
+## Einstellungen
+
+| Option | Bedeutung |
+| --- | --- |
+| `untertitel` | Kleine Zeile über der Überschrift |
+| `titel` | Überschrift der Seite |
+| `datum` | Frei formulierbar, z. B. `Samstag, 14. September 2026` |
+| `uhrzeit` | Z. B. `17:00` — wird als `17:00 Uhr` angezeigt |
+| `ort` | Z. B. `Schulturnhalle, Lehrberg` |
+| `text` | Gedenktext. Leerzeilen ergeben Absätze |
+| `plaetze_gesamt` | Obergrenze über alle Anmeldungen zusammen |
+| `max_personen_pro_anmeldung` | Bremse gegen Zahlendreher |
+| `anmeldeschluss` | Nur ein Hinweis unter dem Knopf, schließt nichts automatisch |
+| `kontakt` | Name und Telefonnummer für Rückfragen und Absagen |
+| `essen` | Liste der Gerichte zur Auswahl |
+| `getraenke` | Liste der Getränke zur Auswahl |
+| `anmeldung_offen` | Hauptschalter. Aus = keine Anmeldung möglich |
+| `datenschutz_hinweis` | Kleingedrucktes unter dem Absende-Knopf |
+| `sensor_erstellen` | Legt `sensor.gedenkveranstaltung_freie_plaetze` an |
+
+Leere Felder werden auf der Seite weggelassen — es steht also nie ein leerer
+Platzhalter herum. Änderungen an den Optionen greifen nach dem Neustart des
+Add-ons.
+
+Gerichte und Getränke können nachträglich ergänzt werden. Umbenennen oder
+Löschen eines Eintrags ändert **nicht** die bereits gespeicherten Anmeldungen:
+alte Bestellungen behalten den alten Namen und tauchen dann nicht mehr in den
+Summen auf. Vor dem ersten Aushang die Liste also festzurren.
+
+## Verwaltung
+
+* **CSV herunterladen** — Semikolon-getrennt und mit BOM, öffnet sich in Excel
+  ohne Umlautsalat. Eine Spalte je Gericht und Getränk.
+* **Anmeldung schließen** — sofort wirksam, jederzeit wieder zu öffnen. Der
+  Schalter ist unabhängig von der Option `anmeldung_offen`.
+* **Löschen** — für Absagen. Der Platz wird sofort wieder frei.
+
+## Sensor
+
+Bei `sensor_erstellen: true` schreibt das Add-on nach jeder Änderung
+`sensor.gedenkveranstaltung_freie_plaetze` in Home Assistant. Zustand ist die
+Zahl der freien Plätze, dazu kommen als Attribute `plaetze_gesamt`,
+`belegte_plaetze`, `anmeldungen`, `anmeldung_offen`, `essen` und `getraenke`.
+
+Damit lässt sich zum Beispiel eine Benachrichtigung bauen:
+
+```yaml
+automation:
+  - alias: Letzte Plätze
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.gedenkveranstaltung_freie_plaetze
+        below: 10
+    actions:
+      - action: notify.persistent_notification
+        data:
+          message: "Nur noch {{ states('sensor.gedenkveranstaltung_freie_plaetze') }} Plätze frei."
+```
+
+Der Sensor wird über die States-API gesetzt. Er verschwindet daher beim
+Neustart von Home Assistant und wird beim nächsten Start des Add-ons oder bei
+der nächsten Anmeldung neu geschrieben.
+
+## Daten
+
+Alle Anmeldungen liegen in `/data/anmeldungen.json` im Add-on. Sie sind damit
+Teil der Home-Assistant-Backups. Beim Deinstallieren des Add-ons werden sie
+gelöscht — vorher CSV exportieren.
+
+## Die Seite von außen erreichbar machen
+
+Das Add-on selbst kümmert sich nicht um Zertifikate oder Portfreigaben. Übliche
+Wege sind ein Reverse Proxy (z. B. das NGINX-Add-on) oder ein Cloudflare
+Tunnel auf Port 8080. Ohne Weiterleitung ist die Seite nur im Heimnetz
+erreichbar — für einen Aushang mit QR-Code im Dorf reicht das nicht.

@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #8A6334; text-decoration: none; }
+    a:hover { color: #6E4E28; }
+    * { box-sizing: border-box; }
+    td, th { text-align: left; padding: 13px 16px; }
+  </style>
+</helmet>
+<div style="min-height: 760px; display: flex; flex-direction: column; gap: 24px; background: #F4F1EB; padding: 32px 36px;">
+
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: #8A6334;">Verwaltung</div>
+      <h1 style="margin: 0; font-family: 'EB Garamond', Georgia, serif; font-size: 30px; line-height: 1.1; font-weight: 500; color: #221F1B;">Anmeldungen</h1>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <a href="#" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; background: #FFFFFF; border: 1px solid #DDD6CA; border-radius: 4px; font-size: 15px; font-weight: 600; color: #3B372F;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5C564C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7.5 10.5L12 15l4.5-4.5"></path><path d="M4 19h16"></path></svg>
+        CSV herunterladen
+      </a>
+      <a href="#" style="display: flex; align-items: center; height: 44px; padding: 0 18px; background: #8A6334; border-radius: 4px; font-size: 15px; font-weight: 600; color: #FFFFFF;">Anmeldung schließen</a>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
+    <div style="background: #FFFFFF; border: 1px solid #DDD6CA; border-radius: 4px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 14px; color: #7A7364;">Anmeldungen</span>
+      <span style="font-family: 'EB Garamond', Georgia, serif; font-size: 30px; line-height: 1.1; color: #221F1B;">42</span>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid #DDD6CA; border-radius: 4px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 14px; color: #7A7364;">Personen</span>
+      <span style="font-family: 'EB Garamond', Georgia, serif; font-size: 30px; line-height: 1.1; color: #221F1B;">83</span>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid #DDD6CA; border-radius: 4px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 14px; color: #7A7364;">Freie Plätze</span>
+      <span style="font-family: 'EB Garamond', Georgia, serif; font-size: 30px; line-height: 1.1; color: #221F1B;">37</span>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid #DDD6CA; border-radius: 4px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 14px; color: #7A7364;">Essen gesamt</span>
+      <span style="font-family: 'EB Garamond', Georgia, serif; font-size: 30px; line-height: 1.1; color: #221F1B;">74</span>
+    </div>
+  </div>
+
+  <div style="background: #FFFFFF; border: 1px solid #DDD6CA; border-radius: 4px; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #FAF7F2; border-bottom: 1px solid #DDD6CA;">
+          <th style="font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: #7A7364;">Name</th>
+          <th style="font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: #7A7364; width: 90px;">Pers.</th>
+          <th style="font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: #7A7364;">Essen</th>
+          <th style="font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: #7A7364;">Getränke</th>
+          <th style="font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: #7A7364;">Anmerkung</th>
+          <th style="font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: #7A7364; width: 120px;">Eingang</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid #F0EAE0;">
+          <td style="font-size: 15px; font-weight: 600; color: #221F1B;">Familie Bergmann</td>
+          <td style="font-size: 15px; color: #3B372F;">3</td>
+          <td style="font-size: 15px; color: #5C564C;">2 Bratwurst, 1 Käsespätzle</td>
+          <td style="font-size: 15px; color: #5C564C;">2 Bier, 1 Wasser</td>
+          <td style="font-size: 15px; color: #5C564C;">Platz mit Rollstuhl</td>
+          <td style="font-size: 15px; color: #9B9484;">14.09., 18:22</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #F0EAE0;">
+          <td style="font-size: 15px; font-weight: 600; color: #221F1B;">Anna Roth</td>
+          <td style="font-size: 15px; color: #3B372F;">1</td>
+          <td style="font-size: 15px; color: #5C564C;">1 Gemüsepfanne</td>
+          <td style="font-size: 15px; color: #5C564C;">1 Wasser</td>
+          <td style="font-size: 15px; color: #9B9484;">—</td>
+          <td style="font-size: 15px; color: #9B9484;">14.09., 17:51</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #F0EAE0;">
+          <td style="font-size: 15px; font-weight: 600; color: #221F1B;">Feuerwehr Lehrberg</td>
+          <td style="font-size: 15px; color: #3B372F;">12</td>
+          <td style="font-size: 15px; color: #5C564C;">9 Bratwurst, 3 Käsespätzle</td>
+          <td style="font-size: 15px; color: #5C564C;">7 Bier, 5 Wasser</td>
+          <td style="font-size: 15px; color: #5C564C;">Kommen geschlossen um 17 Uhr</td>
+          <td style="font-size: 15px; color: #9B9484;">13.09., 20:04</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #F0EAE0;">
+          <td style="font-size: 15px; font-weight: 600; color: #221F1B;">Josef Kellner</td>
+          <td style="font-size: 15px; color: #3B372F;">2</td>
+          <td style="font-size: 15px; color: #5C564C;">2 Kuchen</td>
+          <td style="font-size: 15px; color: #5C564C;">2 Kaffee</td>
+          <td style="font-size: 15px; color: #9B9484;">—</td>
+          <td style="font-size: 15px; color: #9B9484;">13.09., 16:37</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #F0EAE0;">
+          <td style="font-size: 15px; font-weight: 600; color: #221F1B;">Marlene Sauter</td>
+          <td style="font-size: 15px; color: #3B372F;">4</td>
+          <td style="font-size: 15px; color: #5C564C;">2 Bratwurst, 2 Gemüsepfanne</td>
+          <td style="font-size: 15px; color: #5C564C;">2 Wein, 2 Wasser</td>
+          <td style="font-size: 15px; color: #5C564C;">Erdnussallergie</td>
+          <td style="font-size: 15px; color: #9B9484;">12.09., 09:15</td>
+        </tr>
+        <tr>
+          <td style="font-size: 15px; font-weight: 600; color: #221F1B;">Peter Hutzler</td>
+          <td style="font-size: 15px; color: #3B372F;">2</td>
+          <td style="font-size: 15px; color: #5C564C;">2 Bratwurst</td>
+          <td style="font-size: 15px; color: #5C564C;">2 Bier</td>
+          <td style="font-size: 15px; color: #9B9484;">—</td>
+          <td style="font-size: 15px; color: #9B9484;">12.09., 08:02</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="font-size: 14px; color: #9B9484;">Nur über Home Assistant erreichbar. Die Anmeldeseite selbst braucht keinen Login.</div>
+
+</div>
+</x-dc>
+</body>
+</html>

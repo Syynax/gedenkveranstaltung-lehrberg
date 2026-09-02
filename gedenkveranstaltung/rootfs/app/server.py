@@ -1,0 +1,453 @@
+"""Anmeldeseite fuer eine Gedenkveranstaltung, als Home-Assistant-Add-on.
+
+Zwei Server im selben Prozess:
+  * PUBLIC_PORT  - die oeffentliche Anmeldeseite (im config.yaml nach aussen gemappt)
+  * INGRESS_PORT - die Verwaltung, nur ueber Home Assistant Ingress erreichbar
+"""
+
+import csv
+import io
+import json
+import os
+import re
+import secrets
+import threading
+import urllib.error
+import urllib.request
+from datetime import datetime
+from pathlib import Path
+
+from flask import (
+    Flask,
+    Response,
+    abort,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from waitress import serve
+
+PUBLIC_PORT = 8080
+INGRESS_PORT = 8099
+
+DATA_DIR = Path(os.environ.get("ANMELDUNG_DATA", "/data"))
+OPTIONS_FILE = DATA_DIR / "options.json"
+STORE_FILE = DATA_DIR / "anmeldungen.json"
+
+SENSOR_ID = "sensor.gedenkveranstaltung_freie_plaetze"
+SUPERVISOR_TOKEN = os.environ.get("SUPERVISOR_TOKEN")
+
+STANDARD_OPTIONEN = {
+    "untertitel": "Gedenkveranstaltung",
+    "titel": "20. Jahrestag der Gasexplosion in Lehrberg",
+    "datum": "",
+    "uhrzeit": "",
+    "ort": "",
+    "text": "",
+    "plaetze_gesamt": 120,
+    "max_personen_pro_anmeldung": 10,
+    "anmeldeschluss": "",
+    "kontakt": "",
+    "essen": [],
+    "getraenke": [],
+    "anmeldung_offen": True,
+    "datenschutz_hinweis": "Die Angaben werden nur fuer die Planung der Veranstaltung verwendet.",
+    "sensor_erstellen": True,
+}
+
+
+def optionen():
+    """Add-on-Optionen lesen. Wird bei jedem Zugriff gelesen, damit eine
+    Aenderung in Home Assistant ohne Neustart der Seite wirkt."""
+    werte = dict(STANDARD_OPTIONEN)
+    try:
+        werte.update(json.loads(OPTIONS_FILE.read_text(encoding="utf-8")))
+    except (OSError, ValueError):
+        pass
+    werte["essen"] = [str(x).strip() for x in werte.get("essen") or [] if str(x).strip()]
+    werte["getraenke"] = [str(x).strip() for x in werte.get("getraenke") or [] if str(x).strip()]
+    werte["plaetze_gesamt"] = max(1, int(werte.get("plaetze_gesamt") or 1))
+    werte["max_personen_pro_anmeldung"] = max(
+        1, int(werte.get("max_personen_pro_anmeldung") or 1)
+    )
+    return werte
+
+
+# --------------------------------------------------------------------------
+# Speicher
+# --------------------------------------------------------------------------
+
+_lock = threading.Lock()
+
+
+def _leer():
+    return {"geschlossen": False, "anmeldungen": []}
+
+
+def _lesen():
+    try:
+        daten = json.loads(STORE_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return _leer()
+    if not isinstance(daten, dict):
+        return _leer()
+    daten.setdefault("geschlossen", False)
+    if not isinstance(daten.get("anmeldungen"), list):
+        daten["anmeldungen"] = []
+    return daten
+
+
+def _schreiben(daten):
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    temp = STORE_FILE.with_suffix(".json.tmp")
+    temp.write_text(json.dumps(daten, ensure_ascii=False, indent=2), encoding="utf-8")
+    temp.replace(STORE_FILE)
+
+
+def belegte_plaetze(daten):
+    return sum(int(a.get("personen", 0)) for a in daten["anmeldungen"])
+
+
+def lage():
+    """Aktueller Stand fuer die Anzeige."""
+    opt = optionen()
+    with _lock:
+        daten = _lesen()
+    belegt = belegte_plaetze(daten)
+    frei = max(0, opt["plaetze_gesamt"] - belegt)
+    offen = bool(opt["anmeldung_offen"]) and not daten["geschlossen"] and frei > 0
+    return {
+        "opt": opt,
+        "daten": daten,
+        "belegt": belegt,
+        "frei": frei,
+        "gesamt": opt["plaetze_gesamt"],
+        "offen": offen,
+        "ausgebucht": frei <= 0,
+        "manuell_geschlossen": bool(daten["geschlossen"]),
+    }
+
+
+def summen(anmeldungen, schluessel, auswahl):
+    """Wie oft wurde jedes Gericht bzw. Getraenk gewaehlt."""
+    ergebnis = {name: 0 for name in auswahl}
+    for a in anmeldungen:
+        for name, menge in (a.get(schluessel) or {}).items():
+            ergebnis[name] = ergebnis.get(name, 0) + int(menge)
+    return {name: menge for name, menge in ergebnis.items() if menge > 0}
+
+
+# --------------------------------------------------------------------------
+# Sensor in Home Assistant
+# --------------------------------------------------------------------------
+
+
+def sensor_aktualisieren():
+    stand = lage()
+    if not stand["opt"].get("sensor_erstellen") or not SUPERVISOR_TOKEN:
+        return
+    nutzlast = {
+        "state": stand["frei"],
+        "attributes": {
+            "friendly_name": "Gedenkveranstaltung freie Plaetze",
+            "unit_of_measurement": "Plätze",
+            "icon": "mdi:seat",
+            "plaetze_gesamt": stand["gesamt"],
+            "belegte_plaetze": stand["belegt"],
+            "anmeldungen": len(stand["daten"]["anmeldungen"]),
+            "anmeldung_offen": stand["offen"],
+            "essen": summen(stand["daten"]["anmeldungen"], "essen", stand["opt"]["essen"]),
+            "getraenke": summen(
+                stand["daten"]["anmeldungen"], "getraenke", stand["opt"]["getraenke"]
+            ),
+        },
+    }
+    anfrage = urllib.request.Request(
+        f"http://supervisor/core/api/states/{SENSOR_ID}",
+        data=json.dumps(nutzlast).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {SUPERVISOR_TOKEN}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(anfrage, timeout=10):
+            pass
+    except (urllib.error.URLError, OSError) as fehler:
+        print(f"[anmeldung] Sensor konnte nicht aktualisiert werden: {fehler}", flush=True)
+
+
+# --------------------------------------------------------------------------
+# Flask
+# --------------------------------------------------------------------------
+
+app = Flask(__name__)
+
+
+class IngressPfad:
+    """Home Assistant schickt den Ingress-Prefix als Header mit."""
+
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        prefix = environ.get("HTTP_X_INGRESS_PATH")
+        if prefix:
+            environ["SCRIPT_NAME"] = prefix.rstrip("/")
+        return self.wsgi_app(environ, start_response)
+
+
+app.wsgi_app = IngressPfad(app.wsgi_app)
+
+
+def ueber_ingress():
+    return request.environ.get("SERVER_PORT") == str(INGRESS_PORT)
+
+
+@app.before_request
+def verwaltung_abschirmen():
+    """Die Verwaltung ist ausschliesslich ueber Home Assistant erreichbar."""
+    if request.path.startswith("/verwaltung") and not ueber_ingress():
+        abort(404)
+
+
+@app.context_processor
+def vorlagen_werte():
+    return {"ist_verwaltung": ueber_ingress()}
+
+
+# ---------------------------- oeffentliche Seite ---------------------------
+
+
+@app.get("/")
+def start():
+    # Ueber Ingress geoeffnet ist die Verwaltung gemeint, nicht die Besucherseite.
+    if ueber_ingress():
+        return redirect(url_for("verwaltung"))
+    return render_template("start.html", **lage())
+
+
+@app.get("/anmeldung")
+def formular():
+    stand = lage()
+    if not stand["offen"]:
+        return redirect(url_for("start"))
+    return render_template(
+        "formular.html", eingaben={}, fehler=None, **stand
+    )
+
+
+def _menge(feldname):
+    """Eine Zahl aus dem Formular. Wird nicht stillschweigend zurechtgebogen -
+    was nicht passt, meldet die Pruefung unten als Fehler zurueck."""
+    roh = (request.form.get(feldname) or "0").strip()
+    if not re.fullmatch(r"\d{0,3}", roh):
+        raise ValueError("Bitte nur ganze Zahlen eintragen.")
+    return int(roh or 0)
+
+
+@app.post("/anmeldung")
+def anmelden():
+    stand = lage()
+    opt = stand["opt"]
+
+    # Honigtopf gegen einfache Bots: fuer Menschen unsichtbar, bleibt leer.
+    if (request.form.get("webseite") or "").strip():
+        return redirect(url_for("start"))
+
+    if not stand["offen"]:
+        return redirect(url_for("start"))
+
+    name = " ".join((request.form.get("name") or "").split())[:80]
+    anmerkung = (request.form.get("anmerkung") or "").strip()[:500]
+
+    fehler = None
+    personen = 0
+    essen = {}
+    getraenke = {}
+    try:
+        personen = _menge("personen")
+        essen = {
+            gericht: _menge(f"essen_{i}") for i, gericht in enumerate(opt["essen"])
+        }
+        getraenke = {
+            getraenk: _menge(f"getraenk_{i}")
+            for i, getraenk in enumerate(opt["getraenke"])
+        }
+    except ValueError as problem:
+        fehler = str(problem)
+
+    if fehler is None:
+        if len(name) < 2:
+            fehler = "Bitte tragen Sie einen Namen ein."
+        elif personen < 1:
+            fehler = "Bitte geben Sie mindestens eine Person an."
+        elif personen > opt["max_personen_pro_anmeldung"]:
+            fehler = (
+                "Pro Anmeldung sind höchstens "
+                f"{opt['max_personen_pro_anmeldung']} Personen möglich."
+            )
+        elif personen > stand["frei"]:
+            fehler = (
+                f"Es sind nur noch {stand['frei']} Plätze frei. "
+                "Bitte passen Sie die Personenzahl an."
+            )
+        elif sum(essen.values()) > personen:
+            fehler = "Es wurde mehr Essen gewählt als Personen angemeldet sind."
+        elif sum(getraenke.values()) > personen:
+            fehler = "Es wurden mehr Getränke gewählt als Personen angemeldet sind."
+
+    if fehler:
+        return (
+            render_template(
+                "formular.html",
+                fehler=fehler,
+                eingaben={
+                    "name": name,
+                    "personen": personen or 1,
+                    "essen": essen,
+                    "getraenke": getraenke,
+                    "anmerkung": anmerkung,
+                },
+                **stand,
+            ),
+            400,
+        )
+
+    eintrag = {
+        "id": secrets.token_urlsafe(9),
+        "name": name,
+        "personen": personen,
+        "essen": {k: v for k, v in essen.items() if v > 0},
+        "getraenke": {k: v for k, v in getraenke.items() if v > 0},
+        "anmerkung": anmerkung,
+        "zeit": datetime.now().astimezone().isoformat(timespec="seconds"),
+    }
+
+    # Zweite Pruefung unter Sperre: zwischen Anzeige und Absenden koennen
+    # andere Anmeldungen die letzten Plaetze belegt haben.
+    with _lock:
+        daten = _lesen()
+        frei_jetzt = opt["plaetze_gesamt"] - belegte_plaetze(daten)
+        if daten["geschlossen"] or personen > frei_jetzt:
+            zu_spaet = True
+        else:
+            zu_spaet = False
+            daten["anmeldungen"].append(eintrag)
+            _schreiben(daten)
+
+    if zu_spaet:
+        return redirect(url_for("start"))
+
+    sensor_aktualisieren()
+    return redirect(url_for("danke", anmeldung_id=eintrag["id"]))
+
+
+@app.get("/danke/<anmeldung_id>")
+def danke(anmeldung_id):
+    stand = lage()
+    eintrag = next(
+        (a for a in stand["daten"]["anmeldungen"] if a["id"] == anmeldung_id), None
+    )
+    if eintrag is None:
+        return redirect(url_for("start"))
+    return render_template("danke.html", eintrag=eintrag, **stand)
+
+
+# ------------------------------- Verwaltung --------------------------------
+
+
+@app.get("/verwaltung")
+def verwaltung():
+    stand = lage()
+    anmeldungen = sorted(
+        stand["daten"]["anmeldungen"], key=lambda a: a.get("zeit", ""), reverse=True
+    )
+    return render_template(
+        "verwaltung.html",
+        anmeldungen=anmeldungen,
+        essen_summe=summen(anmeldungen, "essen", stand["opt"]["essen"]),
+        getraenke_summe=summen(anmeldungen, "getraenke", stand["opt"]["getraenke"]),
+        **stand,
+    )
+
+
+@app.post("/verwaltung/loeschen/<anmeldung_id>")
+def loeschen(anmeldung_id):
+    with _lock:
+        daten = _lesen()
+        daten["anmeldungen"] = [
+            a for a in daten["anmeldungen"] if a["id"] != anmeldung_id
+        ]
+        _schreiben(daten)
+    sensor_aktualisieren()
+    return redirect(url_for("verwaltung"))
+
+
+@app.post("/verwaltung/umschalten")
+def umschalten():
+    with _lock:
+        daten = _lesen()
+        daten["geschlossen"] = not daten["geschlossen"]
+        _schreiben(daten)
+    sensor_aktualisieren()
+    return redirect(url_for("verwaltung"))
+
+
+@app.get("/verwaltung/anmeldungen.csv")
+def csv_export():
+    stand = lage()
+    opt = stand["opt"]
+    puffer = io.StringIO()
+    schreiber = csv.writer(puffer, delimiter=";", lineterminator="\r\n")
+    kopf = ["Name", "Personen"] + opt["essen"] + opt["getraenke"] + ["Anmerkung", "Eingang"]
+    schreiber.writerow(kopf)
+    for a in sorted(stand["daten"]["anmeldungen"], key=lambda x: x.get("zeit", "")):
+        schreiber.writerow(
+            [a["name"], a["personen"]]
+            + [(a.get("essen") or {}).get(g, 0) for g in opt["essen"]]
+            + [(a.get("getraenke") or {}).get(g, 0) for g in opt["getraenke"]]
+            + [a.get("anmerkung", ""), a.get("zeit", "")]
+        )
+    # BOM voranstellen, damit Excel die Umlaute erkennt
+    inhalt = "﻿" + puffer.getvalue()
+    return Response(
+        inhalt,
+        content_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="anmeldungen.csv"'},
+    )
+
+
+# --------------------------------------------------------------------------
+
+
+@app.template_filter("uhrzeit")
+def uhrzeit(iso_zeit):
+    try:
+        return datetime.fromisoformat(iso_zeit).strftime("%d.%m., %H:%M")
+    except (TypeError, ValueError):
+        return ""
+
+
+def main():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    sensor_aktualisieren()
+    oeffentlich = threading.Thread(
+        target=serve,
+        args=(app,),
+        kwargs={"host": "0.0.0.0", "port": PUBLIC_PORT, "threads": 8, "ident": None},
+        daemon=True,
+    )
+    oeffentlich.start()
+    print(
+        f"[anmeldung] oeffentlich auf Port {PUBLIC_PORT}, "
+        f"Verwaltung ueber Ingress auf Port {INGRESS_PORT}",
+        flush=True,
+    )
+    serve(app, host="0.0.0.0", port=INGRESS_PORT, threads=4, ident=None)
+
+
+if __name__ == "__main__":
+    main()
