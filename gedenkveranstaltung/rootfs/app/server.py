@@ -129,13 +129,29 @@ def lage():
     }
 
 
+def als_liste(wert):
+    """Die Auswahl einer Anmeldung als Liste. Faengt auch Eintraege ab, die
+    noch als Mengen-Dict gespeichert wurden."""
+    if isinstance(wert, dict):
+        return [name for name, menge in wert.items() if menge]
+    return [str(x) for x in (wert or [])]
+
+
 def summen(anmeldungen, schluessel, auswahl):
-    """Wie oft wurde jedes Gericht bzw. Getraenk gewaehlt."""
+    """Wie viele Personen wollen welches Gericht bzw. Getraenk. Gezaehlt wird
+    die ganze Anmeldung: wer zu dritt kommt und Weisswuerste ankreuzt, zaehlt
+    dort mit drei Personen."""
     ergebnis = {name: 0 for name in auswahl}
     for a in anmeldungen:
-        for name, menge in (a.get(schluessel) or {}).items():
-            ergebnis[name] = ergebnis.get(name, 0) + int(menge)
+        for name in als_liste(a.get(schluessel)):
+            ergebnis[name] = ergebnis.get(name, 0) + int(a.get("personen", 0))
     return {name: menge for name, menge in ergebnis.items() if menge > 0}
+
+
+def personen_mit_essen(anmeldungen):
+    return sum(
+        int(a.get("personen", 0)) for a in anmeldungen if als_liste(a.get("essen"))
+    )
 
 
 # --------------------------------------------------------------------------
@@ -248,6 +264,13 @@ def _menge(feldname):
     return int(roh or 0)
 
 
+def _auswahl(feldname, erlaubt):
+    """Angekreuzte Gerichte bzw. Getraenke, in der eingestellten Reihenfolge.
+    Alles, was nicht in den Optionen steht, faellt raus."""
+    gewaehlt = set(request.form.getlist(feldname))
+    return [name for name in erlaubt if name in gewaehlt]
+
+
 @app.post("/anmeldung")
 def anmelden():
     stand = lage()
@@ -265,17 +288,10 @@ def anmelden():
 
     fehler = None
     personen = 0
-    essen = {}
-    getraenke = {}
+    essen = _auswahl("essen", opt["essen"])
+    getraenke = _auswahl("getraenke", opt["getraenke"])
     try:
         personen = _menge("personen")
-        essen = {
-            gericht: _menge(f"essen_{i}") for i, gericht in enumerate(opt["essen"])
-        }
-        getraenke = {
-            getraenk: _menge(f"getraenk_{i}")
-            for i, getraenk in enumerate(opt["getraenke"])
-        }
     except ValueError as problem:
         fehler = str(problem)
 
@@ -294,10 +310,6 @@ def anmelden():
                 f"Es sind nur noch {stand['frei']} Plätze frei. "
                 "Bitte passen Sie die Personenzahl an."
             )
-        elif sum(essen.values()) > personen:
-            fehler = "Es wurde mehr Essen gewählt als Personen angemeldet sind."
-        elif sum(getraenke.values()) > personen:
-            fehler = "Es wurden mehr Getränke gewählt als Personen angemeldet sind."
 
     if fehler:
         return (
@@ -320,8 +332,8 @@ def anmelden():
         "id": secrets.token_urlsafe(9),
         "name": name,
         "personen": personen,
-        "essen": {k: v for k, v in essen.items() if v > 0},
-        "getraenke": {k: v for k, v in getraenke.items() if v > 0},
+        "essen": essen,
+        "getraenke": getraenke,
         "anmerkung": anmerkung,
         "zeit": datetime.now().astimezone().isoformat(timespec="seconds"),
     }
@@ -370,6 +382,7 @@ def verwaltung():
         anmeldungen=anmeldungen,
         essen_summe=summen(anmeldungen, "essen", stand["opt"]["essen"]),
         getraenke_summe=summen(anmeldungen, "getraenke", stand["opt"]["getraenke"]),
+        essenwuensche=personen_mit_essen(anmeldungen),
         **stand,
     )
 
@@ -405,10 +418,12 @@ def csv_export():
     kopf = ["Name", "Personen"] + opt["essen"] + opt["getraenke"] + ["Anmerkung", "Eingang"]
     schreiber.writerow(kopf)
     for a in sorted(stand["daten"]["anmeldungen"], key=lambda x: x.get("zeit", "")):
+        gewaehlt_essen = als_liste(a.get("essen"))
+        gewaehlt_trinken = als_liste(a.get("getraenke"))
         schreiber.writerow(
             [a["name"], a["personen"]]
-            + [(a.get("essen") or {}).get(g, 0) for g in opt["essen"]]
-            + [(a.get("getraenke") or {}).get(g, 0) for g in opt["getraenke"]]
+            + ["ja" if g in gewaehlt_essen else "" for g in opt["essen"]]
+            + ["ja" if g in gewaehlt_trinken else "" for g in opt["getraenke"]]
             + [a.get("anmerkung", ""), a.get("zeit", "")]
         )
     # BOM voranstellen, damit Excel die Umlaute erkennt

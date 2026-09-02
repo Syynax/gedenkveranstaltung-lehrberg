@@ -19,6 +19,10 @@ Die Verwaltung ist **nur** über Ingress erreichbar. Wer die Adresse auf Port
 2. Anmeldung: Name, Anzahl Personen, Essen und Getränke, optionale Anmerkung.
 3. Bestätigung mit Zusammenfassung der Anmeldung.
 
+Essen und Getränke sind eine **Mehrfachauswahl ohne Mengen**: angekreuzt wird,
+*was* gewünscht ist, nicht wie viel. Auf die Platzzahl zählt allein die Anzahl
+der Personen.
+
 Sind alle Plätze vergeben oder ist die Anmeldung geschlossen, zeigt die
 Startseite das statt des Formulars an — das Formular ist dann auch direkt
 nicht mehr erreichbar.
@@ -55,7 +59,7 @@ Summen auf. Vor dem ersten Aushang die Liste also festzurren.
 ## Verwaltung
 
 * **CSV herunterladen** — Semikolon-getrennt und mit BOM, öffnet sich in Excel
-  ohne Umlautsalat. Eine Spalte je Gericht und Getränk.
+  ohne Umlautsalat. Eine Spalte je Gericht und Getränk, mit `ja` wo angekreuzt.
 * **Anmeldung schließen** — sofort wirksam, jederzeit wieder zu öffnen. Der
   Schalter ist unabhängig von der Option `anmeldung_offen`.
 * **Löschen** — für Absagen. Der Platz wird sofort wieder frei.
@@ -66,6 +70,8 @@ Bei `sensor_erstellen: true` schreibt das Add-on nach jeder Änderung
 `sensor.gedenkveranstaltung_freie_plaetze` in Home Assistant. Zustand ist die
 Zahl der freien Plätze, dazu kommen als Attribute `plaetze_gesamt`,
 `belegte_plaetze`, `anmeldungen`, `anmeldung_offen`, `essen` und `getraenke`.
+Die letzten beiden zählen die Nachfrage in Personen: wer zu dritt kommt und
+Weißwürste ankreuzt, zählt dort mit drei.
 
 Damit lässt sich zum Beispiel eine Benachrichtigung bauen:
 

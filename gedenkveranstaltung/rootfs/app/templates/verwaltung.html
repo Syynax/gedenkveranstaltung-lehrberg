@@ -49,21 +49,24 @@
       <span class="kennzahl__wert">{{ frei }}</span>
     </div>
     <div class="kennzahl">
-      <span class="kennzahl__label">Essen gesamt</span>
-      <span class="kennzahl__wert">{{ essen_summe.values() | sum }}</span>
+      <span class="kennzahl__label">Personen mit Essenswunsch</span>
+      <span class="kennzahl__wert">{{ essenwuensche }}</span>
     </div>
   </div>
 
   {% if essen_summe or getraenke_summe %}
   <div class="karte" style="gap: 10px;">
+    <div style="font-size: 14px; color: var(--grau-2);">
+      Nachfrage in Personen — eine Anmeldung zählt mit allen ihren Personen bei jedem angekreuzten Punkt.
+    </div>
     {% if essen_summe %}
     <div class="summenliste">
-      {% for gericht, menge in essen_summe.items() %}<span><b>{{ menge }}×</b> {{ gericht }}</span>{% endfor %}
+      {% for gericht, menge in essen_summe.items() %}<span><b>{{ menge }}</b> {{ gericht }}</span>{% endfor %}
     </div>
     {% endif %}
     {% if getraenke_summe %}
     <div class="summenliste">
-      {% for getraenk, menge in getraenke_summe.items() %}<span><b>{{ menge }}×</b> {{ getraenk }}</span>{% endfor %}
+      {% for getraenk, menge in getraenke_summe.items() %}<span><b>{{ menge }}</b> {{ getraenk }}</span>{% endfor %}
     </div>
     {% endif %}
   </div>
@@ -89,10 +92,10 @@
           <td class="name">{{ a.name }}</td>
           <td>{{ a.personen }}</td>
           <td>
-            {% if a.essen %}{% for gericht, menge in a.essen.items() %}{{ menge }} {{ gericht }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}<span class="leer">—</span>{% endif %}
+            {% if a.essen %}{{ a.essen | join(', ') }}{% else %}<span class="leer">—</span>{% endif %}
           </td>
           <td>
-            {% if a.getraenke %}{% for getraenk, menge in a.getraenke.items() %}{{ menge }} {{ getraenk }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}<span class="leer">—</span>{% endif %}
+            {% if a.getraenke %}{{ a.getraenke | join(', ') }}{% else %}<span class="leer">—</span>{% endif %}
           </td>
           <td>{% if a.anmerkung %}{{ a.anmerkung }}{% else %}<span class="leer">—</span>{% endif %}</td>
           <td class="zeit">{{ a.zeit | uhrzeit }}</td>

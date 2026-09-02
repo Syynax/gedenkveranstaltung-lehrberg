@@ -26,8 +26,8 @@
     <div class="trenner"></div>
     <div class="block">
       <div class="block__titel">Essen</div>
-      {% for gericht, menge in eintrag.essen.items() %}
-      <div class="posten"><span>{{ gericht }}</span><span>{{ menge }}</span></div>
+      {% for gericht in eintrag.essen %}
+      <div class="posten"><span>{{ gericht }}</span></div>
       {% endfor %}
     </div>
     {% endif %}
@@ -35,8 +35,8 @@
     {% if eintrag.getraenke %}
     <div class="block">
       <div class="block__titel">Getränke</div>
-      {% for getraenk, menge in eintrag.getraenke.items() %}
-      <div class="posten"><span>{{ getraenk }}</span><span>{{ menge }}</span></div>
+      {% for getraenk in eintrag.getraenke %}
+      <div class="posten"><span>{{ getraenk }}</span></div>
       {% endfor %}
     </div>
     {% endif %}
