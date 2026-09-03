@@ -1,5 +1,15 @@
 # Änderungen
 
+## 1.4.1
+
+- Der Ablauf verträgt jetzt auch einen Copy-Paste aus der Dokumentation:
+  mehrere Punkte in einer Zeile werden vor jeder Uhrzeit getrennt, ein
+  mitkopiertes `ablauf: |-` entfernt.
+- Das Anmeldeformular ist am Rechner zweispaltig — links Name, Personenzahl
+  und Anmerkung, rechts Essen und Getränke. Vorher eine lange Spalte.
+- Sachlicherer Standardtext für die Startseite, mit mehr Inhalt zum Ablauf
+  und dazu, wer eingeladen ist.
+
 ## 1.4.0
 
 - Neue Option `ablauf`: Programm des Vormittags als eigener Kasten auf der

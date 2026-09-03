@@ -51,7 +51,32 @@ a:hover { color: var(--bronze-dunkel); }
 /* Ab Tablet-Breite zwei Spalten: links das Lesen, rechts das Handeln.
    Darunter bleibt alles eine Spalte. */
 @media (min-width: 820px) {
-  .seite--formular { max-width: 540px; padding: 56px 32px 64px; }
+  .seite--formular { max-width: 860px; padding: 56px 40px 64px; }
+
+  /* Zwei Spalten: links wer, wie viele und die Anmerkung, rechts die
+     Bestellung. Die Spalten sind eigene Container, damit die kurze linke
+     Spalte nicht auf die Zeilenhöhe der langen rechten warten muss. */
+  .seite--formular form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 34px 44px;
+    align-items: start;
+  }
+  /* Mit .seite--formular davor, weil die Grundregeln weiter unten im
+     Stylesheet stehen und sonst gewinnen würden. */
+  .seite--formular .spalte { display: flex; flex-direction: column; gap: 30px; }
+  .seite--formular .feld--anmerkung textarea { min-height: 150px; }
+  .seite--formular .feld--anmerkung,
+  .seite--formular .feld--absenden { order: 0; }
+  .seite--formular .feld--absenden {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  /* Bestätigung bleibt schmal - eine Zusammenfassung liest sich so besser. */
+  .seite--schmal { max-width: 560px; padding: 56px 32px 64px; }
 
   .seite--start {
     max-width: 1020px;
@@ -256,6 +281,13 @@ h1.klein { font-size: clamp(27px, 7.5vw, 32px); line-height: 1.1; }
 
 /* Formular */
 form { display: flex; flex-direction: column; gap: 30px; }
+
+/* Auf dem Handy sind die Spalten durchsichtig: die Felder hängen direkt am
+   Formular. Anmerkung und Knopf rutschen per order ans Ende, damit die
+   Reihenfolge stimmt, obwohl sie im Quelltext links gruppiert sind. */
+.spalte { display: contents; }
+.feld--anmerkung { order: 1; }
+.feld--absenden { order: 2; }
 .feld { display: flex; flex-direction: column; gap: 10px; }
 .feld__label { font-size: 17px; font-weight: 600; color: var(--tinte); }
 .feld__label .optional { font-weight: 400; color: var(--grau-2); }

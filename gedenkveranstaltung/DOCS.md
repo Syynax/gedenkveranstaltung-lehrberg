@@ -30,27 +30,30 @@ Auf die Platzzahl zählt allein die Anzahl der Personen.
 
 ### Ablauf der Veranstaltung
 
-Der Ablauf steht als eigener Kasten auf der Startseite. Eine Zeile je Punkt,
-Uhrzeit und Text durch einen senkrechten Strich getrennt:
+Der Ablauf steht als eigener Kasten auf der Startseite. Ein Punkt je Zeile,
+Uhrzeit und Text durch einen senkrechten Strich getrennt. In das Feld
+`ablauf` gehört genau das hier — **ohne** `ablauf:` davor:
 
-```yaml
-ablauf: |-
-  9:30 | Ankommen und Begrüßung
-  10:00 | Gedenken
-  10:30 | Gemeinsames Frühstück
-  12:30 | Ausklang
+```
+9:30 | Ankommen und Begrüßung
+10:00 | Gedenken
+10:30 | Gemeinsames Frühstück
+12:30 | Ausklang
 ```
 
-Zeilen ohne Strich stehen ohne Uhrzeit da. Ist das Feld leer, entfällt der
-Kasten ganz.
+Das Feld in der Add-on-Oberfläche ist einzeilig, alles landet also
+hintereinander. Das macht nichts: vor jeder Uhrzeit wird automatisch getrennt,
+und ein versehentlich mitkopiertes `ablauf: |-` wird entfernt. Zeilen ohne
+Strich stehen ohne Uhrzeit da. Ist das Feld leer, entfällt der Kasten ganz.
 
 ### Handy und Rechner
 
 Bis 820 Pixel Breite läuft alles untereinander. Darüber wird die Startseite
 zweispaltig: links Titel, Termin, Text und Ablauf, rechts die freien Plätze,
 der Anmeldeknopf und der Anmeldeschluss — die rechte Spalte bleibt beim
-Scrollen stehen. Formular und Bestätigung bleiben einspaltig, nur etwas
-breiter.
+Scrollen stehen. Auch das Anmeldeformular wird zweispaltig: links Name,
+Personenzahl und Anmerkung, rechts Essen und Getränke, der Absendeknopf
+darunter. Die Bestätigung bleibt schmal, die liest sich so besser.
 
 Sind alle Plätze vergeben oder ist die Anmeldung geschlossen, zeigt die
 Startseite das statt des Formulars an — das Formular ist dann auch direkt

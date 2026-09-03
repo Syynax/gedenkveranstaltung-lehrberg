@@ -25,68 +25,71 @@
   <form method="post" action="{{ url_for('anmelden') }}"
         data-max-personen="{{ [opt.max_personen_pro_anmeldung, frei] | min }}">
 
-    <div class="feld">
-      <label class="feld__label" for="name">Wer kommt?</label>
-      <div class="feld__hilfe">Name, unter dem die Anmeldung geführt wird.</div>
-      <input id="name" name="name" type="text" required maxlength="80"
-             autocomplete="name" placeholder="Vor- und Nachname"
-             value="{{ eingaben.name or '' }}">
-    </div>
-
-    <div class="feld">
-      <label class="feld__label" for="personen">Wie viele Personen?</label>
-      <div class="personen">
-        <button type="button" class="schritt-gross" data-schritt="-1" data-ziel="personen" aria-label="Eine Person weniger">{{ teile.minus(20) }}</button>
-        <input class="personen__anzeige" id="personen" name="personen" type="number"
-               inputmode="numeric" min="1" max="{{ [opt.max_personen_pro_anmeldung, frei] | min }}"
-               required value="{{ eingaben.personen or 1 }}">
-        <button type="button" class="schritt-gross" data-schritt="1" data-ziel="personen" aria-label="Eine Person mehr">{{ teile.plus(20) }}</button>
+    <div class="spalte">
+      <div class="feld feld--name">
+        <label class="feld__label" for="name">Wer kommt?</label>
+        <div class="feld__hilfe">Name, unter dem die Anmeldung geführt wird.</div>
+        <input id="name" name="name" type="text" required maxlength="80"
+               autocomplete="name" placeholder="Vor- und Nachname"
+               value="{{ eingaben.name or '' }}">
       </div>
-      <div class="feld__hilfe">Höchstens {{ [opt.max_personen_pro_anmeldung, frei] | min }} Personen pro Anmeldung.</div>
-    </div>
 
-    {% if opt.essen %}
-    <div class="feld">
-      <div class="wahl__kopf">
-        <span class="feld__label" id="essen-titel">Was möchten Sie essen?</span>
-        <span class="wahl__zaehler" data-zaehler></span>
-      </div>
-      <div class="feld__hilfe">Angabe in Stück.</div>
-      <div class="wahl__liste" role="group" aria-labelledby="essen-titel">
-        {% for gericht in opt.essen %}
-        <div class="zeile zeile--menge">
-          <label class="zeile__name" for="essen_{{ loop.index0 }}">{{ gericht }}</label>
-          <button type="button" class="schritt" data-schritt="-1" data-ziel="essen_{{ loop.index0 }}" aria-label="{{ gericht }}: eine Portion weniger">{{ teile.minus(18) }}</button>
-          <input class="menge" id="essen_{{ loop.index0 }}" name="essen_{{ loop.index0 }}"
-                 type="number" inputmode="numeric" min="0" max="99"
-                 value="{{ (eingaben.essen or {}).get(gericht, 0) }}">
-          <button type="button" class="schritt" data-schritt="1" data-ziel="essen_{{ loop.index0 }}" aria-label="{{ gericht }}: eine Portion mehr">{{ teile.plus(18) }}</button>
+      <div class="feld feld--personen">
+        <label class="feld__label" for="personen">Wie viele Personen?</label>
+        <div class="personen">
+          <button type="button" class="schritt-gross" data-schritt="-1" data-ziel="personen" aria-label="Eine Person weniger">{{ teile.minus(20) }}</button>
+          <input class="personen__anzeige" id="personen" name="personen" type="number"
+                 inputmode="numeric" min="1" max="{{ [opt.max_personen_pro_anmeldung, frei] | min }}"
+                 required value="{{ eingaben.personen or 1 }}">
+          <button type="button" class="schritt-gross" data-schritt="1" data-ziel="personen" aria-label="Eine Person mehr">{{ teile.plus(20) }}</button>
         </div>
-        {% endfor %}
+        <div class="feld__hilfe">Höchstens {{ [opt.max_personen_pro_anmeldung, frei] | min }} Personen pro Anmeldung.</div>
+      </div>
+      <div class="feld feld--anmerkung">
+        <label class="feld__label" for="anmerkung">Anmerkung <span class="optional">(optional)</span></label>
+        <textarea id="anmerkung" name="anmerkung" rows="3" maxlength="500"
+                  placeholder="Allergien, Rollstuhl, Sitzwunsch">{{ eingaben.anmerkung or '' }}</textarea>
       </div>
     </div>
-    {% endif %}
 
-    {% if opt.getraenke %}
-    <div class="feld">
-      <div class="feld__label" id="getraenke-titel">Was möchten Sie trinken?</div>
-      <div class="feld__hilfe">Nur zum groben Überblick — die Menge spielt keine Rolle.</div>
-      <div class="wahl__liste" role="group" aria-labelledby="getraenke-titel">
-        {% for getraenk in opt.getraenke %}
-        <label class="zeile">
-          <input type="checkbox" name="getraenke" value="{{ getraenk }}"
-                 {% if getraenk in (eingaben.getraenke or []) %}checked{% endif %}>
-          <span class="zeile__name">{{ getraenk }}</span>
-        </label>
-        {% endfor %}
+    <div class="spalte">
+      {% if opt.essen %}
+      <div class="feld feld--essen">
+        <div class="wahl__kopf">
+          <span class="feld__label" id="essen-titel">Was möchten Sie essen?</span>
+          <span class="wahl__zaehler" data-zaehler></span>
+        </div>
+        <div class="feld__hilfe">Angabe in Stück.</div>
+        <div class="wahl__liste" role="group" aria-labelledby="essen-titel">
+          {% for gericht in opt.essen %}
+          <div class="zeile zeile--menge">
+            <label class="zeile__name" for="essen_{{ loop.index0 }}">{{ gericht }}</label>
+            <button type="button" class="schritt" data-schritt="-1" data-ziel="essen_{{ loop.index0 }}" aria-label="{{ gericht }}: eine Portion weniger">{{ teile.minus(18) }}</button>
+            <input class="menge" id="essen_{{ loop.index0 }}" name="essen_{{ loop.index0 }}"
+                   type="number" inputmode="numeric" min="0" max="99"
+                   value="{{ (eingaben.essen or {}).get(gericht, 0) }}">
+            <button type="button" class="schritt" data-schritt="1" data-ziel="essen_{{ loop.index0 }}" aria-label="{{ gericht }}: eine Portion mehr">{{ teile.plus(18) }}</button>
+          </div>
+          {% endfor %}
+        </div>
       </div>
-    </div>
-    {% endif %}
+      {% endif %}
 
-    <div class="feld">
-      <label class="feld__label" for="anmerkung">Anmerkung <span class="optional">(optional)</span></label>
-      <textarea id="anmerkung" name="anmerkung" rows="3" maxlength="500"
-                placeholder="Allergien, Rollstuhl, Sitzwunsch">{{ eingaben.anmerkung or '' }}</textarea>
+      {% if opt.getraenke %}
+      <div class="feld feld--getraenke">
+        <div class="feld__label" id="getraenke-titel">Was möchten Sie trinken?</div>
+        <div class="feld__hilfe">Nur zum groben Überblick — die Menge spielt keine Rolle.</div>
+        <div class="wahl__liste" role="group" aria-labelledby="getraenke-titel">
+          {% for getraenk in opt.getraenke %}
+          <label class="zeile">
+            <input type="checkbox" name="getraenke" value="{{ getraenk }}"
+                   {% if getraenk in (eingaben.getraenke or []) %}checked{% endif %}>
+            <span class="zeile__name">{{ getraenk }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </div>
 
     <div aria-hidden="true" style="position: absolute; left: -9999px;">
@@ -94,7 +97,7 @@
       <input id="webseite" name="webseite" type="text" tabindex="-1" autocomplete="off">
     </div>
 
-    <div class="feld">
+    <div class="feld feld--absenden">
       <button type="submit" class="knopf">Anmeldung absenden</button>
       {% if opt.datenschutz_hinweis %}
       <div class="hinweis-klein">{{ opt.datenschutz_hinweis }}</div>

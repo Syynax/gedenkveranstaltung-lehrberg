@@ -137,20 +137,31 @@ def lage():
     }
 
 
+ZEIT_AM_ANFANG = re.compile(r"\s+(?=\d{1,2}[:.]\d{2}\s*\|)")
+YAML_KOPF = re.compile(r"^\s*ablauf\s*:\s*(?:\|-?|>-?)?\s*", re.IGNORECASE)
+
+
 def ablauf_punkte(text):
-    """Der Ablauf aus den Optionen. Eine Zeile je Punkt, Uhrzeit und Text
-    durch einen senkrechten Strich getrennt: "9:30 | Empfang". Zeilen ohne
-    Strich stehen ohne Uhrzeit da."""
+    """Der Ablauf aus den Optionen: eine Zeile je Punkt, Uhrzeit und Text durch
+    einen senkrechten Strich getrennt ("9:30 | Empfang").
+
+    Das Feld in der Add-on-Oberflaeche ist einzeilig. Wer mehrere Punkte
+    hineinkopiert, hat sie am Ende hintereinander stehen - und oft noch den
+    YAML-Kopf "ablauf: |-" davor. Beides wird hier aufgeraeumt, damit die
+    Seite nicht wegen eines Kopierfehlers Unsinn anzeigt.
+    """
+    roh = YAML_KOPF.sub("", (text or "").strip())
     punkte = []
-    for zeile in (text or "").splitlines():
-        zeile = zeile.strip()
-        if not zeile:
-            continue
-        zeit, strich, beschreibung = zeile.partition("|")
-        if strich:
-            punkte.append({"zeit": zeit.strip(), "text": beschreibung.strip()})
-        else:
-            punkte.append({"zeit": "", "text": zeile})
+    for zeile in roh.splitlines():
+        for stueck in ZEIT_AM_ANFANG.split(zeile):
+            stueck = stueck.strip().lstrip("-").strip()
+            if not stueck:
+                continue
+            zeit, strich, beschreibung = stueck.partition("|")
+            if strich:
+                punkte.append({"zeit": zeit.strip(), "text": beschreibung.strip()})
+            else:
+                punkte.append({"zeit": "", "text": stueck})
     return punkte
 
 

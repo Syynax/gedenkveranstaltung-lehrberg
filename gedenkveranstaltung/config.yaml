@@ -1,5 +1,5 @@
 name: Gedenkveranstaltung Anmeldung
-version: "1.4.0"
+version: "1.4.1"
 slug: gedenkveranstaltung
 description: Anmeldeseite mit begrenzter Platzzahl für eine Gedenkveranstaltung
 arch:
@@ -34,9 +34,11 @@ options:
   ort: ""
   ablauf: ""
   text: |-
-    Vor zwanzig Jahren hat die Gasexplosion unser Dorf getroffen. Zum Jahrestag kommen wir am Vormittag zusammen — zuerst zum Gedenken, danach zu einem gemeinsamen Frühstück.
+    Vor zwanzig Jahren kam es in Lehrberg zu einer Gasexplosion. Zum Jahrestag lädt die Freiwillige Feuerwehr zu einer Gedenkveranstaltung ein.
 
-    Wir danken allen, die damals geholfen haben, und nehmen uns Zeit füreinander. Die Plätze sind begrenzt, deshalb bitte vorher anmelden.
+    Der Vormittag beginnt mit einer kurzen Ansprache und dem gemeinsamen Gedenken. Danach sitzen wir bei Weißwürsten und Getränken zusammen. Eingeladen sind alle aus Lehrberg und den Nachbarorten, besonders die damaligen Einsatzkräfte und alle, die geholfen haben.
+
+    Die Zahl der Plätze ist begrenzt, und Essen und Getränke müssen vorbestellt werden. Wir bitten deshalb um eine Anmeldung über diese Seite.
   plaetze_gesamt: 120
   max_personen_pro_anmeldung: 10
   anmeldeschluss: ""
