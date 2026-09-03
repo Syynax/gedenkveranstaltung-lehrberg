@@ -2,34 +2,52 @@
 {% import "teile.html" as teile %}
 
 {% block inhalt %}
-<main class="seite">
+<main class="seite seite--start">
 
-  {{ teile.kopf(opt) }}
+  <div class="start__haupt">
 
-  {% if opt.datum or opt.ort %}
-  <div class="termin">
-    {% if opt.datum %}
-    <div class="termin__block">
-      <div class="termin__label">Wann</div>
-      <div class="termin__wert">{{ opt.datum }}</div>
-      {% if opt.uhrzeit %}<div class="termin__zusatz">ab {{ opt.uhrzeit }} Uhr</div>{% endif %}
+    {{ teile.kopf(opt) }}
+
+    {% if opt.datum or opt.ort %}
+    <div class="termin">
+      {% if opt.datum %}
+      <div class="termin__block">
+        <div class="termin__label">Wann</div>
+        <div class="termin__wert">{{ opt.datum }}</div>
+        {% if opt.uhrzeit %}<div class="termin__zusatz">ab {{ opt.uhrzeit }} Uhr</div>{% endif %}
+      </div>
+      {% endif %}
+      {% if opt.datum and opt.ort %}<div class="trenner"></div>{% endif %}
+      {% if opt.ort %}
+      <div class="termin__block">
+        <div class="termin__label">Wo</div>
+        <div class="termin__wert">{{ opt.ort }}</div>
+      </div>
+      {% endif %}
     </div>
     {% endif %}
-    {% if opt.datum and opt.ort %}<div class="trenner"></div>{% endif %}
-    {% if opt.ort %}
-    <div class="termin__block">
-      <div class="termin__label">Wo</div>
-      <div class="termin__wert">{{ opt.ort }}</div>
+
+    {% if opt.text %}
+    <div>{{ teile.absaetze(opt.text) }}</div>
+    {% endif %}
+
+    {% if ablauf %}
+    <div class="ablauf">
+      <div class="termin__label">Ablauf</div>
+      <ol class="ablauf__liste">
+        {% for punkt in ablauf %}
+        <li class="ablauf__punkt">
+          {% if punkt.zeit %}<span class="ablauf__zeit">{{ punkt.zeit }}</span>{% endif %}
+          <span class="ablauf__text">{{ punkt.text }}</span>
+        </li>
+        {% endfor %}
+      </ol>
     </div>
     {% endif %}
+
   </div>
-  {% endif %}
 
-  {% if opt.text %}
-  <div>{{ teile.absaetze(opt.text) }}</div>
-  {% endif %}
-
-  <div class="unten">
+  <div class="start__rand">
 
     {% if offen %}
 

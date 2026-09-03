@@ -48,6 +48,7 @@ STANDARD_OPTIONEN = {
     "uhrzeit": "",
     "ort": "",
     "text": "",
+    "ablauf": "",
     "plaetze_gesamt": 120,
     "max_personen_pro_anmeldung": 10,
     "anmeldeschluss": "",
@@ -125,6 +126,7 @@ def lage():
     offen = bool(opt["anmeldung_offen"]) and not daten["geschlossen"] and frei > 0
     return {
         "opt": opt,
+        "ablauf": ablauf_punkte(opt.get("ablauf")),
         "daten": daten,
         "belegt": belegt,
         "frei": frei,
@@ -133,6 +135,23 @@ def lage():
         "ausgebucht": frei <= 0,
         "manuell_geschlossen": bool(daten["geschlossen"]),
     }
+
+
+def ablauf_punkte(text):
+    """Der Ablauf aus den Optionen. Eine Zeile je Punkt, Uhrzeit und Text
+    durch einen senkrechten Strich getrennt: "9:30 | Empfang". Zeilen ohne
+    Strich stehen ohne Uhrzeit da."""
+    punkte = []
+    for zeile in (text or "").splitlines():
+        zeile = zeile.strip()
+        if not zeile:
+            continue
+        zeit, strich, beschreibung = zeile.partition("|")
+        if strich:
+            punkte.append({"zeit": zeit.strip(), "text": beschreibung.strip()})
+        else:
+            punkte.append({"zeit": "", "text": zeile})
+    return punkte
 
 
 def als_mengen(wert):

@@ -1,5 +1,14 @@
 # Änderungen
 
+## 1.4.0
+
+- Neue Option `ablauf`: Programm des Vormittags als eigener Kasten auf der
+  Startseite, eine Zeile je Punkt (`9:30 | Ankommen`).
+- Die Startseite ist ab 820 Pixel Breite zweispaltig — links der Text, rechts
+  Plätze, Anmeldeknopf und Anmeldeschluss. Vorher war die Seite auch am
+  Rechner eine schmale Handy-Spalte.
+- Wappen der Feuerwehr Lehrberg als Favicon und als Add-on-Symbol.
+
 ## 1.3.3
 
 - Das Add-on schreibt bei jeder Anmeldung eine Logzeile mit belegten Plätzen,

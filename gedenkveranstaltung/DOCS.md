@@ -13,7 +13,7 @@ Login ein, die Organisation sieht die Liste in Home Assistant.
 Die Verwaltung ist **nur** über Ingress erreichbar. Wer die Adresse auf Port
 8080 aufruft, bekommt für `/verwaltung` eine 404 zurück.
 
-## Ablauf für die Gäste
+## So läuft die Anmeldung
 
 1. Startseite: Titel, Datum, Ort, Gedenktext und wie viele Plätze noch frei sind.
 2. Anmeldung: Name, Anzahl Personen, Essen und Getränke, optionale Anmerkung.
@@ -28,6 +28,30 @@ Essen und Getränke werden unterschiedlich abgefragt:
 
 Auf die Platzzahl zählt allein die Anzahl der Personen.
 
+### Ablauf der Veranstaltung
+
+Der Ablauf steht als eigener Kasten auf der Startseite. Eine Zeile je Punkt,
+Uhrzeit und Text durch einen senkrechten Strich getrennt:
+
+```yaml
+ablauf: |-
+  9:30 | Ankommen und Begrüßung
+  10:00 | Gedenken
+  10:30 | Gemeinsames Frühstück
+  12:30 | Ausklang
+```
+
+Zeilen ohne Strich stehen ohne Uhrzeit da. Ist das Feld leer, entfällt der
+Kasten ganz.
+
+### Handy und Rechner
+
+Bis 820 Pixel Breite läuft alles untereinander. Darüber wird die Startseite
+zweispaltig: links Titel, Termin, Text und Ablauf, rechts die freien Plätze,
+der Anmeldeknopf und der Anmeldeschluss — die rechte Spalte bleibt beim
+Scrollen stehen. Formular und Bestätigung bleiben einspaltig, nur etwas
+breiter.
+
 Sind alle Plätze vergeben oder ist die Anmeldung geschlossen, zeigt die
 Startseite das statt des Formulars an — das Formular ist dann auch direkt
 nicht mehr erreichbar.
@@ -40,7 +64,8 @@ nicht mehr erreichbar.
 | `titel` | Überschrift der Seite |
 | `datum` | Frei formulierbar, z. B. `Samstag, 14. September 2026` |
 | `uhrzeit` | Z. B. `9:30` — wird als `ab 9:30 Uhr` angezeigt |
-| `ort` | Z. B. `Schulturnhalle, Lehrberg` |
+| `ort` | Z. B. `Feuerwehrgerätehaus Lehrberg` |
+| `ablauf` | Programm des Vormittags, eine Zeile je Punkt. Leer = kein Ablauf |
 | `text` | Gedenktext. Leerzeilen ergeben Absätze |
 | `plaetze_gesamt` | Obergrenze über alle Anmeldungen zusammen |
 | `max_personen_pro_anmeldung` | Bremse gegen Zahlendreher |

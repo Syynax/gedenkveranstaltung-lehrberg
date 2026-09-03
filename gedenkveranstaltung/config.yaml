@@ -1,5 +1,5 @@
 name: Gedenkveranstaltung Anmeldung
-version: "1.3.3"
+version: "1.4.0"
 slug: gedenkveranstaltung
 description: Anmeldeseite mit begrenzter Platzzahl für eine Gedenkveranstaltung
 arch:
@@ -32,6 +32,7 @@ options:
   datum: ""
   uhrzeit: "9:30"
   ort: ""
+  ablauf: ""
   text: |-
     Vor zwanzig Jahren hat die Gasexplosion unser Dorf getroffen. Zum Jahrestag kommen wir am Vormittag zusammen — zuerst zum Gedenken, danach zu einem gemeinsamen Frühstück.
 
@@ -62,6 +63,7 @@ schema:
   datum: str?
   uhrzeit: str?
   ort: str?
+  ablauf: str?
   text: str?
   plaetze_gesamt: int(1,100000)
   max_personen_pro_anmeldung: int(1,999)
