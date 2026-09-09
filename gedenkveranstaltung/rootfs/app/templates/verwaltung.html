@@ -74,7 +74,7 @@
   </div>
   {% endif %}
 
-  {% if anmeldungen %}
+  {% if anmeldungen or abgesagte %}
   <div class="tabelle-rahmen">
     <table>
       <thead>
@@ -89,10 +89,11 @@
         </tr>
       </thead>
       <tbody>
-        {% for a in anmeldungen %}
-        <tr>
+        {% for a in anmeldungen + abgesagte %}
+        <tr{% if a.abgesagt %} class="abgesagt"{% endif %}>
           <td class="name">
             {{ a.name }}
+            {% if a.abgesagt %}<span class="merker">abgesagt</span>{% endif %}
             {% if a.email %}<div style="font-weight: 400; font-size: 13px; color: var(--grau-2);">{{ a.email }}</div>{% endif %}
           </td>
           <td>{{ a.personen }}</td>
@@ -120,6 +121,14 @@
   {% else %}
   <div class="karte">
     <div style="color: var(--grau);">Noch keine Anmeldungen eingegangen.</div>
+  </div>
+  {% endif %}
+
+  {% if abgesagte %}
+  <div class="fuss">
+    {{ abgesagte | length }} {% if abgesagte | length == 1 %}Absage{% else %}Absagen{% endif %}
+    über den Link in der Bestätigungsmail. Diese Zeilen zählen nicht mehr auf die
+    Plätze und stehen in der CSV mit dem Status „abgesagt“.
   </div>
   {% endif %}
 

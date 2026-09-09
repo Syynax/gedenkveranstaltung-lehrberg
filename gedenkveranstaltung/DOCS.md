@@ -19,6 +19,17 @@ Die Verwaltung ist **nur** über Ingress erreichbar. Wer die Adresse auf Port
 2. Anmeldung: Name, Anzahl Personen, Essen und Getränke, optionale Anmerkung.
 3. Bestätigung mit Zusammenfassung der Anmeldung.
 
+Die Bestätigungsseite ist zugleich der persönliche Zugang zur Anmeldung: Von
+dort lässt sie sich **ändern** oder **absagen**. Die Adresse enthält eine
+zufällige, nicht erratbare Kennung — wer den Link hat, darf ändern. Wer eine
+E-Mail angegeben hat, bekommt den Link zugeschickt; alle anderen sollten ihn
+sich merken oder sich bei Rückfragen an die Kontaktperson wenden.
+
+Eine Absage löscht nichts, sondern markiert die Anmeldung. Die Plätze werden
+sofort wieder frei, in der Verwaltung bleibt die Zeile durchgestrichen stehen
+und in der CSV steht sie mit dem Status `abgesagt`. So sieht die Organisation,
+wer abgesprungen ist, statt dass jemand spurlos verschwindet.
+
 Essen und Getränke werden unterschiedlich abgefragt:
 
 * **Essen** in Stück je Gericht — für den Einkauf. Zwei Weißwürste für eine
@@ -41,19 +52,24 @@ Uhrzeit und Text durch einen senkrechten Strich getrennt. In das Feld
 12:30 | Ausklang
 ```
 
+Statt einer Uhrzeit geht auch eine kurze Angabe wie `anschl.` oder `ca. 12:30`.
+
 Das Feld in der Add-on-Oberfläche ist einzeilig, alles landet also
-hintereinander. Das macht nichts: vor jeder Uhrzeit wird automatisch getrennt,
-und ein versehentlich mitkopiertes `ablauf: |-` wird entfernt. Zeilen ohne
+hintereinander. Das macht nichts: vor jedem neuen Punkt wird automatisch
+getrennt, und ein versehentlich mitkopiertes `ablauf: |-` wird entfernt. Zeilen ohne
 Strich stehen ohne Uhrzeit da. Ist das Feld leer, entfällt der Kasten ganz.
 
 ### Handy und Rechner
 
-Bis 820 Pixel Breite läuft alles untereinander. Darüber wird die Startseite
-zweispaltig: links Titel, Termin, Text und Ablauf, rechts die freien Plätze,
-der Anmeldeknopf und der Anmeldeschluss — die rechte Spalte bleibt beim
-Scrollen stehen. Auch das Anmeldeformular wird zweispaltig: links Name,
-Personenzahl und Anmerkung, rechts Essen und Getränke, der Absendeknopf
-darunter. Die Bestätigung bleibt schmal, die liest sich so besser.
+Bis 820 Pixel Breite läuft alles untereinander: Überschrift, Termin, Text,
+Ablauf, dann Plätze und Anmeldeknopf.
+
+Darüber steht die Überschrift über die volle Breite, darunter links Text und
+Ablauf, rechts Termin, freie Plätze, Anmeldeknopf und Anmeldeschluss als ein
+Block, der beim Scrollen stehen bleibt. Auch das Anmeldeformular wird
+zweispaltig: links Name, E-Mail, Personenzahl und Anmerkung, rechts Essen und
+Getränke, der Absendeknopf darunter. Die Bestätigung bleibt schmal, die liest
+sich so besser.
 
 Sind alle Plätze vergeben oder ist die Anmeldung geschlossen, zeigt die
 Startseite das statt des Formulars an — das Formular ist dann auch direkt
@@ -107,7 +123,9 @@ Summen auf. Vor dem ersten Aushang die Liste also festzurren.
   Spalte mit `ja` wo angekreuzt.
 * **Anmeldung schließen** — sofort wirksam, jederzeit wieder zu öffnen. Der
   Schalter ist unabhängig von der Option `anmeldung_offen`.
-* **Löschen** — für Absagen. Der Platz wird sofort wieder frei.
+* **Löschen** — entfernt eine Anmeldung endgültig. Für Absagen ist das
+  meistens nicht nötig: Sagt jemand selbst über seinen Link ab, bleibt die
+  Zeile durchgestrichen stehen und der Platz ist trotzdem frei.
 
 ## Benachrichtigungen
 
@@ -161,7 +179,8 @@ Das Add-on löst zwei Events aus:
 | Event | Daten |
 | --- | --- |
 | `gedenkveranstaltung_anmeldung` | `name`, `personen`, `essen`, `getraenke`, `anmerkung`, `anmeldungen`, `belegte_plaetze`, `freie_plaetze`, `ausgebucht` |
-| `gedenkveranstaltung_absage` | `name`, `personen` |
+| `gedenkveranstaltung_aenderung` | `name`, `personen`, `essen`, `getraenke`, `anmerkung` |
+| `gedenkveranstaltung_absage` | `name`, `personen`, `freie_plaetze` |
 
 Nachricht bei jeder Anmeldung:
 

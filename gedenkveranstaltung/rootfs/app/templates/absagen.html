@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block titel %}Anmeldung absagen – {{ opt.titel }}{% endblock %}
+
+{% block inhalt %}
+<main class="seite seite--schmal">
+
+  <div class="kopf">
+    <a class="zurueck" href="{{ url_for('danke', anmeldung_id=eintrag.id) }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+      Zurück
+    </a>
+    <h1 class="klein">Anmeldung absagen?</h1>
+    <p class="fliess">Damit werden Ihre Plätze wieder frei. Rückgängig machen können Sie das nicht — Sie können sich aber jederzeit neu anmelden, solange Plätze frei sind.</p>
+  </div>
+
+  <div class="karte zusammenfassung">
+    <div class="block">
+      <div class="block__titel">Angemeldet</div>
+      <div class="block__name">{{ eintrag.name }}</div>
+      <div style="font-size: 16px; color: var(--grau);">
+        {{ eintrag.personen }} {% if eintrag.personen == 1 %}Person{% else %}Personen{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <form method="post" action="{{ url_for('absagen_bestaetigen', anmeldung_id=eintrag.id) }}" style="gap: 14px;">
+    <button type="submit" class="knopf knopf--warnung">Ja, Anmeldung absagen</button>
+    <a class="knopf knopf--zweit" href="{{ url_for('danke', anmeldung_id=eintrag.id) }}">Nein, Anmeldung behalten</a>
+  </form>
+
+</main>
+{% endblock %}

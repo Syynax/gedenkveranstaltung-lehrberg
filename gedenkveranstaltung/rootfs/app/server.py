@@ -129,8 +129,20 @@ def _schreiben(daten):
     temp.replace(STORE_FILE)
 
 
-def belegte_plaetze(daten):
-    return sum(int(a.get("personen", 0)) for a in daten["anmeldungen"])
+def aktive(anmeldungen):
+    """Alle Anmeldungen ausser den abgesagten."""
+    return [a for a in anmeldungen if not a.get("abgesagt")]
+
+
+def belegte_plaetze(daten, ausser=None):
+    """Belegte Plaetze. Abgesagte zaehlen nicht mit; mit "ausser" laesst sich
+    zusaetzlich eine Anmeldung aussparen - beim Aendern soll die eigene
+    Personenzahl den eigenen Platz nicht blockieren."""
+    return sum(
+        int(a.get("personen", 0))
+        for a in aktive(daten["anmeldungen"])
+        if a.get("id") != ausser
+    )
 
 
 def lage():
@@ -154,7 +166,9 @@ def lage():
     }
 
 
-ZEIT_AM_ANFANG = re.compile(r"\s+(?=\d{1,2}[:.]\d{2}\s*\|)")
+# Trennt vor jedem neuen Punkt: eine kurze Angabe ohne Leerzeichen, gefolgt
+# von einem senkrechten Strich - also "10:00 |" ebenso wie "anschl. |".
+ZEIT_AM_ANFANG = re.compile(r"\s+(?=[^\s|]{1,14}\s*\|)")
 YAML_KOPF = re.compile(r"^\s*ablauf\s*:\s*(?:\|-?|>-?)?\s*", re.IGNORECASE)
 
 
@@ -332,7 +346,14 @@ def schwellen(opt):
 EMAIL_MUSTER = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]{2,}")
 
 
-def bestaetigung_mailen(eintrag):
+BETREFFE = {
+    "neu": "Ihre Anmeldung: {titel}",
+    "geaendert": "Ihre Anmeldung wurde geändert: {titel}",
+    "abgesagt": "Ihre Absage: {titel}",
+}
+
+
+def bestaetigung_mailen(eintrag, art="neu"):
     """Schickt dem Gast eine Bestaetigung, wenn er eine Adresse angegeben hat
     und ein Postausgang eingerichtet ist. Scheitert der Versand, steht das im
     Log - die Anmeldung selbst ist da laengst gespeichert."""
@@ -343,14 +364,33 @@ def bestaetigung_mailen(eintrag):
     if not empfaenger or not server or not absender:
         return
 
-    zeilen = [
-        f"Guten Tag {eintrag['name']},",
-        "",
-        f"vielen Dank für Ihre Anmeldung zur Veranstaltung „{opt['titel']}“.",
-        "",
-        "Ihre Angaben:",
-        f"  Personen: {eintrag['personen']}",
-    ]
+    adresse = (opt.get("oeffentliche_adresse") or "").rstrip("/")
+    zeilen = [f"Guten Tag {eintrag['name']},", ""]
+
+    if art == "abgesagt":
+        zeilen += [
+            f"Ihre Anmeldung zur Veranstaltung „{opt['titel']}“ ist abgesagt. "
+            "Ihre Plätze sind wieder frei.",
+            "",
+            "Falls das ein Versehen war, melden Sie sich einfach neu an"
+            + (f":\n{adresse}/" if adresse else "."),
+        ]
+        if opt.get("kontakt"):
+            zeilen += ["", f"Bei Fragen: {opt['kontakt']}"]
+        _mail_abschicken(opt, empfaenger, art, zeilen)
+        return
+
+    if art == "geaendert":
+        zeilen.append(
+            f"Ihre Anmeldung zur Veranstaltung „{opt['titel']}“ wurde geändert. "
+            "Es gilt jetzt:"
+        )
+    else:
+        zeilen.append(
+            f"vielen Dank für Ihre Anmeldung zur Veranstaltung „{opt['titel']}“."
+        )
+    zeilen += ["", "Ihre Angaben:", f"  Personen: {eintrag['personen']}"]
+
     essen = als_mengen(eintrag.get("essen"))
     if essen:
         zeilen.append("  Essen:    " + ", ".join(f"{m} {n}" for n, m in essen.items()))
@@ -365,19 +405,39 @@ def bestaetigung_mailen(eintrag):
         zeilen.append(f"Wann: {wann}")
     if opt.get("ort"):
         zeilen.append(f"Wo:   {opt['ort']}")
-    adresse = (opt.get("oeffentliche_adresse") or "").rstrip("/")
     if adresse:
-        zeilen += ["", "Ihre Anmeldung können Sie hier jederzeit einsehen:",
-                   f"{adresse}/danke/{eintrag['id']}"]
+        zeilen += [
+            "",
+            "Anmeldung ansehen:",
+            f"{adresse}/danke/{eintrag['id']}",
+            "",
+            "Anmeldung ändern:",
+            f"{adresse}/anmeldung/{eintrag['id']}/aendern",
+            "",
+            "Anmeldung absagen:",
+            f"{adresse}/anmeldung/{eintrag['id']}/absagen",
+            "",
+            "Bitte behalten Sie diese Mail, solange die Veranstaltung noch",
+            "aussteht - die Links gelten nur für Ihre Anmeldung.",
+        ]
     if opt.get("kontakt"):
-        zeilen += ["", f"Bei Fragen oder einer Absage: {opt['kontakt']}"]
+        zeilen += ["", f"Bei Fragen: {opt['kontakt']}"]
+    _mail_abschicken(opt, empfaenger, art, zeilen)
+
+
+def _mail_abschicken(opt, empfaenger, art, zeilen):
+    server = (opt.get("smtp_server") or "").strip()
+    absender = (opt.get("smtp_absender") or opt.get("smtp_benutzer") or "").strip()
     # Unterschrift: die erste Zeile des Impressums ist der Veranstalter.
     veranstalter = (opt.get("impressum") or "").strip().splitlines()
-    zeilen += ["", "Mit freundlichen Grüßen",
-               veranstalter[0].strip() if veranstalter else "Das Organisationsteam"]
+    zeilen = list(zeilen) + [
+        "",
+        "Mit freundlichen Grüßen",
+        veranstalter[0].strip() if veranstalter else "Das Organisationsteam",
+    ]
 
     nachricht = EmailMessage()
-    nachricht["Subject"] = f"Ihre Anmeldung: {opt['titel']}"
+    nachricht["Subject"] = BETREFFE.get(art, BETREFFE["neu"]).format(titel=opt["titel"])
     nachricht["From"] = absender
     nachricht["To"] = empfaenger
     # Wenn die Absenderdomain kein Postfach hat, laufen Antworten ins Leere.
@@ -388,22 +448,22 @@ def bestaetigung_mailen(eintrag):
     nachricht.set_content("\n".join(zeilen))
 
     port = int(opt.get("smtp_port") or 587)
-    art = (opt.get("smtp_verschluesselung") or "starttls").lower()
+    verschluesselung = (opt.get("smtp_verschluesselung") or "starttls").lower()
     benutzer = (opt.get("smtp_benutzer") or "").strip()
     passwort = opt.get("smtp_passwort") or ""
     try:
-        if art == "ssl":
+        if verschluesselung == "ssl":
             verbindung = smtplib.SMTP_SSL(server, port, timeout=20,
                                           context=ssl.create_default_context())
         else:
             verbindung = smtplib.SMTP(server, port, timeout=20)
         with verbindung:
-            if art == "starttls":
+            if verschluesselung == "starttls":
                 verbindung.starttls(context=ssl.create_default_context())
             if benutzer:
                 verbindung.login(benutzer, passwort)
             verbindung.send_message(nachricht)
-        print(f"[anmeldung] Bestätigung an {empfaenger} verschickt", flush=True)
+        print(f"[anmeldung] Mail ({art}) an {empfaenger} verschickt", flush=True)
     except (smtplib.SMTPException, OSError) as fehler:
         print(f"[anmeldung] Mail an {empfaenger} fehlgeschlagen: {fehler}", flush=True)
 
@@ -412,6 +472,43 @@ def _nachbereiten(arbeit):
     """Sensor, Events und Nachrichten laufen im Hintergrund - der Gast soll
     nicht warten, bis Home Assistant geantwortet hat."""
     threading.Thread(target=arbeit, daemon=True).start()
+
+
+def _aenderung_melden(eintrag):
+    sensor_aktualisieren()
+    bestaetigung_mailen(eintrag, "geaendert")
+    ereignis_senden(
+        "gedenkveranstaltung_aenderung",
+        {
+            "name": eintrag["name"],
+            "personen": eintrag["personen"],
+            "essen": eintrag.get("essen", {}),
+            "getraenke": eintrag.get("getraenke", []),
+            "anmerkung": eintrag.get("anmerkung", ""),
+        },
+    )
+    if optionen().get("benachrichtigung_jede_anmeldung"):
+        nachricht_senden(f"Anmeldung geändert: {_beschreibung(eintrag)}")
+
+
+def _absage_melden(eintrag):
+    sensor_aktualisieren()
+    bestaetigung_mailen(eintrag, "abgesagt")
+    stand = lage()
+    ereignis_senden(
+        "gedenkveranstaltung_absage",
+        {
+            "name": eintrag["name"],
+            "personen": eintrag["personen"],
+            "freie_plaetze": stand["frei"],
+        },
+    )
+    if optionen().get("benachrichtigung_jede_anmeldung"):
+        nachricht_senden(
+            f"Absage: {eintrag['name']}, {eintrag['personen']} "
+            f"{'Person' if eintrag['personen'] == 1 else 'Personen'}. "
+            f"Wieder {stand['frei']} von {stand['gesamt']} Plätzen frei."
+        )
 
 
 def _beschreibung(eintrag):
@@ -498,8 +595,12 @@ def formular():
     if not stand["offen"]:
         return redirect(url_for("start"))
     return render_template(
-        "formular.html", eingaben={}, fehler=None, **stand
+        "formular.html", eingaben={}, fehler=None, eintrag=None, **stand
     )
+
+
+def _suchen(daten, anmeldung_id):
+    return next((a for a in daten["anmeldungen"] if a.get("id") == anmeldung_id), None)
 
 
 def _menge(feldname):
@@ -518,6 +619,59 @@ def _auswahl(feldname, erlaubt):
     return [name for name in erlaubt if name in gewaehlt]
 
 
+def _formular_lesen(opt, frei):
+    """Formular auslesen und pruefen. Gibt die Werte und - falls etwas nicht
+    stimmt - eine Meldung zurueck. "frei" ist die Zahl der Plaetze, die diese
+    eine Anmeldung hoechstens belegen darf."""
+    werte = {
+        "name": " ".join((request.form.get("name") or "").split())[:80],
+        "anmerkung": (request.form.get("anmerkung") or "").strip()[:500],
+        "email": (request.form.get("email") or "").strip()[:120],
+        "personen": 0,
+        "essen": {},
+        "getraenke": _auswahl("getraenke", opt["getraenke"]),
+    }
+    try:
+        werte["personen"] = _menge("personen")
+        for i, gericht in enumerate(opt["essen"]):
+            anzahl = _menge(f"essen_{i}")
+            if anzahl > 0:
+                werte["essen"][gericht] = anzahl
+    except ValueError as problem:
+        return werte, str(problem)
+
+    personen = werte["personen"]
+    stueck = sum(werte["essen"].values())
+    if len(werte["name"]) < 2:
+        return werte, "Bitte tragen Sie einen Namen ein."
+    if personen < 1:
+        return werte, "Bitte geben Sie mindestens eine Person an."
+    if werte["email"] and not EMAIL_MUSTER.fullmatch(werte["email"]):
+        return werte, (
+            "Die E-Mail-Adresse sieht nicht vollständig aus. "
+            "Bitte prüfen oder das Feld leer lassen."
+        )
+    if personen > opt["max_personen_pro_anmeldung"]:
+        return werte, (
+            "Pro Anmeldung sind höchstens "
+            f"{opt['max_personen_pro_anmeldung']} Personen möglich."
+        )
+    if personen > frei:
+        return werte, (
+            f"Es sind nur noch {frei} Plätze frei. "
+            "Bitte passen Sie die Personenzahl an."
+        )
+    if stueck > personen * 10:
+        # Die Zahl sind Stueck, nicht Portionen je Person - eine Person nimmt
+        # durchaus zwei Weisswuerste. Die Grenze faengt nur Zahlendreher ab.
+        return werte, (
+            f"Das sind {stueck} Stück für {personen} "
+            f"{'Person' if personen == 1 else 'Personen'}. "
+            "Bitte prüfen Sie die Zahlen noch einmal."
+        )
+    return werte, None
+
+
 @app.post("/anmeldung")
 def anmelden():
     stand = lage()
@@ -530,82 +684,20 @@ def anmelden():
     if not stand["offen"]:
         return redirect(url_for("start"))
 
-    name = " ".join((request.form.get("name") or "").split())[:80]
-    anmerkung = (request.form.get("anmerkung") or "").strip()[:500]
-    email = (request.form.get("email") or "").strip()[:120]
-    email_ungueltig = bool(email) and not EMAIL_MUSTER.fullmatch(email)
-
-    fehler = None
-    personen = 0
-    essen = {}
-    getraenke = _auswahl("getraenke", opt["getraenke"])
-    try:
-        personen = _menge("personen")
-        for i, gericht in enumerate(opt["essen"]):
-            anzahl = _menge(f"essen_{i}")
-            if anzahl > 0:
-                essen[gericht] = anzahl
-    except ValueError as problem:
-        fehler = str(problem)
-
-    if fehler is None:
-        if len(name) < 2:
-            fehler = "Bitte tragen Sie einen Namen ein."
-        elif personen < 1:
-            fehler = "Bitte geben Sie mindestens eine Person an."
-        elif email_ungueltig:
-            fehler = (
-                "Die E-Mail-Adresse sieht nicht vollständig aus. "
-                "Bitte prüfen oder das Feld leer lassen."
-            )
-        elif personen > opt["max_personen_pro_anmeldung"]:
-            fehler = (
-                "Pro Anmeldung sind höchstens "
-                f"{opt['max_personen_pro_anmeldung']} Personen möglich."
-            )
-        elif personen > stand["frei"]:
-            fehler = (
-                f"Es sind nur noch {stand['frei']} Plätze frei. "
-                "Bitte passen Sie die Personenzahl an."
-            )
-        elif sum(essen.values()) > personen * 10:
-            # Die Zahl sind Stueck, nicht Portionen je Person - eine Person
-            # nimmt durchaus zwei Weisswuerste. Die Grenze faengt nur
-            # Zahlendreher ab.
-            fehler = (
-                f"Das sind {sum(essen.values())} Stück für {personen} "
-                f"{'Person' if personen == 1 else 'Personen'}. "
-                "Bitte prüfen Sie die Zahlen noch einmal."
-            )
-
+    werte, fehler = _formular_lesen(opt, stand["frei"])
     if fehler:
         return (
             render_template(
-                "formular.html",
-                fehler=fehler,
-                eingaben={
-                    "name": name,
-                    "personen": personen or 1,
-                    "essen": essen,
-                    "getraenke": getraenke,
-                    "anmerkung": anmerkung,
-                    "email": email,
-                },
-                **stand,
+                "formular.html", fehler=fehler, eingaben=werte, eintrag=None, **stand
             ),
             400,
         )
 
-    eintrag = {
-        "id": secrets.token_urlsafe(9),
-        "name": name,
-        "personen": personen,
-        "essen": essen,
-        "getraenke": getraenke,
-        "anmerkung": anmerkung,
-        "email": email,
-        "zeit": datetime.now().astimezone().isoformat(timespec="seconds"),
-    }
+    eintrag = dict(
+        werte,
+        id=secrets.token_urlsafe(9),
+        zeit=datetime.now().astimezone().isoformat(timespec="seconds"),
+    )
 
     # Zweite Pruefung unter Sperre: zwischen Anzeige und Absenden koennen
     # andere Anmeldungen die letzten Plaetze belegt haben.
@@ -613,13 +705,14 @@ def anmelden():
     with _lock:
         daten = _lesen()
         belegt_vorher = belegte_plaetze(daten)
-        if daten["geschlossen"] or personen > opt["plaetze_gesamt"] - belegt_vorher:
+        frei_jetzt = opt["plaetze_gesamt"] - belegt_vorher
+        if daten["geschlossen"] or werte["personen"] > frei_jetzt:
             zu_spaet = True
         else:
             zu_spaet = False
             daten["anmeldungen"].append(eintrag)
             _schreiben(daten)
-            anzahl = len(daten["anmeldungen"])
+            anzahl = len(aktive(daten["anmeldungen"]))
 
     if zu_spaet:
         # Zwischen Anzeige und Absenden sind die letzten Plaetze weggegangen.
@@ -627,9 +720,105 @@ def anmelden():
         return redirect(url_for("start", voll=1))
 
     _nachbereiten(
-        lambda: _melden(eintrag, belegt_vorher, belegt_vorher + personen, anzahl)
+        lambda: _melden(
+            eintrag, belegt_vorher, belegt_vorher + werte["personen"], anzahl
+        )
     )
     return redirect(url_for("danke", anmeldung_id=eintrag["id"]))
+
+
+@app.get("/anmeldung/<anmeldung_id>/aendern")
+def aendern(anmeldung_id):
+    stand = lage()
+    eintrag = _suchen(stand["daten"], anmeldung_id)
+    if eintrag is None or eintrag.get("abgesagt"):
+        return redirect(url_for("start"))
+    # Die eigene Personenzahl blockiert den eigenen Platz nicht.
+    stand["frei"] = stand["frei"] + eintrag["personen"]
+    return render_template(
+        "formular.html", eingaben=eintrag, fehler=None, eintrag=eintrag, **stand
+    )
+
+
+@app.post("/anmeldung/<anmeldung_id>/aendern")
+def aendern_speichern(anmeldung_id):
+    if (request.form.get("webseite") or "").strip():
+        return redirect(url_for("start"))
+
+    stand = lage()
+    opt = stand["opt"]
+    eintrag = _suchen(stand["daten"], anmeldung_id)
+    if eintrag is None or eintrag.get("abgesagt"):
+        return redirect(url_for("start"))
+
+    frei_fuer_diese = opt["plaetze_gesamt"] - belegte_plaetze(
+        stand["daten"], ausser=anmeldung_id
+    )
+    werte, fehler = _formular_lesen(opt, frei_fuer_diese)
+    if fehler:
+        stand["frei"] = frei_fuer_diese
+        return (
+            render_template(
+                "formular.html",
+                fehler=fehler,
+                eingaben=werte,
+                eintrag=eintrag,
+                **stand,
+            ),
+            400,
+        )
+
+    with _lock:
+        daten = _lesen()
+        gespeichert = _suchen(daten, anmeldung_id)
+        if gespeichert is None or gespeichert.get("abgesagt"):
+            return redirect(url_for("start"))
+        frei_jetzt = opt["plaetze_gesamt"] - belegte_plaetze(daten, ausser=anmeldung_id)
+        if werte["personen"] > frei_jetzt:
+            zu_spaet = True
+        else:
+            zu_spaet = False
+            gespeichert.update(werte)
+            gespeichert["geaendert"] = (
+                datetime.now().astimezone().isoformat(timespec="seconds")
+            )
+            _schreiben(daten)
+            neu = dict(gespeichert)
+
+    if zu_spaet:
+        return redirect(url_for("start", voll=1))
+
+    _nachbereiten(lambda: _aenderung_melden(neu))
+    return redirect(url_for("danke", anmeldung_id=anmeldung_id, geaendert=1))
+
+
+@app.get("/anmeldung/<anmeldung_id>/absagen")
+def absagen(anmeldung_id):
+    stand = lage()
+    eintrag = _suchen(stand["daten"], anmeldung_id)
+    if eintrag is None:
+        return redirect(url_for("start"))
+    if eintrag.get("abgesagt"):
+        return redirect(url_for("danke", anmeldung_id=anmeldung_id))
+    return render_template("absagen.html", eintrag=eintrag, **stand)
+
+
+@app.post("/anmeldung/<anmeldung_id>/absagen")
+def absagen_bestaetigen(anmeldung_id):
+    abgesagt = None
+    with _lock:
+        daten = _lesen()
+        eintrag = _suchen(daten, anmeldung_id)
+        if eintrag is not None and not eintrag.get("abgesagt"):
+            eintrag["abgesagt"] = (
+                datetime.now().astimezone().isoformat(timespec="seconds")
+            )
+            _schreiben(daten)
+            abgesagt = dict(eintrag)
+
+    if abgesagt:
+        _nachbereiten(lambda: _absage_melden(abgesagt))
+    return redirect(url_for("danke", anmeldung_id=anmeldung_id))
 
 
 def _melden(eintrag, belegt_vorher, belegt_nachher, anzahl):
@@ -729,13 +918,16 @@ def danke(anmeldung_id):
 @app.get("/verwaltung")
 def verwaltung():
     stand = lage()
-    anmeldungen = sorted(
+    alle = sorted(
         stand["daten"]["anmeldungen"], key=lambda a: a.get("zeit", ""), reverse=True
     )
+    anmeldungen = aktive(alle)
+    abgesagte = [a for a in alle if a.get("abgesagt")]
     essen_summe = portionen(anmeldungen, stand["opt"]["essen"])
     return render_template(
         "verwaltung.html",
         anmeldungen=anmeldungen,
+        abgesagte=abgesagte,
         essen_summe=essen_summe,
         getraenke_summe=nachfrage(anmeldungen, stand["opt"]["getraenke"]),
         portionen_gesamt=sum(essen_summe.values()),
@@ -783,16 +975,20 @@ def csv_export():
     opt = stand["opt"]
     puffer = io.StringIO()
     schreiber = csv.writer(puffer, delimiter=";", lineterminator="\r\n")
-    kopf = ["Name", "Personen"] + opt["essen"] + opt["getraenke"] + ["Anmerkung", "E-Mail", "Eingang"]
+    kopf = (["Status", "Name", "Personen"] + opt["essen"] + opt["getraenke"]
+            + ["Anmerkung", "E-Mail", "Eingang", "Abgesagt am"])
     schreiber.writerow(kopf)
+    # Abgesagte stehen mit drin, aber deutlich als solche - so laesst sich in
+    # Excel filtern und man sieht trotzdem, wer abgesprungen ist.
     for a in sorted(stand["daten"]["anmeldungen"], key=lambda x: x.get("zeit", "")):
         gewaehlt_essen = als_mengen(a.get("essen"))
         gewaehlt_trinken = als_liste(a.get("getraenke"))
         schreiber.writerow(
-            [a["name"], a["personen"]]
+            ["abgesagt" if a.get("abgesagt") else "angemeldet", a["name"], a["personen"]]
             + [gewaehlt_essen.get(g, 0) for g in opt["essen"]]
             + ["ja" if g in gewaehlt_trinken else "" for g in opt["getraenke"]]
-            + [a.get("anmerkung", ""), a.get("email", ""), a.get("zeit", "")]
+            + [a.get("anmerkung", ""), a.get("email", ""), a.get("zeit", ""),
+               a.get("abgesagt", "")]
         )
     # BOM voranstellen, damit Excel die Umlaute erkennt
     inhalt = "﻿" + puffer.getvalue()

@@ -46,8 +46,17 @@ a:hover { color: var(--bronze-dunkel); }
 
 .seite--weit { max-width: 1040px; padding: 32px 28px 40px; }
 
+/* Startseite auf dem Handy: eine Spalte. Die Gruppe .start__rand ist
+   durchsichtig, damit Termin, Text/Ablauf und Aktionsblock in dieser
+   Reihenfolge untereinander stehen - der Termin gehört direkt unter die
+   Überschrift, der Anmeldeknopf ans Ende. */
+.start__rand { display: contents; }
+.start__haupt { order: 1; }
+.start__aktion { order: 2; }
 .start__haupt,
-.start__rand { display: flex; flex-direction: column; gap: 24px; }
+.start__aktion { display: flex; flex-direction: column; gap: 24px; }
+.start__aktion { gap: 16px; }
+.start__text { display: flex; flex-direction: column; }
 
 /* Ab Tablet-Breite zwei Spalten: links das Lesen, rechts das Handeln.
    Darunter bleibt alles eine Spalte. */
@@ -83,17 +92,34 @@ a:hover { color: var(--bronze-dunkel); }
   /* Bestätigung bleibt schmal - eine Zusammenfassung liest sich so besser. */
   .seite--schmal { max-width: 560px; padding: 56px 32px 64px; }
 
+  /* Am Rechner: Überschrift über die volle Breite, darunter links der Text
+     und der Ablauf, rechts Termin, Plätze und Anmeldeknopf als ein Block.
+     Die rechte Spalte ist ein eigener Container - so bleibt darunter kein
+     Loch, wenn der Text links länger wird. */
   .seite--start {
     max-width: 1020px;
     padding: 64px 40px 72px;
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: 56px;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: 40px 56px;
     align-items: start;
   }
-  .seite--start h1 { font-size: 46px; }
+  /* Zeilen ausdrücklich setzen: sonst schiebt die automatische Platzierung
+     die linke Spalte unter die rechte, weil sie im Quelltext danach steht. */
+  .seite--start .kopf { grid-column: 1 / -1; grid-row: 1; }
+  .seite--start h1 { font-size: clamp(38px, 4vw, 48px); }
   .seite--start .fliess { font-size: 18px; }
-  .start__rand { position: sticky; top: 40px; }
+  .seite--start .start__haupt { grid-column: 1; grid-row: 2; order: 0; }
+  .seite--start .start__rand {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: sticky;
+    top: 40px;
+  }
+  .seite--start .start__aktion { order: 0; gap: 16px; }
 }
 
 /* Kopf */
@@ -560,4 +586,36 @@ td.leer { color: var(--grau-3); }
   font-size: 16px;
   line-height: 1.5;
   white-space: pre-line;
+}
+
+/* Absage: bewusst kein Knopf, damit niemand versehentlich draufkommt */
+.absage-link {
+  align-self: center;
+  padding: 10px 12px;
+  font-size: 15px;
+  color: var(--grau-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.absage-link:hover { color: var(--rot); }
+.knopf--warnung {
+  background: var(--rot);
+  border-color: var(--rot);
+}
+.knopf--warnung:hover { background: #6E2C20; border-color: #6E2C20; color: #FFFFFF; }
+.karte--verblasst { opacity: 0.72; }
+
+/* Verwaltung: abgesagte Zeilen */
+tr.abgesagt td { color: var(--grau-3); }
+tr.abgesagt td.name { color: var(--grau-2); font-weight: 400; text-decoration: line-through; }
+.merker {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--karte-2);
+  border: 1px solid var(--linie);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--grau-2);
 }

@@ -1,18 +1,20 @@
 {% extends "base.html" %}
 {% import "teile.html" as teile %}
 
-{% block titel %}Anmeldung – {{ opt.titel }}{% endblock %}
+{% block titel %}{% if eintrag %}Anmeldung ändern{% else %}Anmeldung{% endif %} – {{ opt.titel }}{% endblock %}
 
 {% block inhalt %}
 <main class="seite seite--formular">
 
   <div class="kopf">
-    <a class="zurueck" href="{{ url_for('start') }}">
+    <a class="zurueck" href="{% if eintrag %}{{ url_for('danke', anmeldung_id=eintrag.id) }}{% else %}{{ url_for('start') }}{% endif %}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
       Zurück
     </a>
-    <h1 class="klein">Anmeldung</h1>
-    <div style="font-size: 15px; color: var(--grau-2);">Noch {{ frei }} von {{ gesamt }} Plätzen frei</div>
+    <h1 class="klein">{% if eintrag %}Anmeldung ändern{% else %}Anmeldung{% endif %}</h1>
+    <div style="font-size: 15px; color: var(--grau-2);">
+      {% if eintrag %}Angemeldet als {{ eintrag.name }}{% else %}Noch {{ frei }} von {{ gesamt }} Plätzen frei{% endif %}
+    </div>
   </div>
 
   {% if fehler %}
@@ -22,7 +24,7 @@
   </div>
   {% endif %}
 
-  <form method="post" action="{{ url_for('anmelden') }}"
+  <form method="post" action="{% if eintrag %}{{ url_for('aendern_speichern', anmeldung_id=eintrag.id) }}{% else %}{{ url_for('anmelden') }}{% endif %}"
         data-max-personen="{{ [opt.max_personen_pro_anmeldung, frei] | min }}">
 
     <div class="feld feld--name">
@@ -100,7 +102,10 @@
     </div>
 
     <div class="feld feld--absenden">
-      <button type="submit" class="knopf">Anmeldung absenden</button>
+      <button type="submit" class="knopf">{% if eintrag %}Änderungen speichern{% else %}Anmeldung absenden{% endif %}</button>
+      {% if eintrag %}
+      <a class="absage-link" href="{{ url_for('absagen', anmeldung_id=eintrag.id) }}">Stattdessen absagen</a>
+      {% endif %}
       {% if opt.datenschutz_hinweis %}
       <div class="hinweis-klein">{{ opt.datenschutz_hinweis }}</div>
       {% endif %}

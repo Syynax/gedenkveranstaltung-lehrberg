@@ -1,5 +1,20 @@
 # Änderungen
 
+## 1.6.0
+
+- **Selbst ändern und absagen**: Die Bestätigungsseite führt jetzt zu einem
+  Formular zum Ändern und zu einer Absage mit Rückfrage. Die Links stehen auch
+  in der Bestätigungsmail. Eine Absage gibt die Plätze sofort frei, löscht die
+  Anmeldung aber nicht — in der Verwaltung bleibt sie durchgestrichen stehen,
+  in der CSV mit dem Status `abgesagt`.
+- Mails für Änderung und Absage, neue Events `gedenkveranstaltung_aenderung`
+  und `gedenkveranstaltung_absage` (mit freien Plätzen).
+- **Startseite neu aufgeteilt**: Die Überschrift steht über die volle Breite,
+  darunter links Text und Ablauf, rechts Termin, Plätze und Anmeldeknopf. Die
+  Spalten sind jetzt ausgewogen, statt dass rechts eine große leere Fläche
+  blieb.
+- Der Ablauf trennt auch vor Punkten ohne Uhrzeit, etwa `anschl. |`.
+
 ## 1.5.2
 
 - Neue Option `smtp_antwort_an`: Antworten der Gäste gehen an eine echte
