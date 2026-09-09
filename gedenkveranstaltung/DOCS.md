@@ -260,7 +260,17 @@ zuständige Aufsichtsbehörde ab.
 
 Die Seite rechnet fast nichts und hält Anmeldungen in einer kleinen Datei —
 für einen Dorfstart mit ein paar hundert Besuchern in der ersten Stunde ist
-das reichlich. Was das Add-on dafür tut:
+das reichlich. Ein Lasttest auf einem PC (die echte Seite läuft auf dem
+schwächeren Home-Assistant-Gerät, dort dauert alles entsprechend länger):
+
+| Was | Ergebnis |
+| --- | --- |
+| 200 gleichzeitige Leser, 1 200 Seitenaufrufe | 985 Aufrufe/s, kein Fehler |
+| 100 gleichzeitige Anmeldungen | alle angenommen, Summe stimmt exakt |
+| 60 s Mischlast, 50 Leser und 10 Schreiber | 29 000 Aufrufe, kein Fehler |
+| 200 gleichzeitige Anmeldungen auf 50 Plätze | genau 50 angenommen, 150 abgewiesen |
+
+Was das Add-on dafür tut:
 
 * **Watchdog**: Der Supervisor ruft die Startseite regelmäßig auf und startet
   das Add-on neu, wenn sie nicht mehr antwortet.

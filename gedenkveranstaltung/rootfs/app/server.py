@@ -616,7 +616,9 @@ def anmelden():
             anzahl = len(daten["anmeldungen"])
 
     if zu_spaet:
-        return redirect(url_for("start"))
+        # Zwischen Anzeige und Absenden sind die letzten Plaetze weggegangen.
+        # Die Startseite sagt das dann ausdruecklich, statt nur "ausgebucht".
+        return redirect(url_for("start", voll=1))
 
     _nachbereiten(
         lambda: _melden(eintrag, belegt_vorher, belegt_vorher + personen, anzahl)
@@ -814,7 +816,11 @@ def main():
         args=(app,),
         # 16 Threads: die Seite rechnet fast nichts, sie wartet hoechstens auf
         # die Platte. Mehr Threads heisst mehr gleichzeitige Gaeste ohne Schlange.
-        kwargs={"host": "0.0.0.0", "port": PUBLIC_PORT, "threads": 16, "ident": None},
+        # connection_limit: waitress nimmt sonst ab 100 offenen Verbindungen
+        # keine neuen mehr an - beim Lasttest mit 200 Gleichzeitigen war das
+        # der einzige Engpass. Mehr offene Verbindungen kosten nur Speicher.
+        kwargs={"host": "0.0.0.0", "port": PUBLIC_PORT, "threads": 16,
+                "connection_limit": 500, "ident": None},
         daemon=True,
     )
     oeffentlich.start()

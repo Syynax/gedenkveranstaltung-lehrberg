@@ -1,5 +1,12 @@
 # Änderungen
 
+## 1.5.1
+
+- Nach dem Lasttest: bis zu 500 gleichzeitige Verbindungen statt 100 — mehr
+  offene Verbindungen bedeuteten vorher nur Warten, jetzt auch das nicht.
+- Wer im Wettlauf um die letzten Plätze verliert, sieht auf der Startseite
+  einen klaren Hinweis statt nur „ausgebucht“.
+
 ## 1.5.0
 
 - **Bestätigungsmail**: optionales E-Mail-Feld im Formular; wer es ausfüllt,
