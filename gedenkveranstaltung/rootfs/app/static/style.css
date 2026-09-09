@@ -5,10 +5,11 @@
   --tinte: #221F1B;
   --tinte-2: #3B372F;
   --grau: #5C564C;
-  --grau-2: #7A7364;
-  --grau-3: #9B9484;
-  --linie: #DDD6CA;
+  --grau-2: #6B6558;   /* 5.1:1 auf dem Papierton - Hilfetexte */
+  --grau-3: #7B7466;   /* 4.7:1 auf Weiß - kleine Labels, die Null im Zähler */
+  --linie: #DDD6CA;    /* Karten und Trennlinien, rein dekorativ */
   --linie-2: #EBE4D8;
+  --rahmen: #9A9284;   /* 3.1:1 auf Weiß - Ränder von Eingabefeldern und Knöpfen */
   --bronze: #8A6334;
   --bronze-dunkel: #6E4E28;
   --bronze-hell: #F0EAE0;
@@ -54,22 +55,26 @@ a:hover { color: var(--bronze-dunkel); }
   .seite--formular { max-width: 860px; padding: 56px 40px 64px; }
 
   /* Zwei Spalten: links wer, wie viele und die Anmerkung, rechts die
-     Bestellung. Die Spalten sind eigene Container, damit die kurze linke
-     Spalte nicht auf die Zeilenhöhe der langen rechten warten muss. */
+     Bestellung. Die Felder behalten ihre Quelltext-Reihenfolge (wichtig für
+     Tastatur und Vorlesen) und werden nur im Gitter platziert. Die
+     Getränkeliste ist der längste Block und bekommt zwei Zeilen; die
+     Anmerkung daneben wächst mit, damit links kein Loch bleibt. */
   .seite--formular form {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 34px 44px;
+    gap: 30px 44px;
     align-items: start;
   }
-  /* Mit .seite--formular davor, weil die Grundregeln weiter unten im
-     Stylesheet stehen und sonst gewinnen würden. */
-  .seite--formular .spalte { display: flex; flex-direction: column; gap: 30px; }
-  .seite--formular .feld--anmerkung textarea { min-height: 150px; }
-  .seite--formular .feld--anmerkung,
-  .seite--formular .feld--absenden { order: 0; }
-  .seite--formular .feld--absenden {
+  .feld--name      { grid-column: 1; grid-row: 1; }
+  .feld--email     { grid-column: 1; grid-row: 2; }
+  .feld--personen  { grid-column: 1; grid-row: 3; }
+  .feld--anmerkung { grid-column: 1; grid-row: 4; align-self: stretch; }
+  .feld--essen     { grid-column: 2; grid-row: 1 / span 2; }
+  .feld--getraenke { grid-column: 2; grid-row: 3 / span 2; }
+  .feld--anmerkung textarea { flex: 1; min-height: 150px; }
+  .feld--absenden {
     grid-column: 1 / -1;
+    grid-row: 5;
     justify-self: center;
     width: 100%;
     max-width: 420px;
@@ -269,9 +274,11 @@ h1.klein { font-size: clamp(27px, 7.5vw, 32px); line-height: 1.1; }
 .knopf--klein { height: 44px; font-size: 15px; padding: 0 18px; }
 
 .zurueck {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-height: 44px;
+  margin: -12px 0 -8px;
   font-size: 15px;
   color: var(--grau-2);
 }
@@ -282,18 +289,15 @@ h1.klein { font-size: clamp(27px, 7.5vw, 32px); line-height: 1.1; }
 /* Formular */
 form { display: flex; flex-direction: column; gap: 30px; }
 
-/* Auf dem Handy sind die Spalten durchsichtig: die Felder hängen direkt am
-   Formular. Anmerkung und Knopf rutschen per order ans Ende, damit die
-   Reihenfolge stimmt, obwohl sie im Quelltext links gruppiert sind. */
-.spalte { display: contents; }
-.feld--anmerkung { order: 1; }
-.feld--absenden { order: 2; }
+/* Die Felder stehen im Quelltext in der Reihenfolge, in der man sie auf dem
+   Handy sieht und mit der Tastatur durchläuft. Am Rechner ordnet sie das
+   Gitter weiter oben um - ohne "order", damit die Fokusreihenfolge stimmt. */
 .feld { display: flex; flex-direction: column; gap: 10px; }
 .feld__label { font-size: 17px; font-weight: 600; color: var(--tinte); }
 .feld__label .optional { font-weight: 400; color: var(--grau-2); }
 .feld__hilfe { font-size: 14px; color: var(--grau-2); }
 
-input[type="text"], textarea {
+input[type="text"], input[type="email"], textarea {
   width: 100%;
   padding: 14px 16px;
   font-family: var(--sans);
@@ -301,10 +305,10 @@ input[type="text"], textarea {
   line-height: 1.5;
   color: var(--tinte);
   background: var(--karte);
-  border: 1px solid var(--linie);
+  border: 1px solid var(--rahmen);
   border-radius: 4px;
 }
-input[type="text"] { height: 54px; padding: 0 16px; }
+input[type="text"], input[type="email"] { height: 54px; padding: 0 16px; }
 textarea { resize: vertical; min-height: 92px; }
 input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
   outline: 2px solid var(--bronze);
@@ -320,7 +324,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visib
   font-size: 26px;
   color: var(--tinte);
   background: var(--karte);
-  border: 1px solid var(--linie);
+  border: 1px solid var(--rahmen);
   border-radius: 4px;
   padding: 0 8px;
 }
@@ -332,7 +336,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visib
   align-items: center;
   justify-content: center;
   background: var(--karte);
-  border: 1px solid var(--linie);
+  border: 1px solid var(--rahmen);
   border-radius: 4px;
   cursor: pointer;
 }
@@ -359,7 +363,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visib
   padding: 14px 16px;
   cursor: pointer;
 }
-.zeile:hover { border-color: var(--grau-3); }
+.zeile:hover { border-color: var(--rahmen); }
 .zeile input[type="checkbox"] {
   width: 24px;
   height: 24px;
@@ -387,7 +391,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visib
   align-items: center;
   justify-content: center;
   background: var(--karte-2);
-  border: 1px solid var(--linie-2);
+  border: 1px solid var(--rahmen);
   border-radius: 4px;
   cursor: pointer;
 }
@@ -406,7 +410,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visib
 }
 .menge.null { color: var(--grau-3); }
 .js-aus .schritt { display: none; }
-.js-aus .menge { width: 64px; border: 1px solid var(--linie); background: var(--karte); }
+.js-aus .menge { width: 64px; border: 1px solid var(--rahmen); background: var(--karte); }
 
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 input[type="number"]::-webkit-outer-spin-button,
@@ -519,4 +523,41 @@ td.leer { color: var(--grau-3); }
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* Fußleiste mit Impressum und Datenschutz */
+.fussleiste {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 8px 24px 32px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--grau-2);
+}
+.fussleiste a { color: var(--grau-2); text-decoration: underline; text-underline-offset: 3px; }
+.fussleiste a:hover { color: var(--tinte); }
+
+/* Rechtstexte */
+.rechtstext { display: flex; flex-direction: column; }
+.rechtstext .fliess { font-size: 16px; }
+.rechtstext__titel {
+  margin: 22px 0 6px;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--tinte);
+}
+.rechtstext__titel:first-child { margin-top: 0; }
+.rechtstext .fliess + .fliess { margin-top: 10px; }
+.rechtstext__kasten {
+  margin: 8px 0 12px;
+  padding: 14px 16px;
+  background: var(--karte);
+  border: 1px solid var(--linie);
+  border-radius: 4px;
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-line;
 }

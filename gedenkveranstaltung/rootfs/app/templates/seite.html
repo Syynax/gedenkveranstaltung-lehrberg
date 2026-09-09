@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% import "teile.html" as teile %}
+
+{% block titel %}{{ ueberschrift }} – {{ opt.titel }}{% endblock %}
+
+{% block inhalt %}
+<main class="seite seite--schmal">
+
+  <div class="kopf">
+    <a class="zurueck" href="{{ url_for('start') }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+      Zurück
+    </a>
+    <h1 class="klein">{{ ueberschrift }}</h1>
+  </div>
+
+  {% if inhalt %}
+  <div class="rechtstext">{{ teile.absaetze(inhalt) }}</div>
+  {% else %}
+  <div class="meldung meldung--info">
+    <span>Dieser Text ist noch nicht hinterlegt. Er wird in den Einstellungen des Add-ons unter <b>{{ feldname }}</b> eingetragen.</span>
+  </div>
+  {% endif %}
+
+</main>
+{% endblock %}

@@ -91,7 +91,10 @@
       <tbody>
         {% for a in anmeldungen %}
         <tr>
-          <td class="name">{{ a.name }}</td>
+          <td class="name">
+            {{ a.name }}
+            {% if a.email %}<div style="font-weight: 400; font-size: 13px; color: var(--grau-2);">{{ a.email }}</div>{% endif %}
+          </td>
           <td>{{ a.personen }}</td>
           <td>
             {% if a.essen %}{% for gericht, menge in a.essen.items() %}{{ menge }} {{ gericht }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}<span class="leer">—</span>{% endif %}

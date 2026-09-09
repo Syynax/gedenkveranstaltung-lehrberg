@@ -11,7 +11,10 @@ import json
 import os
 import re
 import secrets
+import smtplib
+import ssl
 import threading
+from email.message import EmailMessage
 import urllib.error
 import urllib.request
 from datetime import datetime
@@ -28,8 +31,10 @@ from flask import (
 )
 from waitress import serve
 
-PUBLIC_PORT = 8080
-INGRESS_PORT = 8099
+# Im Add-on immer 8080/8099. Die Variablen gibt es nur, damit sich zum Testen
+# ein zweiter Server neben dem ersten starten laesst.
+PUBLIC_PORT = int(os.environ.get("ANMELDUNG_PORT", "8080"))
+INGRESS_PORT = int(os.environ.get("ANMELDUNG_INGRESS_PORT", "8099"))
 
 DATA_DIR = Path(os.environ.get("ANMELDUNG_DATA", "/data"))
 OPTIONS_FILE = DATA_DIR / "options.json"
@@ -61,6 +66,17 @@ STANDARD_OPTIONEN = {
     "benachrichtigung_dienst": "",
     "benachrichtigung_jede_anmeldung": True,
     "benachrichtigung_schwellen": "",
+    "oeffentliche_adresse": "",
+    "impressum": "",
+    "datenschutz": "",
+    "email_abfragen": True,
+    "smtp_server": "",
+    "smtp_port": 587,
+    "smtp_verschluesselung": "starttls",
+    "smtp_benutzer": "",
+    "smtp_passwort": "",
+    "smtp_absender": "",
+    "loeschfrist": "4 Wochen",
 }
 
 
@@ -312,6 +328,80 @@ def schwellen(opt):
     return sorted({int(zahl) for zahl in re.findall(r"\d+", str(roh))})
 
 
+EMAIL_MUSTER = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]{2,}")
+
+
+def bestaetigung_mailen(eintrag):
+    """Schickt dem Gast eine Bestaetigung, wenn er eine Adresse angegeben hat
+    und ein Postausgang eingerichtet ist. Scheitert der Versand, steht das im
+    Log - die Anmeldung selbst ist da laengst gespeichert."""
+    empfaenger = (eintrag.get("email") or "").strip()
+    opt = optionen()
+    server = (opt.get("smtp_server") or "").strip()
+    absender = (opt.get("smtp_absender") or opt.get("smtp_benutzer") or "").strip()
+    if not empfaenger or not server or not absender:
+        return
+
+    zeilen = [
+        f"Guten Tag {eintrag['name']},",
+        "",
+        f"vielen Dank für Ihre Anmeldung zur Veranstaltung „{opt['titel']}“.",
+        "",
+        "Ihre Angaben:",
+        f"  Personen: {eintrag['personen']}",
+    ]
+    essen = als_mengen(eintrag.get("essen"))
+    if essen:
+        zeilen.append("  Essen:    " + ", ".join(f"{m} {n}" for n, m in essen.items()))
+    getraenke = als_liste(eintrag.get("getraenke"))
+    if getraenke:
+        zeilen.append("  Getränke: " + ", ".join(getraenke))
+    if eintrag.get("anmerkung"):
+        zeilen.append(f"  Anmerkung: {eintrag['anmerkung']}")
+    zeilen.append("")
+    if opt.get("datum"):
+        wann = opt["datum"] + (f", ab {opt['uhrzeit']} Uhr" if opt.get("uhrzeit") else "")
+        zeilen.append(f"Wann: {wann}")
+    if opt.get("ort"):
+        zeilen.append(f"Wo:   {opt['ort']}")
+    adresse = (opt.get("oeffentliche_adresse") or "").rstrip("/")
+    if adresse:
+        zeilen += ["", "Ihre Anmeldung können Sie hier jederzeit einsehen:",
+                   f"{adresse}/danke/{eintrag['id']}"]
+    if opt.get("kontakt"):
+        zeilen += ["", f"Bei Fragen oder einer Absage: {opt['kontakt']}"]
+    # Unterschrift: die erste Zeile des Impressums ist der Veranstalter.
+    veranstalter = (opt.get("impressum") or "").strip().splitlines()
+    zeilen += ["", "Mit freundlichen Grüßen",
+               veranstalter[0].strip() if veranstalter else "Das Organisationsteam"]
+
+    nachricht = EmailMessage()
+    nachricht["Subject"] = f"Ihre Anmeldung: {opt['titel']}"
+    nachricht["From"] = absender
+    nachricht["To"] = empfaenger
+    nachricht.set_content("\n".join(zeilen))
+
+    port = int(opt.get("smtp_port") or 587)
+    art = (opt.get("smtp_verschluesselung") or "starttls").lower()
+    benutzer = (opt.get("smtp_benutzer") or "").strip()
+    passwort = opt.get("smtp_passwort") or ""
+    try:
+        if art == "ssl":
+            verbindung = smtplib.SMTP_SSL(server, port, timeout=20,
+                                          context=ssl.create_default_context())
+        else:
+            verbindung = smtplib.SMTP(server, port, timeout=20)
+        with verbindung:
+            if art == "starttls":
+                verbindung.starttls(context=ssl.create_default_context())
+            if benutzer:
+                verbindung.login(benutzer, passwort)
+            verbindung.send_message(nachricht)
+        print(f"[anmeldung] Bestätigung an {empfaenger} verschickt", flush=True)
+    except (smtplib.SMTPException, OSError) as fehler:
+        print(f"[anmeldung] Mail an {empfaenger} fehlgeschlagen: {fehler}", flush=True)
+
+
 def _nachbereiten(arbeit):
     """Sensor, Events und Nachrichten laufen im Hintergrund - der Gast soll
     nicht warten, bis Home Assistant geantwortet hat."""
@@ -364,9 +454,25 @@ def verwaltung_abschirmen():
         abort(404)
 
 
+# Statische Dateien einen Tag lang puffern lassen - Cloudflare und die
+# Browser holen CSS und Wappen dann nicht bei jedem Aufruf neu. Damit eine
+# neue Fassung trotzdem sofort ankommt, haengt an jeder Adresse die
+# Aenderungszeit der Datei.
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
+STATIC_DIR = Path(app.static_folder)
+
+
+def statisch(dateiname):
+    try:
+        stand = int((STATIC_DIR / dateiname).stat().st_mtime)
+    except OSError:
+        stand = 0
+    return url_for("static", filename=dateiname, v=stand)
+
+
 @app.context_processor
 def vorlagen_werte():
-    return {"ist_verwaltung": ueber_ingress()}
+    return {"ist_verwaltung": ueber_ingress(), "statisch": statisch}
 
 
 # ---------------------------- oeffentliche Seite ---------------------------
@@ -420,6 +526,8 @@ def anmelden():
 
     name = " ".join((request.form.get("name") or "").split())[:80]
     anmerkung = (request.form.get("anmerkung") or "").strip()[:500]
+    email = (request.form.get("email") or "").strip()[:120]
+    email_ungueltig = bool(email) and not EMAIL_MUSTER.fullmatch(email)
 
     fehler = None
     personen = 0
@@ -439,6 +547,11 @@ def anmelden():
             fehler = "Bitte tragen Sie einen Namen ein."
         elif personen < 1:
             fehler = "Bitte geben Sie mindestens eine Person an."
+        elif email_ungueltig:
+            fehler = (
+                "Die E-Mail-Adresse sieht nicht vollständig aus. "
+                "Bitte prüfen oder das Feld leer lassen."
+            )
         elif personen > opt["max_personen_pro_anmeldung"]:
             fehler = (
                 "Pro Anmeldung sind höchstens "
@@ -470,6 +583,7 @@ def anmelden():
                     "essen": essen,
                     "getraenke": getraenke,
                     "anmerkung": anmerkung,
+                    "email": email,
                 },
                 **stand,
             ),
@@ -483,6 +597,7 @@ def anmelden():
         "essen": essen,
         "getraenke": getraenke,
         "anmerkung": anmerkung,
+        "email": email,
         "zeit": datetime.now().astimezone().isoformat(timespec="seconds"),
     }
 
@@ -510,8 +625,9 @@ def anmelden():
 
 
 def _melden(eintrag, belegt_vorher, belegt_nachher, anzahl):
-    """Sensor schreiben, Event ausloesen, Nachricht schicken."""
+    """Sensor schreiben, Event ausloesen, Nachricht schicken, Mail an den Gast."""
     sensor_aktualisieren()
+    bestaetigung_mailen(eintrag)
     opt = optionen()
     gesamt = opt["plaetze_gesamt"]
     frei = max(0, gesamt - belegt_nachher)
@@ -557,6 +673,35 @@ def _melden(eintrag, belegt_vorher, belegt_nachher, anzahl):
                 f"{belegt_nachher} von {gesamt} Plätzen sind belegt "
                 f"(Schwelle {schwelle} erreicht). Noch {frei} frei."
             )
+
+
+@app.get("/impressum")
+def impressum():
+    stand = lage()
+    return render_template(
+        "seite.html",
+        ueberschrift="Impressum",
+        inhalt=stand["opt"].get("impressum") or "",
+        feldname="impressum",
+        **stand,
+    )
+
+
+@app.get("/datenschutz")
+def datenschutz():
+    stand = lage()
+    eigener_text = (stand["opt"].get("datenschutz") or "").strip()
+    if eigener_text:
+        return render_template(
+            "seite.html",
+            ueberschrift="Datenschutz",
+            inhalt=eigener_text,
+            feldname="datenschutz",
+            **stand,
+        )
+    # Ohne eigenen Text: die eingebaute Erklaerung, die genau beschreibt, was
+    # dieses Add-on tut. Den Verantwortlichen holt sie aus dem Impressum.
+    return render_template("datenschutz_vorlage.html", **stand)
 
 
 @app.get("/danke/<anmeldung_id>")
@@ -630,7 +775,7 @@ def csv_export():
     opt = stand["opt"]
     puffer = io.StringIO()
     schreiber = csv.writer(puffer, delimiter=";", lineterminator="\r\n")
-    kopf = ["Name", "Personen"] + opt["essen"] + opt["getraenke"] + ["Anmerkung", "Eingang"]
+    kopf = ["Name", "Personen"] + opt["essen"] + opt["getraenke"] + ["Anmerkung", "E-Mail", "Eingang"]
     schreiber.writerow(kopf)
     for a in sorted(stand["daten"]["anmeldungen"], key=lambda x: x.get("zeit", "")):
         gewaehlt_essen = als_mengen(a.get("essen"))
@@ -639,7 +784,7 @@ def csv_export():
             [a["name"], a["personen"]]
             + [gewaehlt_essen.get(g, 0) for g in opt["essen"]]
             + ["ja" if g in gewaehlt_trinken else "" for g in opt["getraenke"]]
-            + [a.get("anmerkung", ""), a.get("zeit", "")]
+            + [a.get("anmerkung", ""), a.get("email", ""), a.get("zeit", "")]
         )
     # BOM voranstellen, damit Excel die Umlaute erkennt
     inhalt = "﻿" + puffer.getvalue()
@@ -667,7 +812,9 @@ def main():
     oeffentlich = threading.Thread(
         target=serve,
         args=(app,),
-        kwargs={"host": "0.0.0.0", "port": PUBLIC_PORT, "threads": 8, "ident": None},
+        # 16 Threads: die Seite rechnet fast nichts, sie wartet hoechstens auf
+        # die Platte. Mehr Threads heisst mehr gleichzeitige Gaeste ohne Schlange.
+        kwargs={"host": "0.0.0.0", "port": PUBLIC_PORT, "threads": 16, "ident": None},
         daemon=True,
     )
     oeffentlich.start()

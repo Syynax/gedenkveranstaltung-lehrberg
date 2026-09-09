@@ -20,6 +20,9 @@
       <div style="font-size: 16px; color: var(--grau);">
         {{ eintrag.personen }} {% if eintrag.personen == 1 %}Person{% else %}Personen{% endif %}
       </div>
+      {% if eintrag.email %}
+      <div style="font-size: 15px; color: var(--grau-2);">Bestätigung an {{ eintrag.email }}</div>
+      {% endif %}
     </div>
 
     {% if eintrag.essen %}

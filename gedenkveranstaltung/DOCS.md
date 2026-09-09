@@ -82,6 +82,13 @@ nicht mehr erreichbar.
 | `benachrichtigung_dienst` | Notify-Dienst für Nachrichten, leer = aus |
 | `benachrichtigung_jede_anmeldung` | Nachricht bei jeder einzelnen Anmeldung |
 | `benachrichtigung_schwellen` | Belegte Plätze als Text, z. B. `60, 100`. Leer = aus |
+| `oeffentliche_adresse` | Adresse der Seite von außen, z. B. `https://anmeldung.example.de` — für Links in Mails und die Vorschau beim Teilen |
+| `impressum` | Anbieterkennzeichnung, Zeilen durch Zeilenumbruch. Erscheint unter /impressum und als Verantwortlicher im Datenschutz |
+| `datenschutz` | Eigener Datenschutztext. Leer = die eingebaute Erklärung |
+| `loeschfrist` | Wann die Daten nach der Veranstaltung gelöscht werden, für die Datenschutzerklärung |
+| `email_abfragen` | Optionales E-Mail-Feld im Formular anzeigen |
+| `smtp_server`, `smtp_port`, `smtp_verschluesselung` | Postausgang für Bestätigungsmails |
+| `smtp_benutzer`, `smtp_passwort`, `smtp_absender` | Zugangsdaten und Absenderadresse |
 
 Leere Felder werden auf der Seite weggelassen — es steht also nie ein leerer
 Platzhalter herum. Änderungen an den Optionen greifen nach dem Neustart des
@@ -201,6 +208,79 @@ Absage, damit jemand hinterhertelefonieren kann:
             Absage: {{ trigger.event.data.name }},
             {{ trigger.event.data.personen }} Personen.
 ```
+
+## Bestätigungsmail
+
+Wer im Formular eine E-Mail-Adresse angibt (freiwillig), bekommt eine
+Bestätigung mit seinen Angaben, Datum und Ort und dem persönlichen Link zu
+seiner Anmeldung. Dafür braucht das Add-on einen Postausgang:
+
+```yaml
+email_abfragen: true
+smtp_server: smtp.example.de
+smtp_port: 587
+smtp_verschluesselung: starttls
+smtp_benutzer: anmeldung@example.de
+smtp_passwort: "…"
+smtp_absender: anmeldung@example.de
+oeffentliche_adresse: https://anmeldung.example.de
+```
+
+* Bei den meisten Anbietern (GMX, web.de, Strato, IONOS, Gmail mit
+  App-Passwort) ist es `587` mit `starttls`. Manche wollen `465` mit `ssl`.
+* Bleibt `smtp_server` leer, wird keine Mail verschickt — das Feld im Formular
+  gibt es trotzdem, solange `email_abfragen` an ist. Wer beides nicht will,
+  schaltet `email_abfragen` aus.
+* Der Versand läuft im Hintergrund. Klappt er nicht, steht der Grund im Log;
+  die Anmeldung ist davon unabhängig gespeichert.
+* Die Adresse wird nur für diese eine Mail verwendet und steht in der
+  Verwaltung unter dem Namen sowie in der CSV.
+
+## Impressum und Datenschutz
+
+Beide Seiten sind über die Fußzeile jeder öffentlichen Seite erreichbar.
+
+* `impressum`: Vereinsname, Anschrift, Vertretung, Kontakt — eine Angabe je
+  Zeile. Die erste Zeile dient auch als Unterschrift in der Bestätigungsmail.
+* `/datenschutz` zeigt ohne weiteres Zutun eine **eingebaute Erklärung**, die
+  genau beschreibt, was dieses Add-on tut: welche Daten, wofür, Cloudflare als
+  Durchleiter, keine Cookies, lokale Schriften, Löschfrist, Rechte der
+  Betroffenen, Aufsichtsbehörde. Den Verantwortlichen holt sie aus dem
+  Impressum. Wer einen eigenen Text will, trägt ihn in `datenschutz` ein.
+* Die Schriften liegen im Add-on. Es wird nichts von Google nachgeladen — das
+  Landgericht München hat das 2022 ohne Einwilligung als Datenschutzverstoß
+  gewertet.
+
+Das ist kein Rechtsrat. Vor dem offiziellen Start sollte jemand darüber
+schauen — vor allem die Frage, ob der Verein (e.V.) oder die Feuerwehr als
+gemeindliche Einrichtung die Seite betreibt. Davon hängen Impressum und
+zuständige Aufsichtsbehörde ab.
+
+## Andrang und Ausfallsicherheit
+
+Die Seite rechnet fast nichts und hält Anmeldungen in einer kleinen Datei —
+für einen Dorfstart mit ein paar hundert Besuchern in der ersten Stunde ist
+das reichlich. Was das Add-on dafür tut:
+
+* **Watchdog**: Der Supervisor ruft die Startseite regelmäßig auf und startet
+  das Add-on neu, wenn sie nicht mehr antwortet.
+* **Cloudflare puffert** CSS, Schriften und Bilder einen Tag lang. Nur die
+  Seiten selbst gehen bis zum Home Assistant durch.
+* **Überbuchung ist ausgeschlossen**: Die letzten Plätze werden unter einer
+  Sperre vergeben; gleichzeitige Anmeldungen können nicht über die
+  Gesamtzahl hinaus.
+* Sensor, Events, Nachrichten und Mails laufen im Hintergrund — der Gast
+  wartet nie auf Home Assistant.
+
+Was du zusätzlich tun kannst:
+
+* Am Starttag **kein Home-Assistant-Update** und keinen Neustart einplanen.
+* Bei Cloudflare unter *Security → WAF → Rate limiting rules* eine Regel
+  anlegen, die pro IP mehr als etwa 10 Anmeldungen (POST auf `/anmeldung`)
+  in 10 Sekunden blockt. Das hält Skripte fern, ohne echte Gäste zu stören.
+* **Backups** in Home Assistant einschalten (Einstellungen → System →
+  Backups → automatisch). Die Anmeldungen liegen in `/data` des Add-ons und
+  sind damit im Backup.
 
 ## Sensor
 

@@ -1,5 +1,24 @@
 # Änderungen
 
+## 1.5.0
+
+- **Bestätigungsmail**: optionales E-Mail-Feld im Formular; wer es ausfüllt,
+  bekommt Zusammenfassung, Termin und seinen persönlichen Link. Postausgang
+  über die neuen `smtp_*`-Optionen.
+- **Impressum und Datenschutz** als eigene Seiten mit Fußzeile. Der
+  Datenschutztext ist eingebaut und beschreibt genau, was das Add-on tut;
+  den Verantwortlichen holt er aus `impressum`.
+- **Schriften liegen im Add-on**, kein Nachladen von Google mehr.
+- **Watchdog**: Home Assistant startet das Add-on neu, wenn die Seite nicht
+  mehr antwortet. Statische Dateien werden einen Tag lang gepuffert, mit
+  Versionsstempel für sofortige Updates. 16 statt 8 Bearbeitungsthreads.
+- **Vorschau beim Teilen** (WhatsApp, Signal): Titel, Beschreibung und
+  Wappenbild über Open-Graph-Angaben. Dafür `oeffentliche_adresse` setzen.
+- Aus der Durchsicht der Live-Seite: Fokusreihenfolge auf dem Handy stimmt
+  wieder mit der Anzeige überein, Kontraste von Hilfetexten und Rändern
+  angehoben, „Zurück“ als 44-Pixel-Klickfläche, toter Skriptrest entfernt,
+  Halbgeviertstrich statt Geviertstrich.
+
 ## 1.4.1
 
 - Der Ablauf verträgt jetzt auch einen Copy-Paste aus der Dokumentation:
