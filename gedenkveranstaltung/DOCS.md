@@ -89,6 +89,7 @@ nicht mehr erreichbar.
 | `email_abfragen` | Optionales E-Mail-Feld im Formular anzeigen |
 | `smtp_server`, `smtp_port`, `smtp_verschluesselung` | Postausgang für Bestätigungsmails |
 | `smtp_benutzer`, `smtp_passwort`, `smtp_absender` | Zugangsdaten und Absenderadresse |
+| `smtp_antwort_an` | Adresse für Antworten der Gäste, falls die Absenderdomain kein Postfach hat |
 
 Leere Felder werden auf der Seite weggelassen — es steht also nie ein leerer
 Platzhalter herum. Änderungen an den Optionen greifen nach dem Neustart des
@@ -235,6 +236,34 @@ oeffentliche_adresse: https://anmeldung.example.de
   die Anmeldung ist davon unabhängig gespeichert.
 * Die Adresse wird nur für diese eine Mail verwendet und steht in der
   Verwaltung unter dem Namen sowie in der CSV.
+* `smtp_antwort_an` setzen, wenn die Absenderdomain kein eigenes Postfach hat.
+  Antworten der Gäste gehen dann an diese Adresse statt ins Leere.
+
+### Versanddienst statt eigenem Mailserver
+
+Vom Heimanschluss aus lassen sich Mails praktisch nicht zustellen: Die IP steht
+in der Spamhaus-PBL, ein passender Reverse-DNS-Eintrag fehlt, und viele
+Anbieter sperren Port 25 ausgehend. Es gibt zwar ein gepflegtes
+Mailserver-Add-on für Home Assistant (Postfix/Dovecot von Erik73), das
+empfiehlt für den Ausgang aber selbst einen externen Smarthost.
+
+Der einfache Weg ist ein Versanddienst wie SMTP2GO, Brevo oder der
+Mailserver des Domain-Hosters. Beispiel SMTP2GO:
+
+```yaml
+smtp_server: mail.smtp2go.com
+smtp_port: 587
+smtp_verschluesselung: starttls
+smtp_benutzer: "<SMTP-Benutzer aus dem SMTP2GO-Konto>"
+smtp_passwort: "<zugehöriges Passwort>"
+smtp_absender: anmeldung@eure-domain.de
+smtp_antwort_an: vorstand@echtes-postfach.de
+```
+
+Wichtig: Die Absenderdomain muss beim Dienst **verifiziert** sein (ein paar
+DNS-Einträge für DKIM). Ohne das greift ein vorhandener DMARC-Eintrag und die
+Mails landen im Spam. Blockiert der Anschluss Port 587, geht bei SMTP2GO auch
+Port 2525.
 
 ## Impressum und Datenschutz
 

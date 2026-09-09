@@ -76,6 +76,7 @@ STANDARD_OPTIONEN = {
     "smtp_benutzer": "",
     "smtp_passwort": "",
     "smtp_absender": "",
+    "smtp_antwort_an": "",
     "loeschfrist": "4 Wochen",
 }
 
@@ -379,6 +380,11 @@ def bestaetigung_mailen(eintrag):
     nachricht["Subject"] = f"Ihre Anmeldung: {opt['titel']}"
     nachricht["From"] = absender
     nachricht["To"] = empfaenger
+    # Wenn die Absenderdomain kein Postfach hat, laufen Antworten ins Leere.
+    # Antwort-an lenkt sie auf eine Adresse, die wirklich jemand liest.
+    antwort_an = (opt.get("smtp_antwort_an") or "").strip()
+    if antwort_an:
+        nachricht["Reply-To"] = antwort_an
     nachricht.set_content("\n".join(zeilen))
 
     port = int(opt.get("smtp_port") or 587)

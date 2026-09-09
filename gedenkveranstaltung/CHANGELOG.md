@@ -1,5 +1,10 @@
 # Änderungen
 
+## 1.5.2
+
+- Neue Option `smtp_antwort_an`: Antworten der Gäste gehen an eine echte
+  Adresse, auch wenn die Absenderdomain kein Postfach hat.
+
 ## 1.5.1
 
 - Nach dem Lasttest: bis zu 500 gleichzeitige Verbindungen statt 100 — mehr
