@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block titel %}Noch nicht freigeschaltet – {{ opt.titel }}{% endblock %}
+{% block beschreibung %}Diese Seite ist derzeit nicht öffentlich erreichbar.{% endblock %}
+
+{# Waehrend der Testphase gibt es weder Impressum noch Datenschutz zu sehen -
+   die Fusszeile wuerde nur wieder hierher fuehren. #}
+{% block fussleiste %}{% endblock %}
+
+{% block inhalt %}
+<main class="seite seite--schmal">
+
+  <div class="kopf">
+    <h1 class="klein">Noch nicht freigeschaltet</h1>
+  </div>
+
+  <div class="rechtstext">
+    <p>
+      Diese Seite wird gerade vorbereitet und ist noch nicht öffentlich
+      erreichbar. Bitte schauen Sie später noch einmal vorbei.
+    </p>
+    {% if opt.kontakt %}
+    <p>Bei Fragen erreichen Sie uns unter {{ opt.kontakt }}.</p>
+    {% endif %}
+  </div>
+
+  {% if adresse %}
+  <div class="meldung meldung--info">
+    <span>Ihre Adresse: <b>{{ adresse }}</b></span>
+  </div>
+  {% endif %}
+
+</main>
+{% endblock %}

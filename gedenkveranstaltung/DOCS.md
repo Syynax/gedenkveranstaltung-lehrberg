@@ -106,6 +106,7 @@ nicht mehr erreichbar.
 | `smtp_server`, `smtp_port`, `smtp_verschluesselung` | Postausgang für Bestätigungsmails |
 | `smtp_benutzer`, `smtp_passwort`, `smtp_absender` | Zugangsdaten und Absenderadresse |
 | `smtp_antwort_an` | Adresse für Antworten der Gäste, falls die Absenderdomain kein Postfach hat |
+| `nur_fuer_ip` | Zum Testen: Gästeseite nur für diese Adressen sichtbar. Leer = für alle |
 
 Leere Felder werden auf der Seite weggelassen — es steht also nie ein leerer
 Platzhalter herum. Änderungen an den Optionen greifen nach dem Neustart des
@@ -116,11 +117,71 @@ Löschen eines Eintrags ändert **nicht** die bereits gespeicherten Anmeldungen:
 alte Bestellungen behalten den alten Namen und tauchen dann nicht mehr in den
 Summen auf. Vor dem ersten Aushang die Liste also festzurren.
 
+## Seite zum Testen sperren
+
+Solange die Seite noch nicht ausgehängt ist, kann man sie hinter der Option
+`nur_fuer_ip` verstecken: Steht dort etwas, bekommt **nur** diese Adresse die
+Gästeseite zu sehen, alle anderen eine Seite „Noch nicht freigeschaltet"
+(Status 503). Leeres Feld heißt: normal für alle offen.
+
+```yaml
+nur_fuer_ip: 84.123.45.67
+```
+
+Mehrere Einträge durch Komma oder Leerzeichen trennen. Neben einzelnen
+Adressen gehen auch ganze Bereiche in CIDR-Schreibweise, IPv4 wie IPv6:
+
+```yaml
+nur_fuer_ip: 84.123.45.67, 91.0.0.0/8, 2001:db8::/32
+```
+
+Das ist praktisch, weil sich die Adresse am Hausanschluss bei jeder
+Zwangstrennung ändert — mit dem passenden Bereich muss man nicht jedes Mal
+nachtragen. Ein Eintrag, der keine Adresse ist, wird übergangen und im
+Add-on-Protokoll vermerkt; die übrigen gelten weiter.
+
+**Die eigene Adresse herausfinden:** Die Sperrseite zeigt sie unten an. Also:
+Option auf einen Platzhalter wie `0.0.0.0` setzen, **Add-on neu starten**, die
+Seite von außen über die öffentliche Adresse aufrufen, den angezeigten Wert
+eintragen und wieder neu starten. Jeder abgewiesene Zugriff steht außerdem mit
+Adresse und Pfad im Add-on-Protokoll.
+
+> Wie alle Optionen greift auch diese erst nach einem Neustart des Add-ons —
+> zwischen Speichern und Wirkung liegt immer ein Neustart.
+
+Zu beachten:
+
+* **Aus dem Heimnetz bleibt die Seite offen.** Gesperrt wird nur, was von außen
+  durch den Tunnel kommt. Ein Aufruf im eigenen WLAN über
+  `http://homeassistant.local:8080` zeigt also weiter die normale Seite — zum
+  Prüfen der Sperre muss man über die öffentliche Adresse gehen, etwa vom Handy
+  im Mobilfunknetz.
+* **Der Watchdog läuft weiter.** Home Assistant prüft die Startseite
+  regelmäßig; diese Prüfung kommt von innen und wird nicht gesperrt. Sonst
+  würde das Add-on während der Testphase dauernd neu gestartet.
+* **Die Verwaltung ist nie gesperrt.** Sie läuft über Home Assistant und bleibt
+  auch dann erreichbar, wenn man sich mit einem Tippfehler von der Gästeseite
+  aussperrt.
+* **Impressum und Datenschutz sind mitgesperrt.** In der Testphase ist die
+  Seite nicht öffentlich angeboten, das ist also in Ordnung — vor dem Aushang
+  muss die Option aber leer sein.
+* **Das ist eine Testsperre, kein Schutzwall.** Die Adresse kommt aus der
+  Kopfzeile `Cf-Connecting-Ip`, die Cloudflare setzt. Wer das Add-on im
+  Heimnetz direkt am Tunnel vorbei erreicht, kann diese Kopfzeile selbst
+  setzen und damit vorbei. Für „die Seite soll noch niemand sehen" reicht es,
+  für echten Zugriffsschutz nicht.
+
 ## Verwaltung
 
 * **CSV herunterladen** — Semikolon-getrennt und mit BOM, öffnet sich in Excel
   ohne Umlautsalat. Je Gericht eine Spalte mit der Stückzahl, je Getränk eine
   Spalte mit `ja` wo angekreuzt.
+
+  Beginnt ein Name oder eine Anmerkung mit `=`, `+`, `-` oder `@`, steht in der
+  Datei ein Hochkomma davor: `'- Rollstuhl`. Das ist Absicht — Excel würde eine
+  solche Zelle sonst als Formel ausrechnen, und was dort steht, tippen die
+  Gäste. Das Hochkomma bleibt beim Öffnen sichtbar und gehört nicht zur
+  Angabe.
 * **Anmeldung schließen** — sofort wirksam, jederzeit wieder zu öffnen. Der
   Schalter ist unabhängig von der Option `anmeldung_offen`.
 * **Löschen** — entfernt eine Anmeldung endgültig. Für Absagen ist das

@@ -7,6 +7,7 @@ Zwei Server im selben Prozess:
 
 import csv
 import io
+import ipaddress
 import json
 import os
 import re
@@ -78,6 +79,7 @@ STANDARD_OPTIONEN = {
     "smtp_absender": "",
     "smtp_antwort_an": "",
     "loeschfrist": "4 Wochen",
+    "nur_fuer_ip": "",
 }
 
 
@@ -530,15 +532,25 @@ def _beschreibung(eintrag):
 app = Flask(__name__)
 
 
+# Ingress-Pfade sehen aus wie /api/hassio_ingress/<token>. Alles andere wird
+# verworfen: ein "//fremde-seite.example" im Header landete sonst in jedem
+# url_for und machte aus einem redirect() eine Weiterleitung nach auswaerts.
+INGRESS_PFAD = re.compile(r"/[A-Za-z0-9._~-]+(?:/[A-Za-z0-9._~-]+)*/?")
+
+
 class IngressPfad:
-    """Home Assistant schickt den Ingress-Prefix als Header mit."""
+    """Home Assistant schickt den Ingress-Prefix als Header mit. Ausgewertet
+    wird er nur auf dem Ingress-Port - auf der oeffentlichen Seite kommt der
+    Header von aussen und laesst sich frei erfinden."""
 
     def __init__(self, wsgi_app):
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        prefix = environ.get("HTTP_X_INGRESS_PATH")
-        if prefix:
+        prefix = environ.get("HTTP_X_INGRESS_PATH") or ""
+        if environ.get("SERVER_PORT") == str(INGRESS_PORT) and INGRESS_PFAD.fullmatch(
+            prefix
+        ):
             environ["SCRIPT_NAME"] = prefix.rstrip("/")
         return self.wsgi_app(environ, start_response)
 
@@ -550,11 +562,101 @@ def ueber_ingress():
     return request.environ.get("SERVER_PORT") == str(INGRESS_PORT)
 
 
+def besucher_adresse():
+    """Adresse des Gastes. Hinter dem Cloudflare-Tunnel steht in remote_addr nur
+    der Tunnel selbst - die echte Adresse kommt als Kopfzeile. Cf-Connecting-Ip
+    setzt Cloudflare selbst; aus X-Forwarded-For zaehlt der letzte Eintrag,
+    alles davor darf der Absender frei erfinden."""
+    adresse = (request.headers.get("Cf-Connecting-Ip") or "").strip()
+    if not adresse:
+        kette = [
+            teil.strip()
+            for teil in (request.headers.get("X-Forwarded-For") or "").split(",")
+            if teil.strip()
+        ]
+        adresse = kette[-1] if kette else ""
+    return adresse or request.remote_addr or ""
+
+
+def ueber_tunnel():
+    """Kam die Anfrage von aussen? Dann hat der Tunnel eine Kopfzeile mit der
+    Adresse des Gastes gesetzt. Ohne die stammt sie aus dem Haus - aus dem
+    Heimnetz oder vom Supervisor."""
+    return bool(
+        (request.headers.get("Cf-Connecting-Ip") or "").strip()
+        or (request.headers.get("X-Forwarded-For") or "").strip()
+    )
+
+
+def adressnetze(text):
+    """Die Option in Netze uebersetzen. Eine einzelne Adresse wird dabei zu
+    ihrem eigenen Netz, damit beides gleich geprueft werden kann."""
+    netze = []
+    for teil in re.split(r"[,;\s]+", str(text or "")):
+        if not teil:
+            continue
+        try:
+            netze.append(ipaddress.ip_network(teil, strict=False))
+        except ValueError:
+            print(
+                f"[anmeldung] nur_fuer_ip: '{teil}' ist keine Adresse und wird "
+                "uebergangen",
+                flush=True,
+            )
+    return netze
+
+
+def adresse_erlaubt(adresse, netze):
+    if not netze:
+        return True
+    try:
+        wer = ipaddress.ip_address(adresse)
+    except ValueError:
+        return False
+    return any(wer in netz for netz in netze)
+
+
 @app.before_request
 def verwaltung_abschirmen():
     """Die Verwaltung ist ausschliesslich ueber Home Assistant erreichbar."""
     if request.path.startswith("/verwaltung") and not ueber_ingress():
         abort(404)
+
+
+@app.before_request
+def testsperre():
+    """Zum Testen vor dem Aushang: die oeffentliche Seite nur fuer bestimmte
+    Adressen. Die Verwaltung ueber Ingress bleibt immer offen, sonst sperrt man
+    sich mit einem Tippfehler selbst aus.
+
+    Das ist eine Testsperre, kein Schutzwall: wer das Add-on am Tunnel vorbei
+    direkt erreicht, kann die Kopfzeile Cf-Connecting-Ip selbst setzen."""
+    if ueber_ingress() or request.endpoint == "static":
+        return None
+    # Anfragen ohne Weiterleitungs-Kopfzeile kommen aus dem Haus: der Watchdog
+    # des Supervisors (config.yaml) und Aufrufe aus dem Heimnetz. Die bleiben
+    # offen - sonst bekaeme der Watchdog dauerhaft eine 503 und startete das
+    # Add-on womoeglich im Kreis neu, und aus dem Heimnetz liesse sich die
+    # Seite waehrend der Testphase gar nicht mehr ansehen.
+    if not ueber_tunnel():
+        return None
+    opt = optionen()
+    netze = adressnetze(opt["nur_fuer_ip"])
+    if not netze:
+        return None
+    adresse = besucher_adresse()
+    if adresse_erlaubt(adresse, netze):
+        return None
+    print(
+        f"[anmeldung] Testsperre: {adresse or 'unbekannte Adresse'} abgewiesen "
+        f"({request.path})",
+        flush=True,
+    )
+    return (
+        render_template("gesperrt.html", opt=opt, adresse=adresse),
+        503,
+        {"Retry-After": "3600"},
+    )
 
 
 # Statische Dateien einen Tag lang puffern lassen - Cloudflare und die
@@ -904,9 +1006,9 @@ def datenschutz():
 @app.get("/danke/<anmeldung_id>")
 def danke(anmeldung_id):
     stand = lage()
-    eintrag = next(
-        (a for a in stand["daten"]["anmeldungen"] if a["id"] == anmeldung_id), None
-    )
+    # ueber _suchen, weil das auch mit Altbestaenden ohne id zurechtkommt -
+    # ein direktes a["id"] warf dort einen KeyError und damit einen 500er.
+    eintrag = _suchen(stand["daten"], anmeldung_id)
     if eintrag is None:
         return redirect(url_for("start"))
     return render_template("danke.html", eintrag=eintrag, **stand)
@@ -939,11 +1041,9 @@ def verwaltung():
 def loeschen(anmeldung_id):
     with _lock:
         daten = _lesen()
-        entfernt = next(
-            (a for a in daten["anmeldungen"] if a["id"] == anmeldung_id), None
-        )
+        entfernt = _suchen(daten, anmeldung_id)
         daten["anmeldungen"] = [
-            a for a in daten["anmeldungen"] if a["id"] != anmeldung_id
+            a for a in daten["anmeldungen"] if a.get("id") != anmeldung_id
         ]
         _schreiben(daten)
 
@@ -969,6 +1069,17 @@ def umschalten():
     return redirect(url_for("verwaltung"))
 
 
+# Excel und LibreOffice rechnen eine Zelle als Formel aus, wenn sie mit =, +,
+# - oder @ beginnt. Name und Anmerkung tippen die Gaeste selbst - ein
+# vorangestelltes Hochkomma macht daraus wieder gewoehnlichen Text.
+CSV_FORMELZEICHEN = ("=", "+", "-", "@", "\t", "\r", "\n")
+
+
+def _csv_feld(wert):
+    text = "" if wert is None else str(wert)
+    return "'" + text if text.startswith(CSV_FORMELZEICHEN) else text
+
+
 @app.get("/verwaltung/anmeldungen.csv")
 def csv_export():
     stand = lage()
@@ -983,13 +1094,15 @@ def csv_export():
     for a in sorted(stand["daten"]["anmeldungen"], key=lambda x: x.get("zeit", "")):
         gewaehlt_essen = als_mengen(a.get("essen"))
         gewaehlt_trinken = als_liste(a.get("getraenke"))
-        schreiber.writerow(
-            ["abgesagt" if a.get("abgesagt") else "angemeldet", a["name"], a["personen"]]
+        zeile = (
+            ["abgesagt" if a.get("abgesagt") else "angemeldet",
+             a.get("name", ""), a.get("personen", 0)]
             + [gewaehlt_essen.get(g, 0) for g in opt["essen"]]
             + ["ja" if g in gewaehlt_trinken else "" for g in opt["getraenke"]]
             + [a.get("anmerkung", ""), a.get("email", ""), a.get("zeit", ""),
                a.get("abgesagt", "")]
         )
+        schreiber.writerow([_csv_feld(f) for f in zeile])
     # BOM voranstellen, damit Excel die Umlaute erkennt
     inhalt = "﻿" + puffer.getvalue()
     return Response(

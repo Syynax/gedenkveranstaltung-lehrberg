@@ -1,5 +1,5 @@
 name: Gedenkveranstaltung Anmeldung
-version: "1.6.0"
+version: "1.7.0"
 slug: gedenkveranstaltung
 description: Anmeldeseite mit begrenzter Platzzahl für eine Gedenkveranstaltung
 arch:
@@ -73,6 +73,7 @@ options:
   smtp_absender: ""
   smtp_antwort_an: ""
   loeschfrist: 4 Wochen
+  nur_fuer_ip: ""
 
 schema:
   untertitel: str?
@@ -108,3 +109,4 @@ schema:
   smtp_absender: str?
   smtp_antwort_an: str?
   loeschfrist: str?
+  nur_fuer_ip: str?

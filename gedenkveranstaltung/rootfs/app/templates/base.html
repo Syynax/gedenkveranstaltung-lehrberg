@@ -25,6 +25,7 @@
 </head>
 <body>
 {% block inhalt %}{% endblock %}
+{% block fussleiste %}
 {% if not ist_verwaltung %}
 <footer class="fussleiste">
   <a href="{{ url_for('impressum') }}">Impressum</a>
@@ -32,5 +33,6 @@
   <a href="{{ url_for('datenschutz') }}">Datenschutz</a>
 </footer>
 {% endif %}
+{% endblock %}
 </body>
 </html>

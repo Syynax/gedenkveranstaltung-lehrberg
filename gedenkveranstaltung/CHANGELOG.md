@@ -1,5 +1,28 @@
 # Änderungen
 
+## 1.7.0
+
+- Neue Option `nur_fuer_ip`: Zum Testen vor dem Aushang ist die Gästeseite nur
+  noch für die eingetragenen Adressen sichtbar, alle anderen bekommen „Noch
+  nicht freigeschaltet". Einzelne Adressen oder ganze Bereiche, IPv4 wie IPv6.
+  Die Sperrseite zeigt die eigene Adresse an, damit man sie eintragen kann.
+  Gesperrt wird nur, was von außen durch den Tunnel kommt — die Verwaltung,
+  das Heimnetz und der Watchdog von Home Assistant bleiben erreichbar.
+- Sicherheitslücke in der Verwaltung geschlossen: Ein Gästename mit
+  Anführungszeichen konnte aus der Löschabfrage ausbrechen und beliebiges
+  JavaScript im Browser der Orga ausführen. Der Name wird jetzt als Attribut
+  übergeben statt in den Skripttext geschrieben.
+- Die Kopfzeile `X-Ingress-Path` wird nur noch auf dem Ingress-Port und nur als
+  einfacher Pfad ausgewertet. Vorher ließ sich damit von außen eine fremde
+  Adresse in alle Links der Seite schieben.
+- Der CSV-Export entschärft Formeln: Eine Zelle, die mit `=`, `+`, `-` oder `@`
+  beginnt, bekommt ein Hochkomma davor. Ein Gästename wie `=HYPERLINK(…)` wurde
+  sonst beim Öffnen der Datei in Excel ausgeführt.
+- waitress von 3.0.0 auf 3.0.2. In 3.0.0 stecken zwei Schwachstellen
+  (CVE-2024-49768, CVE-2024-49769), und der Port hängt öffentlich am Tunnel.
+- Ein Altbestand ohne `id` führt nicht mehr zum Serverfehler auf der
+  Bestätigungsseite und in der Verwaltung.
+
 ## 1.6.0
 
 - **Selbst ändern und absagen**: Die Bestätigungsseite führt jetzt zu einem
