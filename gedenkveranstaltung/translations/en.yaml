@@ -17,7 +17,7 @@ configuration:
     description: e.g. "Feuerwehrgerätehaus Lehrberg".
   text:
     name: "Event: invitation text"
-    description: Body text on the start page. Blank lines start new paragraphs.
+    description: Body text on the start page. A vertical bar starts a new paragraph.
   ablauf:
     name: "Event: programme"
     description: >-

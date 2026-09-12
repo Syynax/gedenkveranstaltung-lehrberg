@@ -98,7 +98,7 @@
   <div class="start__haupt">
 
     {% if opt.text %}
-    <div class="start__text">{{ teile.absaetze(opt.text) }}</div>
+    <div class="start__text">{{ teile.absaetze(opt.text | zeilen) }}</div>
     {% endif %}
 
     {% if ablauf %}

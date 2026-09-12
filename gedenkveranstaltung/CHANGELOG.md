@@ -1,5 +1,13 @@
 # Änderungen
 
+## 1.10.1
+
+- Im Einladungstext beginnt ein senkrechter Strich einen neuen Absatz, wie
+  schon beim Impressum. Im einzeiligen Feld von Home Assistant ließen sich
+  sonst keine Absätze setzen, und der Text stand als ein Block da.
+- Neuer Standardtext: nicht mehr „zum Jahrestag“, weil die Veranstaltung
+  nicht am Tag selbst stattfindet, und mit dem Hinweis auf die Uniform.
+
 ## 1.10.0
 
 - Die Einstellungen sind nach Gruppen sortiert: Veranstaltung, Anmeldung,

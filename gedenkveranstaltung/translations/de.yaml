@@ -17,7 +17,7 @@ configuration:
     description: z. B. „Feuerwehrgerätehaus Lehrberg“.
   text:
     name: "Veranstaltung: Einladungstext"
-    description: Der Fließtext auf der Startseite. Leerzeilen ergeben Absätze.
+    description: Der Fließtext auf der Startseite. Ein senkrechter Strich beginnt einen neuen Absatz.
   ablauf:
     name: "Veranstaltung: Ablauf"
     description: >-

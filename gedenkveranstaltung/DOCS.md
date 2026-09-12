@@ -102,7 +102,7 @@ Klammern braucht man nur in der YAML-Ansicht.
 | Datum (`datum`) | Frei formulierbar, z. B. `Samstag, 3. Oktober 2026` |
 | Beginn (`uhrzeit`) | Z. B. `9:30` — wird als `ab 9:30 Uhr` angezeigt |
 | Ort (`ort`) | Z. B. `Feuerwehrgerätehaus Lehrberg` |
-| Einladungstext (`text`) | Fließtext. Leerzeilen ergeben Absätze |
+| Einladungstext (`text`) | Fließtext. Ein senkrechter Strich beginnt einen neuen Absatz |
 | Ablauf (`ablauf`) | Programm, siehe oben. Leer = kein Ablauf |
 | Ansprechpartner (`kontakt`) | Name und Telefonnummer für Rückfragen |
 
