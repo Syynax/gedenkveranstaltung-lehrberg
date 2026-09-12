@@ -1,5 +1,9 @@
 # Änderungen
 
+## 1.10.3
+
+- Die Vorschläge im Anmerkungsfeld sind raus. Das Feld ist jetzt leer.
+
 ## 1.10.2
 
 - Der Ablauf erkennt Uhrzeiten jetzt an ihrer Form. Bisher galt jedes kurze

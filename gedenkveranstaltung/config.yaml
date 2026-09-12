@@ -1,5 +1,5 @@
 name: Gedenkveranstaltung Anmeldung
-version: "1.10.2"
+version: "1.10.3"
 slug: gedenkveranstaltung
 description: Anmeldeseite mit begrenzter Platzzahl für eine Gedenkveranstaltung
 arch:
