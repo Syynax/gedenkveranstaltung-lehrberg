@@ -111,10 +111,11 @@ nicht mehr erreichbar.
 | `benachrichtigung_jede_anmeldung` | Nachricht bei jeder einzelnen Anmeldung |
 | `benachrichtigung_schwellen` | Belegte Plätze als Text, z. B. `60, 100`. Leer = aus |
 | `oeffentliche_adresse` | Adresse der Seite von außen, z. B. `https://anmeldung.example.de` — für Links in Mails und die Vorschau beim Teilen |
-| `impressum` | Anbieterkennzeichnung, Zeilen durch Zeilenumbruch. Erscheint unter /impressum und als Verantwortlicher im Datenschutz |
+| `impressum` | Anbieterkennzeichnung. Ein senkrechter Strich trennt die Zeilen. Erscheint unter /impressum und als Verantwortlicher im Datenschutz |
 | `datenschutz` | Eigener Datenschutztext. Leer = die eingebaute Erklärung |
+| `veranstalter` | Name unter der Bestätigungsmail, z. B. `Freiwillige Feuerwehr Lehrberg` |
 | `loeschfrist` | Wann die Daten nach der Veranstaltung gelöscht werden, für die Datenschutzerklärung |
-| `email_abfragen` | Optionales E-Mail-Feld im Formular anzeigen |
+| `email_abfragen` | E-Mail-Feld im Formular anzeigen. Angeschaltet ist es ein Pflichtfeld |
 | `smtp_server`, `smtp_port`, `smtp_verschluesselung` | Postausgang für Bestätigungsmails |
 | `smtp_benutzer`, `smtp_passwort`, `smtp_absender` | Zugangsdaten und Absenderadresse |
 | `smtp_antwort_an` | Adresse für Antworten der Gäste, falls die Absenderdomain kein Postfach hat |
@@ -311,9 +312,11 @@ Absage, damit jemand hinterhertelefonieren kann:
 
 ## Bestätigungsmail
 
-Wer im Formular eine E-Mail-Adresse angibt (freiwillig), bekommt eine
-Bestätigung mit seinen Angaben, Datum und Ort und dem persönlichen Link zu
-seiner Anmeldung. Dafür braucht das Add-on einen Postausgang:
+Die E-Mail-Adresse ist ein Pflichtfeld, solange `email_abfragen` an ist.
+Jeder Gast bekommt damit eine Bestätigung mit seinen Angaben, Datum und Ort
+und den persönlichen Links zu seiner Anmeldung, und ihr könnt alle erreichen,
+falls die Veranstaltung selbst verschoben werden muss. Dafür braucht das
+Add-on einen Postausgang:
 
 ```yaml
 email_abfragen: true
@@ -337,6 +340,12 @@ oeffentliche_adresse: https://anmeldung.example.de
   Verwaltung unter dem Namen sowie in der CSV.
 * `smtp_antwort_an` setzen, wenn die Absenderdomain kein eigenes Postfach hat.
   Antworten der Gäste gehen dann an diese Adresse statt ins Leere.
+* Die Mail geht als Text **und** als gesetzte HTML-Fassung raus. Beide kommen
+  aus derselben Quelle; wessen Programm kein HTML anzeigt, sieht denselben
+  Inhalt als Text. Geladen wird dabei nichts nach, auch keine Bilder.
+* Unter der Mail steht `veranstalter`. Ist das Feld leer, wird die erste Zeile
+  des Impressums genommen, aber nur wenn sie kurz genug für einen Namen ist —
+  sonst steht dort „Das Organisationsteam“.
 
 ### Versanddienst statt eigenem Mailserver
 
@@ -368,8 +377,11 @@ Port 2525.
 
 Beide Seiten sind über die Fußzeile jeder öffentlichen Seite erreichbar.
 
-* `impressum`: Vereinsname, Anschrift, Vertretung, Kontakt — eine Angabe je
-  Zeile. Die erste Zeile dient auch als Unterschrift in der Bestätigungsmail.
+* `impressum`: Vereinsname, Anschrift, Vertretung, Kontakt. Das Feld in der
+  Oberfläche ist einzeilig, deshalb trennt ein senkrechter Strich die Zeilen:
+  `Freiwillige Feuerwehr Lehrberg e. V. | Gartenstraße 3 | 91611 Lehrberg`.
+  Haltet es kurz — Haftungsausschlüsse aus einem Impressum-Generator gehören
+  nicht hierher, sie stehen sonst mit auf der Seite.
 * `/datenschutz` zeigt ohne weiteres Zutun eine **eingebaute Erklärung**, die
   genau beschreibt, was dieses Add-on tut: welche Daten, wofür, Cloudflare als
   Durchleiter, keine Cookies, lokale Schriften, Löschfrist, Rechte der

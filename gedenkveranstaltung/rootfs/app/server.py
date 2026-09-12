@@ -16,6 +16,7 @@ import smtplib
 import ssl
 import threading
 from email.message import EmailMessage
+from html import escape
 import urllib.error
 import urllib.request
 from datetime import datetime
@@ -70,6 +71,7 @@ STANDARD_OPTIONEN = {
     "oeffentliche_adresse": "",
     "impressum": "",
     "datenschutz": "",
+    "veranstalter": "",
     "email_abfragen": True,
     "smtp_server": "",
     "smtp_port": 587,
@@ -361,10 +363,241 @@ BETREFFE = {
 }
 
 
+def veranstalter_name(opt):
+    """Der Name unter der Mail.
+
+    Frueher stand hier die erste Zeile des Impressums. Das Feld in der
+    Add-on-Oberflaeche ist aber einzeilig, also war "die erste Zeile" das ganze
+    Impressum samt Haftungsausschluss - und genau so stand es unter jeder Mail.
+    Jetzt gibt es ein eigenes Feld; das Impressum ist nur noch der Rueckfall,
+    und auch dort zaehlt nur der erste Abschnitt, und der nur, solange er kurz
+    genug ist, um ein Name zu sein.
+    """
+    name = (opt.get("veranstalter") or "").strip()
+    if name:
+        return name
+    teile = [t for t in zeilen(opt.get("impressum")).splitlines() if t]
+    if teile and len(teile[0]) <= 60:
+        return teile[0]
+    return "Das Organisationsteam"
+
+
+def _mail_inhalt(opt, eintrag, art, adresse):
+    """Der Inhalt der Bestaetigung, einmal gebaut und noch ohne Darstellung.
+    Text- und HTML-Fassung lesen dasselbe, damit sie nicht auseinanderlaufen."""
+    titel = opt["titel"]
+    inhalt = {
+        "anrede": f"Guten Tag {eintrag['name']},",
+        "absaetze": [],
+        "angaben": [],
+        "termin": [],
+        "links": [],
+        "links_titel": "Ihre Anmeldung",
+        "hinweis": "",
+        "kontakt": (opt.get("kontakt") or "").strip(),
+        "veranstalter": veranstalter_name(opt),
+    }
+
+    if art == "abgesagt":
+        inhalt["absaetze"] = [
+            f"Ihre Anmeldung zur Veranstaltung „{titel}“ ist abgesagt. "
+            "Ihre Plätze sind wieder frei.",
+            "War das ein Versehen? Dann melden Sie sich einfach neu an.",
+        ]
+        if adresse:
+            inhalt["links_titel"] = "Erneut anmelden"
+            inhalt["links"] = [("Zur Anmeldeseite", adresse + "/")]
+        return inhalt
+
+    if art == "geaendert":
+        inhalt["absaetze"].append(
+            f"Ihre Anmeldung zur Veranstaltung „{titel}“ wurde geändert. "
+            "Es gilt jetzt:"
+        )
+    else:
+        inhalt["absaetze"].append(
+            f"vielen Dank für Ihre Anmeldung zur Veranstaltung „{titel}“."
+        )
+
+    inhalt["angaben"].append(("Personen", str(eintrag["personen"])))
+    essen = als_mengen(eintrag.get("essen"))
+    if essen:
+        # "1× Weißwürste" statt "1 Weißwürste": das Mal-Zeichen liest sich bei
+        # jedem Gerichtnamen richtig, auch wenn er schon im Plural steht.
+        inhalt["angaben"].append(
+            ("Essen", " · ".join(f"{menge}× {name}" for name, menge in essen.items()))
+        )
+    getraenke = als_liste(eintrag.get("getraenke"))
+    if getraenke:
+        # Getrennt wird mit einem Punkt statt mit Komma: "Helles, alkoholfrei"
+        # traegt selbst schon eines und sah sonst nach zwei Getraenken aus.
+        inhalt["angaben"].append(("Getränke", " · ".join(getraenke)))
+    if eintrag.get("anmerkung"):
+        inhalt["angaben"].append(("Anmerkung", eintrag["anmerkung"]))
+
+    if opt.get("datum"):
+        wann = opt["datum"]
+        if opt.get("uhrzeit"):
+            wann += f", ab {opt['uhrzeit']} Uhr"
+        inhalt["termin"].append(("Wann", wann))
+    if opt.get("ort"):
+        inhalt["termin"].append(("Wo", opt["ort"]))
+
+    if adresse:
+        kennung = eintrag["id"]
+        inhalt["links"] = [
+            ("Anmeldung ansehen", f"{adresse}/danke/{kennung}"),
+            ("Anmeldung ändern", f"{adresse}/anmeldung/{kennung}/aendern"),
+            ("Anmeldung absagen", f"{adresse}/anmeldung/{kennung}/absagen"),
+        ]
+        inhalt["hinweis"] = (
+            "Bitte behalten Sie diese Mail, solange die Veranstaltung noch aussteht. "
+            "Die Links gelten nur für Ihre Anmeldung."
+        )
+    return inhalt
+
+
+def _als_text(inhalt):
+    """Die Nur-Text-Fassung. Keine Spalten, die mit Leerzeichen aufgefuellt
+    sind: in einer Proportionalschrift steht so etwas krumm."""
+    zeilen = [inhalt["anrede"], ""]
+    for absatz in inhalt["absaetze"]:
+        zeilen += [absatz, ""]
+
+    def block(ueberschrift, paare):
+        if not paare:
+            return []
+        raus = [ueberschrift, "-" * len(ueberschrift)]
+        raus += [f"{name}: {wert}" for name, wert in paare]
+        return raus + [""]
+
+    zeilen += block("Ihre Angaben", inhalt["angaben"])
+    zeilen += block("Termin", inhalt["termin"])
+    if inhalt["links"]:
+        zeilen += [inhalt["links_titel"], "-" * len(inhalt["links_titel"])]
+        for name, verweis in inhalt["links"]:
+            zeilen += [f"{name}:", verweis, ""]
+    if inhalt["hinweis"]:
+        zeilen += [inhalt["hinweis"], ""]
+    if inhalt["kontakt"]:
+        zeilen += [f"Bei Fragen: {inhalt['kontakt']}", ""]
+    zeilen += ["Mit freundlichen Grüßen", inhalt["veranstalter"]]
+    return "\n".join(zeilen)
+
+
+# Mailprogramme laden keine Schriften nach und rechnen kein modernes CSS aus.
+# Deshalb Tabellen, Stile direkt am Element und Schriften, die jedes Geraet hat.
+MAIL_SANS = "font-family:'Segoe UI',Helvetica,Arial,sans-serif;"
+MAIL_SERIF = "font-family:Georgia,'Times New Roman',serif;"
+
+
+def _als_html(inhalt, titel):
+    """Die HTML-Fassung: dieselben Angaben wie im Text, nur gesetzt."""
+    teile = [
+        f'<tr><td style="{MAIL_SANS}padding:0 0 16px;font-size:17px;color:#221F1B;">'
+        f"{escape(inhalt['anrede'])}</td></tr>"
+    ]
+    for absatz in inhalt["absaetze"]:
+        teile.append(
+            f'<tr><td style="{MAIL_SANS}padding:0 0 14px;font-size:17px;'
+            f'line-height:1.5;color:#3B372F;">{escape(absatz)}</td></tr>'
+        )
+
+    def ueberschrift(text):
+        return (
+            f'<tr><td style="{MAIL_SANS}padding:10px 0 6px;font-size:12px;'
+            f'letter-spacing:.08em;text-transform:uppercase;color:#7B7466;">'
+            f"{escape(text)}</td></tr>"
+        )
+
+    def block(titelzeile, paare):
+        if not paare:
+            return ""
+        reihen = ""
+        for name, wert in paare:
+            reihen += (
+                f'<tr><td style="{MAIL_SANS}padding:3px 14px 3px 0;font-size:14px;'
+                f'color:#6B6558;vertical-align:top;white-space:nowrap;">{escape(name)}</td>'
+                f'<td style="{MAIL_SANS}padding:3px 0;font-size:16px;color:#221F1B;">'
+                f"{escape(wert)}</td></tr>"
+            )
+        return ueberschrift(titelzeile) + (
+            '<tr><td style="padding:0 0 6px;">'
+            '<table role="presentation" cellpadding="0" cellspacing="0" border="0" '
+            'width="100%" style="background:#FAF7F2;border:1px solid #EBE4D8;'
+            'border-radius:4px;border-collapse:separate;">'
+            '<tr><td style="padding:10px 14px;">'
+            '<table role="presentation" cellpadding="0" cellspacing="0" border="0">'
+            + reihen
+            + "</table></td></tr></table></td></tr>"
+        )
+
+    teile.append(block("Ihre Angaben", inhalt["angaben"]))
+    teile.append(block("Termin", inhalt["termin"]))
+
+    if inhalt["links"]:
+        haupt, haupt_verweis = inhalt["links"][0]
+        teile.append(ueberschrift(inhalt["links_titel"]))
+        teile.append(
+            '<tr><td style="padding:2px 0 4px;">'
+            f'<a href="{escape(haupt_verweis, quote=True)}" style="{MAIL_SANS}'
+            'display:inline-block;background:#8A6334;color:#FFFFFF;font-size:16px;'
+            'text-decoration:none;padding:11px 20px;border-radius:4px;">'
+            f"{escape(haupt)}</a></td></tr>"
+        )
+        weitere = ""
+        for name, verweis in inhalt["links"][1:]:
+            weitere += (
+                f'<div style="{MAIL_SANS}padding:4px 0;font-size:15px;">'
+                f'<a href="{escape(verweis, quote=True)}" style="color:#8A6334;">'
+                f"{escape(name)}</a></div>"
+            )
+        if weitere:
+            teile.append(f'<tr><td style="padding:6px 0 2px;">{weitere}</td></tr>')
+
+    if inhalt["hinweis"]:
+        teile.append(
+            f'<tr><td style="{MAIL_SANS}padding:16px 0 0;font-size:14px;'
+            f'line-height:1.5;color:#6B6558;">{escape(inhalt["hinweis"])}</td></tr>'
+        )
+
+    fuss = "Mit freundlichen Grüßen<br>" + escape(inhalt["veranstalter"])
+    if inhalt["kontakt"]:
+        fuss = f"Bei Fragen: {escape(inhalt['kontakt'])}<br><br>" + fuss
+    teile.append(
+        f'<tr><td style="{MAIL_SANS}padding:18px 0 0;font-size:15px;'
+        f'line-height:1.6;color:#3B372F;">'
+        '<div style="border-top:1px solid #EBE4D8;padding-top:16px;">'
+        f"{fuss}</div></td></tr>"
+    )
+
+    return (
+        '<!doctype html><html lang="de"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        f"<title>{escape(titel)}</title></head>"
+        '<body style="margin:0;padding:0;background:#F4F1EB;">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        'border="0" style="background:#F4F1EB;"><tr>'
+        '<td align="center" style="padding:24px 12px;">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        'border="0" style="max-width:560px;background:#FFFFFF;border:1px solid #DDD6CA;'
+        'border-radius:6px;border-collapse:separate;">'
+        '<tr><td style="padding:26px 26px 0;">'
+        '<div style="height:3px;width:38px;background:#8A6334;font-size:0;line-height:0;">'
+        "&nbsp;</div>"
+        f'<div style="{MAIL_SERIF}padding:14px 0 4px;font-size:21px;line-height:1.3;'
+        f'color:#221F1B;">{escape(titel)}</div></td></tr>'
+        '<tr><td style="padding:12px 26px 26px;">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
+        + "".join(teile)
+        + "</table></td></tr></table></td></tr></table></body></html>"
+    )
+
+
 def bestaetigung_mailen(eintrag, art="neu"):
-    """Schickt dem Gast eine Bestaetigung, wenn er eine Adresse angegeben hat
-    und ein Postausgang eingerichtet ist. Scheitert der Versand, steht das im
-    Log - die Anmeldung selbst ist da laengst gespeichert."""
+    """Schickt dem Gast eine Bestaetigung, wenn eine Adresse da ist und ein
+    Postausgang eingerichtet ist. Scheitert der Versand, steht das im Log -
+    die Anmeldung selbst ist da laengst gespeichert."""
     empfaenger = (eintrag.get("email") or "").strip()
     opt = optionen()
     server = (opt.get("smtp_server") or "").strip()
@@ -373,76 +606,12 @@ def bestaetigung_mailen(eintrag, art="neu"):
         return
 
     adresse = (opt.get("oeffentliche_adresse") or "").rstrip("/")
-    zeilen = [f"Guten Tag {eintrag['name']},", ""]
-
-    if art == "abgesagt":
-        zeilen += [
-            f"Ihre Anmeldung zur Veranstaltung „{opt['titel']}“ ist abgesagt. "
-            "Ihre Plätze sind wieder frei.",
-            "",
-            "Falls das ein Versehen war, melden Sie sich einfach neu an"
-            + (f":\n{adresse}/" if adresse else "."),
-        ]
-        if opt.get("kontakt"):
-            zeilen += ["", f"Bei Fragen: {opt['kontakt']}"]
-        _mail_abschicken(opt, empfaenger, art, zeilen)
-        return
-
-    if art == "geaendert":
-        zeilen.append(
-            f"Ihre Anmeldung zur Veranstaltung „{opt['titel']}“ wurde geändert. "
-            "Es gilt jetzt:"
-        )
-    else:
-        zeilen.append(
-            f"vielen Dank für Ihre Anmeldung zur Veranstaltung „{opt['titel']}“."
-        )
-    zeilen += ["", "Ihre Angaben:", f"  Personen: {eintrag['personen']}"]
-
-    essen = als_mengen(eintrag.get("essen"))
-    if essen:
-        zeilen.append("  Essen:    " + ", ".join(f"{m} {n}" for n, m in essen.items()))
-    getraenke = als_liste(eintrag.get("getraenke"))
-    if getraenke:
-        zeilen.append("  Getränke: " + ", ".join(getraenke))
-    if eintrag.get("anmerkung"):
-        zeilen.append(f"  Anmerkung: {eintrag['anmerkung']}")
-    zeilen.append("")
-    if opt.get("datum"):
-        wann = opt["datum"] + (f", ab {opt['uhrzeit']} Uhr" if opt.get("uhrzeit") else "")
-        zeilen.append(f"Wann: {wann}")
-    if opt.get("ort"):
-        zeilen.append(f"Wo:   {opt['ort']}")
-    if adresse:
-        zeilen += [
-            "",
-            "Anmeldung ansehen:",
-            f"{adresse}/danke/{eintrag['id']}",
-            "",
-            "Anmeldung ändern:",
-            f"{adresse}/anmeldung/{eintrag['id']}/aendern",
-            "",
-            "Anmeldung absagen:",
-            f"{adresse}/anmeldung/{eintrag['id']}/absagen",
-            "",
-            "Bitte behalten Sie diese Mail, solange die Veranstaltung noch",
-            "aussteht - die Links gelten nur für Ihre Anmeldung.",
-        ]
-    if opt.get("kontakt"):
-        zeilen += ["", f"Bei Fragen: {opt['kontakt']}"]
-    _mail_abschicken(opt, empfaenger, art, zeilen)
+    _mail_abschicken(opt, empfaenger, art, _mail_inhalt(opt, eintrag, art, adresse))
 
 
-def _mail_abschicken(opt, empfaenger, art, zeilen):
+def _mail_abschicken(opt, empfaenger, art, inhalt):
     server = (opt.get("smtp_server") or "").strip()
     absender = (opt.get("smtp_absender") or opt.get("smtp_benutzer") or "").strip()
-    # Unterschrift: die erste Zeile des Impressums ist der Veranstalter.
-    veranstalter = (opt.get("impressum") or "").strip().splitlines()
-    zeilen = list(zeilen) + [
-        "",
-        "Mit freundlichen Grüßen",
-        veranstalter[0].strip() if veranstalter else "Das Organisationsteam",
-    ]
 
     nachricht = EmailMessage()
     nachricht["Subject"] = BETREFFE.get(art, BETREFFE["neu"]).format(titel=opt["titel"])
@@ -453,7 +622,10 @@ def _mail_abschicken(opt, empfaenger, art, zeilen):
     antwort_an = (opt.get("smtp_antwort_an") or "").strip()
     if antwort_an:
         nachricht["Reply-To"] = antwort_an
-    nachricht.set_content("\n".join(zeilen))
+    nachricht.set_content(_als_text(inhalt))
+    # Die HTML-Fassung ist nur die Alternative: wer lieber Text liest oder
+    # dessen Programm kein HTML anzeigt, sieht oben genau dasselbe.
+    nachricht.add_alternative(_als_html(inhalt, opt["titel"]), subtype="html")
 
     port = int(opt.get("smtp_port") or 587)
     verschluesselung = (opt.get("smtp_verschluesselung") or "starttls").lower()
@@ -758,11 +930,16 @@ def _formular_lesen(opt, frei):
         return werte, "Bitte tragen Sie einen Namen ein."
     if personen < 1:
         return werte, "Bitte geben Sie mindestens eine Person an."
-    if werte["email"] and not EMAIL_MUSTER.fullmatch(werte["email"]):
-        return werte, (
-            "Die E-Mail-Adresse sieht nicht vollständig aus. "
-            "Bitte prüfen oder das Feld leer lassen."
-        )
+    if opt["email_abfragen"]:
+        # Pflichtfeld: ohne Adresse gibt es weder Bestaetigung noch den Link
+        # zum Aendern und Absagen, und genau daran haengt die Planung.
+        if not werte["email"]:
+            return werte, "Bitte tragen Sie eine E-Mail-Adresse ein."
+        if not EMAIL_MUSTER.fullmatch(werte["email"]):
+            return werte, (
+                "Die E-Mail-Adresse sieht nicht vollständig aus. "
+                "Bitte prüfen Sie die Schreibweise."
+            )
     if personen > opt["max_personen_pro_anmeldung"]:
         return werte, (
             "Pro Anmeldung sind höchstens "

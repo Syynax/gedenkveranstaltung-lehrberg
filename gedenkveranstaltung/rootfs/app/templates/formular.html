@@ -37,9 +37,9 @@
 
     {% if opt.email_abfragen %}
     <div class="feld feld--email">
-      <label class="feld__label" for="email">E-Mail <span class="optional">(optional)</span></label>
-      <div class="feld__hilfe">Nur für eine Bestätigung mit Ihren Angaben. Sonst wird die Adresse nicht verwendet.</div>
-      <input id="email" name="email" type="email" maxlength="120"
+      <label class="feld__label" for="email">E-Mail</label>
+      <div class="feld__hilfe">Wir schicken Ihnen die Bestätigung und den Link, mit dem Sie Ihre Anmeldung später ändern oder absagen können. Sonst wird die Adresse nicht verwendet.</div>
+      <input id="email" name="email" type="email" maxlength="120" required
              autocomplete="email" inputmode="email" placeholder="name@beispiel.de"
              value="{{ eingaben.email or '' }}">
     </div>

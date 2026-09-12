@@ -1,5 +1,24 @@
 # Änderungen
 
+## 1.9.0
+
+- Die Bestätigungsmail ist neu gesetzt und geht jetzt als Text **und** als
+  HTML-Fassung raus: Karte im Papierton, Angaben und Termin je in einem
+  eigenen Kasten, ein Knopf für „Anmeldung ansehen“ statt drei nackter
+  Adressen. Beide Fassungen kommen aus derselben Quelle und können nicht
+  auseinanderlaufen. Nachgeladen wird nichts, auch keine Bilder.
+- Die Unterschrift stand bisher als ganzes Impressum unter jeder Mail,
+  Haftungsausschluss inklusive: Sie nahm „die erste Zeile des Impressums“,
+  und bei einem einzeiligen Feld ist das alles. Dafür gibt es jetzt die
+  Option `veranstalter`. Bleibt sie leer, zählt die erste Zeile des
+  Impressums nur noch, solange sie kurz genug für einen Namen ist.
+- Essen steht als `1× Weißwürste` da, Getränke werden mit einem Punkt
+  getrennt. Mit Komma sah „Helles, alkoholfrei“ nach zwei Getränken aus.
+- Die E-Mail-Adresse ist ein Pflichtfeld. Damit hat jede Anmeldung eine
+  Bestätigung und einen Link zum Ändern und Absagen, und alle Gäste sind
+  erreichbar, falls die Veranstaltung selbst verschoben werden muss.
+  Datenschutzerklärung und Formularhinweis sagen das jetzt auch so.
+
 ## 1.8.1
 
 - Im Ablauf trennt jetzt auch ein Semikolon zwei Punkte. Damit lässt sich nur

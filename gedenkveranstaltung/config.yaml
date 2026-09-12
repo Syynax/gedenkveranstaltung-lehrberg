@@ -1,5 +1,5 @@
 name: Gedenkveranstaltung Anmeldung
-version: "1.8.1"
+version: "1.9.0"
 slug: gedenkveranstaltung
 description: Anmeldeseite mit begrenzter Platzzahl für eine Gedenkveranstaltung
 arch:
@@ -64,6 +64,7 @@ options:
   oeffentliche_adresse: ""
   impressum: ""
   datenschutz: ""
+  veranstalter: ""
   email_abfragen: true
   smtp_server: ""
   smtp_port: 587
@@ -100,6 +101,7 @@ schema:
   oeffentliche_adresse: str?
   impressum: str?
   datenschutz: str?
+  veranstalter: str?
   email_abfragen: bool
   smtp_server: str?
   smtp_port: port
