@@ -21,8 +21,9 @@ configuration:
   ablauf:
     name: "Event: programme"
     description: >-
-      Separate time and item with a vertical bar, items with a semicolon.
-      Example: "9:30 | Andacht; Vortrag; Weißwurstfrühstück". Empty = no programme.
+      Separate items with a vertical bar. A time between two bars belongs to the
+      next item. Example: "Beginn 9:30 | Andacht | Vortrag | Weißwurstfrühstück".
+      Empty = no programme.
   kontakt:
     name: "Event: contact person"
     description: Name and phone or e-mail for questions. Shown on the page and in the mail.

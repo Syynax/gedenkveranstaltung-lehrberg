@@ -41,35 +41,29 @@ Auf die Platzzahl zählt allein die Anzahl der Personen.
 
 ### Ablauf der Veranstaltung
 
-Der Ablauf steht als eigener Kasten auf der Startseite. Ein Punkt je Zeile,
-Uhrzeit und Text durch einen senkrechten Strich getrennt. In das Feld
-`ablauf` gehört genau das hier — **ohne** `ablauf:` davor:
+Der Ablauf steht als eigener Kasten auf der Startseite. Die Punkte werden
+durch einen senkrechten Strich getrennt. Steht zwischen zwei Strichen nur eine
+Uhrzeit, gehört sie zum nächsten Punkt:
 
 ```
-9:30 | Ankommen und Begrüßung
-10:00 | Gedenken
-10:30 | Gemeinsames Frühstück
-12:30 | Ausklang
+Beginn 9:30 | Andacht | Rückblick auf den Einsatz | Weißwurstfrühstück
 ```
 
-Statt einer Uhrzeit geht auch eine kurze Angabe wie `anschl.` oder `ca. 12:30`.
-
-Soll nur der Beginn eine Uhrzeit tragen und der Rest keine, trennt ein
-Semikolon die Punkte:
+Das ergibt „9:30 Andacht“ und darunter die übrigen Punkte ohne Uhrzeit. Wer
+jedem Punkt eine Zeit geben will, schreibt sie jeweils davor:
 
 ```
-9:30 | Andacht; Rückblick auf den Einsatz; Weißwurstfrühstück; Ausklang
+9:30 | Andacht | 10:00 | Rückblick | 10:30 | Weißwurstfrühstück
 ```
 
-Das Semikolon ist dafür nötig, weil ein Punkt ohne Strich sonst nicht von der
-Fortsetzung des vorigen zu unterscheiden wäre. Sobald ein einziger Punkt eine
-Uhrzeit hat, bleibt die Spalte für alle stehen, damit die Texte untereinander
-bündig sind.
+Als Uhrzeit gelten `9:30`, `9.30`, `9:30 Uhr`, `ca. 12:30`, `ab 12:30`,
+`gegen 12:30` sowie `anschl.`, `anschließend` und `danach`. Ein vorangestelltes
+`Beginn` oder `Start` wird weggelassen, das „ab 9:30 Uhr“ steht ohnehin unter
+dem Datum. Statt des Strichs gehen auch ein Semikolon oder eine neue Zeile, und
+ein versehentlich mitkopiertes `ablauf: |-` wird entfernt.
 
-Das Feld in der Add-on-Oberfläche ist einzeilig, alles landet also
-hintereinander. Das macht nichts: vor jedem neuen Punkt wird automatisch
-getrennt, und ein versehentlich mitkopiertes `ablauf: |-` wird entfernt. Ist das
-Feld leer, entfällt der Kasten ganz.
+Sobald ein Punkt eine Uhrzeit hat, bleibt die Spalte für alle stehen, damit die
+Texte bündig sind. Ist das Feld leer, entfällt der Kasten ganz.
 
 ### Handy und Rechner
 

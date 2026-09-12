@@ -170,39 +170,50 @@ def lage():
     }
 
 
-# Trennt vor jedem neuen Punkt: eine kurze Angabe ohne Leerzeichen, gefolgt
-# von einem senkrechten Strich - also "10:00 |" ebenso wie "anschl. |".
-ZEIT_AM_ANFANG = re.compile(r"\s+(?=[^\s|]{1,14}\s*\|)")
+# Was als Uhrzeit gilt. Bewusst eng: frueher war es jedes kurze Wort vor einem
+# Strich, und dann stand "Andacht" in der Zeitspalte.
+ZEITANGABE = r"(?:(?:ca\.|ab|gegen)\s*)?\d{1,2}[:.]\d{2}(?:\s*Uhr)?|anschl\.|anschließend|danach"
+NUR_ZEIT = re.compile(
+    rf"(?:(?:Beginn|Start|Uhrzeit)\s*:?\s*)?({ZEITANGABE})", re.IGNORECASE
+)
+ZEIT_AM_ENDE = re.compile(rf"(.*\S)\s+({ZEITANGABE})", re.IGNORECASE)
 YAML_KOPF = re.compile(r"^\s*ablauf\s*:\s*(?:\|-?|>-?)?\s*", re.IGNORECASE)
 
 
 def ablauf_punkte(text):
-    """Der Ablauf aus den Optionen: ein Punkt je Zeile, Uhrzeit und Text durch
-    einen senkrechten Strich getrennt ("9:30 | Andacht").
+    """Der Ablauf aus den Optionen.
 
-    Das Feld in der Add-on-Oberflaeche ist einzeilig. Wer mehrere Punkte
-    hineinkopiert, hat sie am Ende hintereinander stehen - und oft noch den
-    YAML-Kopf "ablauf: |-" davor. Beides wird hier aufgeraeumt, damit die
-    Seite nicht wegen eines Kopierfehlers Unsinn anzeigt.
+    Punkte werden durch einen senkrechten Strich, ein Semikolon oder eine neue
+    Zeile getrennt. Steht zwischen zwei Trennern nur eine Uhrzeit, gehoert sie
+    zum folgenden Punkt: "Beginn 9:30 | Andacht | Vortrag" ergibt Andacht mit
+    9:30 und Vortrag ohne Zeit. Die aeltere Schreibweise mit der Zeit direkt
+    vor dem Strich ("9:30 | Andacht 10:00 | Vortrag") liest sich genauso.
 
-    Ein Semikolon trennt ebenfalls zwei Punkte. Das braucht, wer nur den
-    Beginn mit einer Uhrzeit versieht und den Rest ohne: ohne Strich davor
-    laesst sich ein neuer Punkt sonst nicht von der Fortsetzung des alten
-    unterscheiden, denn "Andacht" sieht aus wie eine Zeitangabe.
+    Das Feld in der Add-on-Oberflaeche ist einzeilig, und oft kommt beim
+    Kopieren der YAML-Kopf "ablauf: |-" mit. Beides wird hier aufgeraeumt.
     """
     roh = YAML_KOPF.sub("", (text or "").strip())
+    stuecke = [s.strip().lstrip("-").strip() for s in re.split(r"[|;\n]", roh)]
+    stuecke = [s for s in stuecke if s]
+
     punkte = []
-    for zeile in roh.splitlines():
-        for abschnitt in zeile.split(";"):
-            for stueck in ZEIT_AM_ANFANG.split(abschnitt):
-                stueck = stueck.strip().lstrip("-").strip()
-                if not stueck:
-                    continue
-                zeit, strich, beschreibung = stueck.partition("|")
-                if strich:
-                    punkte.append({"zeit": zeit.strip(), "text": beschreibung.strip()})
-                else:
-                    punkte.append({"zeit": "", "text": stueck})
+    zeit = ""
+    for i, stueck in enumerate(stuecke):
+        nur = NUR_ZEIT.fullmatch(stueck)
+        if nur:
+            zeit = nur.group(1)
+            continue
+        folgt_noch = i + 1 < len(stuecke)
+        am_ende = ZEIT_AM_ENDE.fullmatch(stueck) if folgt_noch else None
+        if am_ende:
+            # "Andacht 10:00 | Vortrag": die Zeit gehoert schon zum Vortrag.
+            punkte.append({"zeit": zeit, "text": am_ende.group(1)})
+            zeit = am_ende.group(2)
+        else:
+            punkte.append({"zeit": zeit, "text": stueck})
+            zeit = ""
+    if zeit:
+        punkte.append({"zeit": zeit, "text": ""})
     return punkte
 
 

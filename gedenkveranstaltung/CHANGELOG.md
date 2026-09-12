@@ -1,5 +1,15 @@
 # Änderungen
 
+## 1.10.2
+
+- Der Ablauf erkennt Uhrzeiten jetzt an ihrer Form. Bisher galt jedes kurze
+  Wort vor einem Strich als Zeitangabe, und bei
+  `Beginn 9:30 | Andacht | Rückblick` standen „Andacht“ und „berichtet“ in
+  der Zeitspalte. Jetzt trennt der Strich einfach die Punkte, und eine
+  Uhrzeit zwischen zwei Strichen gehört zum nächsten Punkt.
+- Die bisherigen Schreibweisen mit Semikolon oder mit der Zeit direkt vor
+  dem Strich funktionieren weiter.
+
 ## 1.10.1
 
 - Im Einladungstext beginnt ein senkrechter Strich einen neuen Absatz, wie
