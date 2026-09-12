@@ -1119,6 +1119,21 @@ def csv_export():
 # --------------------------------------------------------------------------
 
 
+@app.template_filter("zeilen")
+def zeilen(text):
+    """Einzeiliges Feld, mehrzeiliger Text.
+
+    Die Eingabefelder in der Add-on-Oberflaeche sind einzeilig. Ein Impressum
+    oder ein eigener Rechtstext braucht aber Umbrueche. Wie schon beim Ablauf
+    gilt deshalb der senkrechte Strich als Zeilenwechsel - echte Umbrueche aus
+    der YAML-Ansicht bleiben natuerlich erhalten.
+    """
+    teile = []
+    for zeile in (text or "").splitlines():
+        teile.extend(zeile.split("|"))
+    return "\n".join(t.strip() for t in teile if t.strip())
+
+
 @app.template_filter("uhrzeit")
 def uhrzeit(iso_zeit):
     try:

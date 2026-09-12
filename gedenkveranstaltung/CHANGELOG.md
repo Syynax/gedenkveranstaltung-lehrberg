@@ -1,5 +1,21 @@
 # Änderungen
 
+## 1.8.0
+
+- Die Datenschutzerklärung wurde gegen den Code geprüft und dort nachgezogen,
+  wo sie zu wenig oder das Falsche sagte: die selbst erzeugten Angaben (Kennung,
+  Zeitstempel), der persönliche Link als alleiniger Nachweis, die Meldung jeder
+  Anmeldung an Home Assistant samt Name und Anmerkung, der Push-Dienst des
+  Handy-Herstellers, der Inhalt der Bestätigungsmail, das technische Protokoll
+  und vor allem: eine Absage löscht die Anmeldung nicht, sie gibt nur die
+  Plätze frei. Das pauschale „Keine Weitergabe an Dritte“ ist raus.
+- Am Anmerkungsfeld steht jetzt direkt der Hinweis, dass Angaben zu Allergien
+  freiwillig sind und wofür sie verwendet werden. Eine Einwilligung nach Art. 9
+  DSGVO muss ausdrücklich sein, und niemand öffnet dafür den Rechtstext.
+- Impressum und eigener Datenschutztext dürfen einen senkrechten Strich als
+  Zeilenwechsel benutzen, so wie der Ablauf. Die Eingabefelder in Home Assistant
+  sind einzeilig; ohne das stand die Anschrift als eine lange Zeile in der Seite.
+
 ## 1.7.1
 
 - Aufräumen an der Testsperre: Der Rückfall auf `X-Forwarded-For` war wirkungslos,

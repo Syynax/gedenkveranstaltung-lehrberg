@@ -5,7 +5,12 @@
 {# Eingebauter Text. Er beschreibt genau das, was dieses Add-on technisch tut,
    und holt sich nur den Verantwortlichen aus dem Impressum. Wer einen eigenen
    Text will, traegt ihn in der Option "datenschutz" ein - dann wird der hier
-   nicht mehr benutzt. Kein Rechtsrat: vor dem offiziellen Start pruefen lassen. #}
+   nicht mehr benutzt. Kein Rechtsrat: vor dem offiziellen Start pruefen lassen.
+
+   Die Abschnitte sind gegen den Code geprueft: gespeicherte Felder, die
+   Kennung im persoenlichen Link, die Absage ohne Loeschung, Ereignisse und
+   Benachrichtigungen an Home Assistant, der CSV-Export und das Protokoll.
+   Wer daran etwas aendert, muss auch hier nachziehen. #}
 
 {% block inhalt %}
 <main class="seite seite--schmal">
@@ -24,36 +29,48 @@
     <h2 class="rechtstext__titel">Verantwortlicher</h2>
     {% if opt.impressum %}
     <p class="fliess">Verantwortlich für die Verarbeitung Ihrer Daten auf dieser Anmeldeseite ist:</p>
-    <div class="rechtstext__kasten">{{ opt.impressum }}</div>
+    <div class="rechtstext__kasten">{{ opt.impressum | zeilen }}</div>
     {% else %}
     <div class="meldung meldung--info"><span>Der Verantwortliche ist noch nicht hinterlegt. Er wird in den Einstellungen des Add-ons unter <b>impressum</b> eingetragen und erscheint dann hier.</span></div>
     {% endif %}
     <p class="fliess">Einen Datenschutzbeauftragten haben wir nicht benannt.</p>
 
     <h2 class="rechtstext__titel">Zweck und erhobene Daten</h2>
-    <p class="fliess">Wir verarbeiten Ihre Daten ausschließlich, um Ihre Anmeldung zu erfassen, die begrenzten Plätze zu vergeben und das Essen in der passenden Menge vorzubestellen. Dafür erheben wir Ihren Namen (Pflichtangabe), die Anzahl der angemeldeten Personen, die gewünschte Stückzahl je Gericht, die angekreuzten Getränke und den Zeitpunkt der Anmeldung.{% if opt.email_abfragen %} Freiwillig können Sie zusätzlich eine E-Mail-Adresse angeben.{% endif %} Ebenfalls freiwillig ist das Anmerkungsfeld.</p>
+    <p class="fliess">Wir verarbeiten Ihre Daten ausschließlich, um Ihre Anmeldung zu erfassen, die begrenzten Plätze zu vergeben und das Essen in der passenden Menge vorzubestellen. Dafür erheben wir Ihren Namen (Pflichtangabe), die Anzahl der angemeldeten Personen, die gewünschte Stückzahl je Gericht und die angekreuzten Getränke.{% if opt.email_abfragen %} Freiwillig können Sie zusätzlich eine E-Mail-Adresse angeben.{% endif %} Ebenfalls freiwillig ist das Anmerkungsfeld.</p>
+    <p class="fliess">Dazu kommen drei Angaben, die die Seite selbst erzeugt: der Zeitpunkt Ihrer Anmeldung, der Zeitpunkt einer späteren Änderung oder Absage und eine zufällige Kennung, über die Ihr persönlicher Link funktioniert.</p>
 
     {% if opt.email_abfragen %}
     <h2 class="rechtstext__titel">E-Mail-Adresse</h2>
-    <p class="fliess">Die Angabe einer E-Mail-Adresse ist freiwillig. Wir nutzen sie nur, um Ihnen eine Bestätigung Ihrer Anmeldung zu schicken. Ohne E-Mail-Adresse ist Ihre Anmeldung genauso gültig, Sie erhalten dann lediglich keine Bestätigung.</p>
+    <p class="fliess">Die Angabe einer E-Mail-Adresse ist freiwillig. Wir nutzen sie nur, um Ihnen eine Bestätigung zu schicken: einmal nach der Anmeldung und noch einmal, wenn Sie Ihre Anmeldung später ändern oder absagen. Ohne E-Mail-Adresse ist Ihre Anmeldung genauso gültig. Sie erhalten dann allerdings weder eine Bestätigung noch einen persönlichen Link.</p>
+
+    <h2 class="rechtstext__titel">Ihr persönlicher Link</h2>
+    <p class="fliess">In der Bestätigungsmail stehen Links, über die Sie Ihre Anmeldung ansehen, ändern oder absagen können. Diese Links enthalten die zufällige Kennung Ihrer Anmeldung, und diese Kennung ist der einzige Nachweis: Wer den Link hat, sieht und ändert die Anmeldung, ohne sich weiter ausweisen zu müssen. Auf Benutzerkonto und Passwort haben wir bewusst verzichtet, weil beides für eine einmalige Veranstaltung unverhältnismäßig wäre. Geben Sie die Mail deshalb bitte nicht weiter. Falls doch einmal jemand Fremdes den Link kennt, sagen Sie uns Bescheid: Wir löschen die Anmeldung dann und legen sie neu an.</p>
     {% endif %}
 
     <h2 class="rechtstext__titel">Anmerkungsfeld und Gesundheitsangaben</h2>
-    <p class="fliess">Im Anmerkungsfeld können Sie uns freiwillig Hinweise geben, zum Beispiel zu Allergien oder Unverträglichkeiten oder dass Sie einen Rollstuhlplatz brauchen. Solche Angaben sind Gesundheitsdaten im Sinne von Art. 9 DSGVO. Indem Sie sie eintragen und das Formular absenden, willigen Sie ausdrücklich ein, dass wir sie zur Vorbereitung der Veranstaltung verwenden. Sie können diese Einwilligung jederzeit formlos über die oben genannten Kontaktdaten widerrufen; wir löschen die Angabe dann umgehend. Die bis zum Widerruf erfolgte Verarbeitung bleibt rechtmäßig.</p>
+    <p class="fliess">Im Anmerkungsfeld können Sie uns freiwillig Hinweise geben, zum Beispiel zu Allergien oder Unverträglichkeiten oder dass Sie einen Rollstuhlplatz brauchen. Solche Angaben sind Gesundheitsdaten im Sinne von Art. 9 DSGVO. Das Feld ist leer voreingestellt, und ohne Eintrag geht Ihre Anmeldung genauso durch. Tragen Sie dort etwas ein und senden das Formular ab, willigen Sie damit ausdrücklich ein, dass wir diese Angabe zur Vorbereitung der Veranstaltung verwenden. Die Einwilligung können Sie jederzeit formlos widerrufen; die Anmerkung können Sie außerdem selbst über Ihren persönlichen Link wieder entfernen. Die bis dahin erfolgte Verarbeitung bleibt rechtmäßig.</p>
+    <p class="fliess">Bitte schreiben Sie in dieses Feld nur das, was wir für die Veranstaltung wirklich wissen müssen. Die Anmerkung steht in Ihrer Bestätigungsmail und in der Liste, mit der wir am Veranstaltungstag arbeiten.</p>
 
     <h2 class="rechtstext__titel">Rechtsgrundlagen</h2>
     <p class="fliess">Die Verarbeitung der Anmeldedaten stützt sich auf Art. 6 Abs. 1 lit. b DSGVO (Durchführung Ihrer Teilnahme) und ergänzend auf Art. 6 Abs. 1 lit. f DSGVO (unser berechtigtes Interesse an einer geordneten Planung). Freiwillige Angaben verarbeiten wir auf Grundlage Ihrer Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, bei Gesundheitsangaben nach Art. 9 Abs. 2 lit. a DSGVO.</p>
 
-    <h2 class="rechtstext__titel">Empfänger und technische Dienstleister</h2>
-    <p class="fliess">Ihre Anmeldedaten sehen nur die mit der Organisation betrauten Personen. Eine Weitergabe an Dritte findet nicht statt.</p>
-    <p class="fliess">Die Anmeldeseite läuft auf einem eigenen Server des Veranstalters. Der Zugang aus dem Internet wird über einen Tunnel der Cloudflare, Inc. (USA) durchgeleitet. Dabei verarbeitet Cloudflare technisch bedingt Ihre IP-Adresse und Verbindungsdaten; wir selbst speichern keine IP-Adressen. Cloudflare ist unser Auftragsverarbeiter nach Art. 28 DSGVO. Die damit verbundene Übermittlung in die USA stützt sich auf den Angemessenheitsbeschluss der EU-Kommission zum EU-US Data Privacy Framework (Art. 45 DSGVO), unter dem Cloudflare zertifiziert ist.</p>
-    {% if opt.email_abfragen and opt.smtp_server %}
-    <p class="fliess">Bestätigungsmails versenden wir über unseren E-Mail-Anbieter, der die Nachricht als Auftragsverarbeiter zustellt.</p>
-    {% endif %}
-    <p class="fliess">Schriftarten und alle übrigen Bestandteile der Seite werden vom Server des Veranstalters selbst ausgeliefert. Cookies, Tracking oder Analysewerkzeuge setzen wir nicht ein.</p>
+    <h2 class="rechtstext__titel">Wer Ihre Daten zu sehen bekommt</h2>
+    <p class="fliess">Ihre Anmeldung liegt auf einem Server des Veranstalters. Einsehen können sie nur die Personen, die die Veranstaltung organisieren. Für die Vorbereitung erstellen wir daraus Listen, die Ihren Namen, die Bestellung, die Anmerkung{% if opt.email_abfragen %} und Ihre E-Mail-Adresse{% endif %} enthalten können. Verkauf, Werbenutzung oder eine Weitergabe an Unbeteiligte gibt es nicht.</p>
+    <p class="fliess">Der Server läuft unter der Haussteuerung Home Assistant. Damit die Organisatoren mitbekommen, wenn sich jemand anmeldet, meldet die Seite dorthin jede Anmeldung, Änderung und Absage. In dieser Meldung stehen Ihr Name, die Personenzahl, die Bestellung und die Anmerkung. Wird daraus eine Mitteilung auf ein Mobiltelefon geschickt, enthält sie Ihren Namen und wird technisch über den Push-Dienst des jeweiligen Geräteherstellers zugestellt.</p>
 
-    <h2 class="rechtstext__titel">Speicherdauer</h2>
-    <p class="fliess">Wir löschen alle Anmeldedaten spätestens {{ opt.loeschfrist or "4 Wochen" }} nach der Veranstaltung. Widerrufene Angaben löschen wir sofort.</p>
+    <h2 class="rechtstext__titel">Technische Dienstleister</h2>
+    <p class="fliess">Der Zugang aus dem Internet wird über einen Tunnel der Cloudflare, Inc. (USA) durchgeleitet. Dabei verarbeitet Cloudflare technisch bedingt Ihre IP-Adresse und Verbindungsdaten. Cloudflare ist unser Auftragsverarbeiter nach Art. 28 DSGVO; die Übermittlung in die USA stützt sich auf den Angemessenheitsbeschluss der EU-Kommission zum EU-US Data Privacy Framework (Art. 45 DSGVO), unter dem Cloudflare zertifiziert ist.</p>
+    {% if opt.email_abfragen and opt.smtp_server %}
+    <p class="fliess">Die Bestätigungsmails stellt ein E-Mail-Versanddienst als Auftragsverarbeiter zu. Er verarbeitet dabei Ihre E-Mail-Adresse und den Inhalt der Nachricht, also auch Ihren Namen, Ihre Bestellung und eine eingetragene Anmerkung. Die Übertragung ist auf dem Transportweg verschlüsselt.</p>
+    {% endif %}
+    <p class="fliess">Schriftarten und alle übrigen Bestandteile der Seite werden vom Server des Veranstalters selbst ausgeliefert. Cookies, Tracking oder Analysewerkzeuge setzen wir nicht ein. Der Cloudflare-Tunnel kann zur Abwehr von Angriffen eigene technische Cookies setzen.</p>
+
+    <h2 class="rechtstext__titel">IP-Adressen und Protokolle</h2>
+    <p class="fliess">Zu Ihrer Anmeldung speichern wir keine IP-Adresse. Der Server führt ein technisches Protokoll zur Fehlersuche, in dem stehen kann, an welche Adresse eine Bestätigung ging. Solange die Seite vor der Veröffentlichung nur für bestimmte Anschlüsse freigeschaltet ist, wird darin auch eine abgewiesene IP-Adresse vermerkt. Dieses Protokoll ist nur uns zugänglich, wird nicht ausgewertet und spätestens mit den Anmeldedaten gelöscht.</p>
+
+    <h2 class="rechtstext__titel">Absage und Speicherdauer</h2>
+    <p class="fliess">Eine Absage über Ihren persönlichen Link gibt die Plätze sofort wieder frei. Ihre Angaben bleiben danach als abgesagte Anmeldung stehen, damit wir nachvollziehen können, wer zu- und wieder abgesagt hat. Sollen wir sie schon vorher vollständig entfernen, genügt eine formlose Nachricht an die oben genannten Kontaktdaten.</p>
+    <p class="fliess">Spätestens {{ opt.loeschfrist or "4 Wochen" }} nach der Veranstaltung löschen wir alle Anmeldedaten einschließlich der abgesagten und der daraus erstellten Listen.</p>
 
     <h2 class="rechtstext__titel">Ihre Rechte</h2>
     <p class="fliess">Sie haben das Recht auf Auskunft über Ihre gespeicherten Daten (Art. 15 DSGVO), auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18) und Datenübertragbarkeit (Art. 20). Gegen eine Verarbeitung auf Grundlage unseres berechtigten Interesses können Sie jederzeit Widerspruch einlegen (Art. 21 DSGVO). Erteilte Einwilligungen können Sie jederzeit widerrufen. Wenden Sie sich dafür an die oben genannten Kontaktdaten.</p>

@@ -311,6 +311,11 @@ h1.klein { font-size: clamp(27px, 7.5vw, 32px); line-height: 1.1; }
 .zurueck:hover { color: var(--tinte-2); }
 
 .hinweis-klein { text-align: center; font-size: 14px; line-height: 1.5; color: var(--grau-2); }
+/* Am Anmerkungsfeld steht der Hinweis linksbuendig direkt unter dem Feld,
+   damit er zur Eingabe gehoert und nicht wie eine Fusszeile wirkt. */
+.feld--anmerkung .hinweis-klein { margin-top: 6px; text-align: left; font-size: 13px; }
+.hinweis-klein a { color: var(--grau-2); text-decoration: underline; text-underline-offset: 2px; }
+.hinweis-klein a:hover { color: var(--tinte); }
 
 /* Formular */
 form { display: flex; flex-direction: column; gap: 30px; }

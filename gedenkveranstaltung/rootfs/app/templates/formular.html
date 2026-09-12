@@ -99,6 +99,10 @@
       <label class="feld__label" for="anmerkung">Anmerkung <span class="optional">(optional)</span></label>
       <textarea id="anmerkung" name="anmerkung" rows="3" maxlength="500"
                 placeholder="Allergien, Rollstuhl, Sitzwunsch">{{ eingaben.anmerkung or '' }}</textarea>
+      {# Angaben zu Allergien sind Gesundheitsdaten. Die Einwilligung dafuer muss
+         ausdruecklich sein - also steht sie direkt am Feld und nicht nur im
+         Rechtstext, den kaum jemand oeffnet. #}
+      <div class="hinweis-klein">Freiwillig. Angaben zu Allergien oder Gesundheit verwenden wir nur zur Vorbereitung der Veranstaltung und löschen sie danach. Mit dem Absenden willigen Sie darin ein. Mehr im <a href="{{ url_for('datenschutz') }}">Datenschutz</a>.</div>
     </div>
 
     <div class="feld feld--absenden">

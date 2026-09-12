@@ -15,7 +15,7 @@
   </div>
 
   {% if inhalt %}
-  <div class="rechtstext">{{ teile.absaetze(inhalt) }}</div>
+  <div class="rechtstext">{{ teile.absaetze(inhalt | zeilen) }}</div>
   {% else %}
   <div class="meldung meldung--info">
     <span>Dieser Text ist noch nicht hinterlegt. Er wird in den Einstellungen des Add-ons unter <b>{{ feldname }}</b> eingetragen.</span>
