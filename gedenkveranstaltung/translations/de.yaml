@@ -1,0 +1,123 @@
+configuration:
+  # --- Veranstaltung: was auf der Startseite steht ---------------------------
+  titel:
+    name: "Veranstaltung: Titel"
+    description: Die große Überschrift der Seite, auch Betreff der Bestätigungsmail.
+  untertitel:
+    name: "Veranstaltung: Überzeile"
+    description: Kleine Zeile in Großbuchstaben über dem Titel, z. B. „Gedenkveranstaltung“.
+  datum:
+    name: "Veranstaltung: Datum"
+    description: Ausgeschrieben, so wie es dastehen soll, z. B. „Samstag, 3. Oktober 2026“.
+  uhrzeit:
+    name: "Veranstaltung: Beginn"
+    description: Nur die Uhrzeit, z. B. „9:30“. Angezeigt wird „ab 9:30 Uhr“.
+  ort:
+    name: "Veranstaltung: Ort"
+    description: z. B. „Feuerwehrgerätehaus Lehrberg“.
+  text:
+    name: "Veranstaltung: Einladungstext"
+    description: Der Fließtext auf der Startseite. Leerzeilen ergeben Absätze.
+  ablauf:
+    name: "Veranstaltung: Ablauf"
+    description: >-
+      Uhrzeit und Programmpunkt durch einen senkrechten Strich trennen, Punkte
+      durch ein Semikolon. Beispiel: „9:30 | Andacht; Vortrag; Weißwurstfrühstück“.
+      Leer = kein Ablauf.
+  kontakt:
+    name: "Veranstaltung: Ansprechpartner"
+    description: Name und Telefon oder E-Mail für Rückfragen. Steht auf der Seite und in der Mail.
+
+  # --- Anmeldung ---------------------------------------------------------------
+  anmeldung_offen:
+    name: "Anmeldung: geöffnet"
+    description: Hauptschalter. Aus = niemand kann sich anmelden, die Startseite bleibt sichtbar.
+  plaetze_gesamt:
+    name: "Anmeldung: Plätze insgesamt"
+    description: Obergrenze über alle Anmeldungen zusammen. Gezählt werden Personen.
+  max_personen_pro_anmeldung:
+    name: "Anmeldung: höchstens Personen je Anmeldung"
+    description: Bremse gegen Zahlendreher.
+  anmeldeschluss:
+    name: "Anmeldung: Anmeldeschluss"
+    description: >-
+      Nur ein Hinweis auf der Seite, z. B. „bis 20. September“. Geschlossen wird
+      damit nichts – dafür den Hauptschalter oben benutzen.
+  essen:
+    name: "Anmeldung: Speisen"
+    description: Zur Auswahl mit Stückzahl, ein Gericht je Eintrag.
+  getraenke:
+    name: "Anmeldung: Getränke"
+    description: Zum Ankreuzen, ein Getränk je Eintrag.
+  email_abfragen:
+    name: "Anmeldung: E-Mail-Adresse abfragen"
+    description: An = Pflichtfeld im Formular, jeder Gast bekommt eine Bestätigung. Aus = kein E-Mail-Feld.
+  datenschutz_hinweis:
+    name: "Anmeldung: Hinweis unter dem Absende-Knopf"
+    description: Eine kurze Zeile Kleingedrucktes. Leer = kein Hinweis.
+
+  # --- Bestätigungsmail --------------------------------------------------------
+  veranstalter:
+    name: "E-Mail: Unterschrift"
+    description: Name unter jeder Mail, z. B. „Freiwillige Feuerwehr Lehrberg“.
+  smtp_server:
+    name: "E-Mail: Mailserver"
+    description: Postausgang, z. B. „mail.smtp2go.com“. Leer = es werden keine Mails verschickt.
+  smtp_port:
+    name: "E-Mail: Port"
+    description: Meist 587 mit STARTTLS, manchmal 465 mit SSL.
+  smtp_verschluesselung:
+    name: "E-Mail: Verschlüsselung"
+    description: starttls bei Port 587, ssl bei Port 465. „keine“ nur für einen Mailserver im eigenen Netz.
+  smtp_benutzer:
+    name: "E-Mail: Benutzername"
+    description: Zugang beim Mailanbieter.
+  smtp_passwort:
+    name: "E-Mail: Passwort"
+    description: Passwort oder App-Passwort beim Mailanbieter.
+  smtp_absender:
+    name: "E-Mail: Absenderadresse"
+    description: Von dieser Adresse kommt die Mail, z. B. „anmeldung@fflehrberg.de“. Die Domain muss beim Anbieter bestätigt sein.
+  smtp_antwort_an:
+    name: "E-Mail: Antworten gehen an"
+    description: Wohin „Antworten“ der Gäste geht, falls die Absenderadresse kein echtes Postfach hat.
+
+  # --- Webseite und Rechtliches --------------------------------------------------
+  oeffentliche_adresse:
+    name: "Webseite: öffentliche Adresse"
+    description: >-
+      So erreichen Gäste die Seite, z. B. „https://anmeldung.fflehrberg.de“. Nötig
+      für die Links in der Mail und die Vorschau beim Teilen per WhatsApp.
+  impressum:
+    name: "Webseite: Impressum"
+    description: >-
+      Name, Anschrift, Vertretung, Kontakt. Ein senkrechter Strich beginnt eine
+      neue Zeile. Erscheint auch als Verantwortlicher im Datenschutz.
+  datenschutz:
+    name: "Webseite: eigene Datenschutzerklärung"
+    description: Leer lassen = die eingebaute Erklärung, die genau zu diesem Add-on passt.
+  loeschfrist:
+    name: "Webseite: Löschfrist"
+    description: Wie lange nach der Veranstaltung die Daten gelöscht werden, z. B. „4 Wochen“. Steht in der Datenschutzerklärung.
+  nur_fuer_ip:
+    name: "Webseite: vorab nur sichtbar für"
+    description: >-
+      Zum Testen vor der Veröffentlichung: IP-Adressen oder Bereiche, durch Komma
+      getrennt. Alle anderen sehen „Noch nicht freigeschaltet“. Leer = für alle sichtbar.
+
+  # --- Home Assistant ------------------------------------------------------------
+  sensor_erstellen:
+    name: "Home Assistant: Sensor anlegen"
+    description: Legt sensor.gedenkveranstaltung_freie_plaetze mit Plätzen, Essen und Getränken an.
+  benachrichtigung_dienst:
+    name: "Home Assistant: Benachrichtigung an"
+    description: Notify-Aktion oder -Entität, z. B. „notify.handy_cedric“. Leer = keine Nachrichten.
+  benachrichtigung_jede_anmeldung:
+    name: "Home Assistant: bei jeder Anmeldung benachrichtigen"
+    description: Aus = nur noch Nachrichten beim Erreichen der Schwellen.
+  benachrichtigung_schwellen:
+    name: "Home Assistant: Schwellen"
+    description: Belegte Plätze, bei denen eine Nachricht kommt, z. B. „60, 100“. Leer = keine.
+
+network:
+  8080/tcp: Öffentliche Anmeldeseite für die Gäste

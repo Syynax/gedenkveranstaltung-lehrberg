@@ -1,0 +1,114 @@
+configuration:
+  # --- Event: what the start page shows ---------------------------------------
+  titel:
+    name: "Event: title"
+    description: The large heading of the page, also used as the subject of the confirmation mail.
+  untertitel:
+    name: "Event: overline"
+    description: Small uppercase line above the title.
+  datum:
+    name: "Event: date"
+    description: Written out exactly as it should appear, e.g. "Samstag, 3. Oktober 2026".
+  uhrzeit:
+    name: "Event: start time"
+    description: Time only, e.g. "9:30". Shown as "ab 9:30 Uhr".
+  ort:
+    name: "Event: location"
+    description: e.g. "Feuerwehrgerätehaus Lehrberg".
+  text:
+    name: "Event: invitation text"
+    description: Body text on the start page. Blank lines start new paragraphs.
+  ablauf:
+    name: "Event: programme"
+    description: >-
+      Separate time and item with a vertical bar, items with a semicolon.
+      Example: "9:30 | Andacht; Vortrag; Weißwurstfrühstück". Empty = no programme.
+  kontakt:
+    name: "Event: contact person"
+    description: Name and phone or e-mail for questions. Shown on the page and in the mail.
+
+  # --- Registration ---------------------------------------------------------------
+  anmeldung_offen:
+    name: "Registration: open"
+    description: Main switch. Off = nobody can register, the start page stays visible.
+  plaetze_gesamt:
+    name: "Registration: total seats"
+    description: Upper limit across all registrations. Counts persons.
+  max_personen_pro_anmeldung:
+    name: "Registration: max. persons per registration"
+    description: Guards against typos.
+  anmeldeschluss:
+    name: "Registration: deadline"
+    description: Only a note on the page. It does not close anything, use the main switch for that.
+  essen:
+    name: "Registration: food"
+    description: Chosen with a piece count, one dish per entry.
+  getraenke:
+    name: "Registration: drinks"
+    description: Ticked, one drink per entry.
+  email_abfragen:
+    name: "Registration: ask for e-mail address"
+    description: On = required field, every guest gets a confirmation. Off = no e-mail field.
+  datenschutz_hinweis:
+    name: "Registration: note below the submit button"
+    description: One short line of small print. Empty = no note.
+
+  # --- Confirmation mail ----------------------------------------------------------
+  veranstalter:
+    name: "E-mail: signature"
+    description: Name below every mail, e.g. "Freiwillige Feuerwehr Lehrberg".
+  smtp_server:
+    name: "E-mail: SMTP server"
+    description: Outgoing server, e.g. "mail.smtp2go.com". Empty = no mails are sent.
+  smtp_port:
+    name: "E-mail: port"
+    description: Usually 587 with STARTTLS, sometimes 465 with SSL.
+  smtp_verschluesselung:
+    name: "E-mail: encryption"
+    description: starttls for port 587, ssl for port 465. "keine" only for a server on your own network.
+  smtp_benutzer:
+    name: "E-mail: username"
+    description: Login at the mail provider.
+  smtp_passwort:
+    name: "E-mail: password"
+    description: Password or app password at the mail provider.
+  smtp_absender:
+    name: "E-mail: sender address"
+    description: The mail comes from this address. Its domain must be verified at the provider.
+  smtp_antwort_an:
+    name: "E-mail: replies go to"
+    description: Where guests' replies go if the sender address has no real mailbox.
+
+  # --- Website and legal ------------------------------------------------------------
+  oeffentliche_adresse:
+    name: "Website: public address"
+    description: How guests reach the page, e.g. "https://anmeldung.fflehrberg.de". Needed for the links in the mail and link previews.
+  impressum:
+    name: "Website: imprint"
+    description: Name, address, representative, contact. A vertical bar starts a new line. Also shown as the controller in the privacy policy.
+  datenschutz:
+    name: "Website: custom privacy policy"
+    description: Leave empty to use the built-in policy that matches this add-on.
+  loeschfrist:
+    name: "Website: deletion period"
+    description: How long after the event the data is deleted, e.g. "4 Wochen". Shown in the privacy policy.
+  nur_fuer_ip:
+    name: "Website: visible in advance only for"
+    description: For testing before going live. IP addresses or ranges, comma separated. Everyone else sees "not yet available". Empty = visible to all.
+
+  # --- Home Assistant ----------------------------------------------------------------
+  sensor_erstellen:
+    name: "Home Assistant: create sensor"
+    description: Creates sensor.gedenkveranstaltung_freie_plaetze with seats, food and drinks.
+  benachrichtigung_dienst:
+    name: "Home Assistant: notify target"
+    description: Notify action or entity, e.g. "notify.mobile_app_phone". Empty = no notifications.
+  benachrichtigung_jede_anmeldung:
+    name: "Home Assistant: notify on every registration"
+    description: Off = only notify when a threshold is reached.
+  benachrichtigung_schwellen:
+    name: "Home Assistant: thresholds"
+    description: Occupied seats that trigger a notification, e.g. "60, 100". Empty = none.
+
+network:
+  8080/tcp: Public registration page for guests

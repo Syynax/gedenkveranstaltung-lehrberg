@@ -89,37 +89,64 @@ nicht mehr erreichbar.
 
 ## Einstellungen
 
-| Option | Bedeutung |
+Die Einstellungsseite ist in fünf Gruppen sortiert. Jedes Feld trägt vorne den
+Namen seiner Gruppe und darunter eine kurze Erklärung. Die technischen Namen in
+Klammern braucht man nur in der YAML-Ansicht.
+
+**Veranstaltung** — was auf der Startseite steht
+
+| Feld | Bedeutung |
 | --- | --- |
-| `untertitel` | Kleine Zeile über der Überschrift |
-| `titel` | Überschrift der Seite |
-| `datum` | Frei formulierbar, z. B. `Samstag, 14. September 2026` |
-| `uhrzeit` | Z. B. `9:30` — wird als `ab 9:30 Uhr` angezeigt |
-| `ort` | Z. B. `Feuerwehrgerätehaus Lehrberg` |
-| `ablauf` | Programm des Vormittags, eine Zeile je Punkt. Leer = kein Ablauf |
-| `text` | Gedenktext. Leerzeilen ergeben Absätze |
-| `plaetze_gesamt` | Obergrenze über alle Anmeldungen zusammen |
-| `max_personen_pro_anmeldung` | Bremse gegen Zahlendreher |
-| `anmeldeschluss` | Nur ein Hinweis unter dem Knopf, schließt nichts automatisch |
-| `kontakt` | Name und Telefonnummer für Rückfragen und Absagen |
-| `essen` | Liste der Gerichte zur Auswahl |
-| `getraenke` | Liste der Getränke zur Auswahl |
-| `anmeldung_offen` | Hauptschalter. Aus = keine Anmeldung möglich |
-| `datenschutz_hinweis` | Kleingedrucktes unter dem Absende-Knopf |
-| `sensor_erstellen` | Legt `sensor.gedenkveranstaltung_freie_plaetze` an |
-| `benachrichtigung_dienst` | Notify-Dienst für Nachrichten, leer = aus |
-| `benachrichtigung_jede_anmeldung` | Nachricht bei jeder einzelnen Anmeldung |
-| `benachrichtigung_schwellen` | Belegte Plätze als Text, z. B. `60, 100`. Leer = aus |
-| `oeffentliche_adresse` | Adresse der Seite von außen, z. B. `https://anmeldung.example.de` — für Links in Mails und die Vorschau beim Teilen |
-| `impressum` | Anbieterkennzeichnung. Ein senkrechter Strich trennt die Zeilen. Erscheint unter /impressum und als Verantwortlicher im Datenschutz |
-| `datenschutz` | Eigener Datenschutztext. Leer = die eingebaute Erklärung |
-| `veranstalter` | Name unter der Bestätigungsmail, z. B. `Freiwillige Feuerwehr Lehrberg` |
-| `loeschfrist` | Wann die Daten nach der Veranstaltung gelöscht werden, für die Datenschutzerklärung |
-| `email_abfragen` | E-Mail-Feld im Formular anzeigen. Angeschaltet ist es ein Pflichtfeld |
-| `smtp_server`, `smtp_port`, `smtp_verschluesselung` | Postausgang für Bestätigungsmails |
-| `smtp_benutzer`, `smtp_passwort`, `smtp_absender` | Zugangsdaten und Absenderadresse |
-| `smtp_antwort_an` | Adresse für Antworten der Gäste, falls die Absenderdomain kein Postfach hat |
-| `nur_fuer_ip` | Zum Testen: Gästeseite nur für diese Adressen sichtbar. Leer = für alle |
+| Titel (`titel`) | Überschrift der Seite, auch Betreff der Mail |
+| Überzeile (`untertitel`) | Kleine Zeile über der Überschrift |
+| Datum (`datum`) | Frei formulierbar, z. B. `Samstag, 3. Oktober 2026` |
+| Beginn (`uhrzeit`) | Z. B. `9:30` — wird als `ab 9:30 Uhr` angezeigt |
+| Ort (`ort`) | Z. B. `Feuerwehrgerätehaus Lehrberg` |
+| Einladungstext (`text`) | Fließtext. Leerzeilen ergeben Absätze |
+| Ablauf (`ablauf`) | Programm, siehe oben. Leer = kein Ablauf |
+| Ansprechpartner (`kontakt`) | Name und Telefonnummer für Rückfragen |
+
+**Anmeldung**
+
+| Feld | Bedeutung |
+| --- | --- |
+| geöffnet (`anmeldung_offen`) | Hauptschalter. Aus = keine Anmeldung möglich |
+| Plätze insgesamt (`plaetze_gesamt`) | Obergrenze über alle Anmeldungen, gezählt in Personen |
+| höchstens Personen je Anmeldung (`max_personen_pro_anmeldung`) | Bremse gegen Zahlendreher |
+| Anmeldeschluss (`anmeldeschluss`) | Nur ein Hinweis, schließt nichts automatisch |
+| Speisen (`essen`) | Gerichte zur Auswahl mit Stückzahl |
+| Getränke (`getraenke`) | Getränke zum Ankreuzen |
+| E-Mail-Adresse abfragen (`email_abfragen`) | An = Pflichtfeld mit Bestätigungsmail |
+| Hinweis unter dem Absende-Knopf (`datenschutz_hinweis`) | Eine Zeile Kleingedrucktes |
+
+**E-Mail** — die Bestätigungsmail
+
+| Feld | Bedeutung |
+| --- | --- |
+| Unterschrift (`veranstalter`) | Name unter der Mail, z. B. `Freiwillige Feuerwehr Lehrberg` |
+| Mailserver, Port, Verschlüsselung (`smtp_server`, `smtp_port`, `smtp_verschluesselung`) | Postausgang. Leerer Server = keine Mails |
+| Benutzername, Passwort (`smtp_benutzer`, `smtp_passwort`) | Zugang beim Mailanbieter |
+| Absenderadresse (`smtp_absender`) | Von dieser Adresse kommt die Mail |
+| Antworten gehen an (`smtp_antwort_an`) | Für Antworten, falls der Absender kein Postfach hat |
+
+**Webseite** — Adresse und Rechtliches
+
+| Feld | Bedeutung |
+| --- | --- |
+| öffentliche Adresse (`oeffentliche_adresse`) | Z. B. `https://anmeldung.example.de` — für Links in Mails und die Vorschau beim Teilen |
+| Impressum (`impressum`) | Ein senkrechter Strich trennt die Zeilen. Erscheint auch als Verantwortlicher im Datenschutz |
+| eigene Datenschutzerklärung (`datenschutz`) | Leer = die eingebaute Erklärung |
+| Löschfrist (`loeschfrist`) | Steht in der Datenschutzerklärung |
+| vorab nur sichtbar für (`nur_fuer_ip`) | Zum Testen: Gästeseite nur für diese Adressen. Leer = für alle |
+
+**Home Assistant**
+
+| Feld | Bedeutung |
+| --- | --- |
+| Sensor anlegen (`sensor_erstellen`) | Legt `sensor.gedenkveranstaltung_freie_plaetze` an |
+| Benachrichtigung an (`benachrichtigung_dienst`) | Notify-Aktion oder -Entität. Leer = aus |
+| bei jeder Anmeldung benachrichtigen (`benachrichtigung_jede_anmeldung`) | Aus = nur bei den Schwellen |
+| Schwellen (`benachrichtigung_schwellen`) | Belegte Plätze als Text, z. B. `60, 100`. Leer = aus |
 
 Leere Felder werden auf der Seite weggelassen — es steht also nie ein leerer
 Platzhalter herum. Änderungen an den Optionen greifen nach dem Neustart des

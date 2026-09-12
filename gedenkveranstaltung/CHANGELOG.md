@@ -1,5 +1,17 @@
 # Änderungen
 
+## 1.10.0
+
+- Die Einstellungen sind nach Gruppen sortiert: Veranstaltung, Anmeldung,
+  E-Mail, Webseite, Home Assistant. Bisher standen sie in der Reihenfolge,
+  in der sie dazugekommen sind.
+- Jedes Feld hat einen lesbaren Namen mit seiner Gruppe vorne und eine
+  Erklärung darunter, auf Deutsch und Englisch. Statt
+  `max_personen_pro_anmeldung` steht dort „Anmeldung: höchstens Personen
+  je Anmeldung“.
+- Die technischen Schlüssel sind unverändert. Alle gespeicherten Werte
+  bleiben erhalten, es muss nichts neu eingetragen werden.
+
 ## 1.9.0
 
 - Die Bestätigungsmail ist neu gesetzt und geht jetzt als Text **und** als

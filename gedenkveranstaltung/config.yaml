@@ -1,5 +1,5 @@
 name: Gedenkveranstaltung Anmeldung
-version: "1.9.0"
+version: "1.10.0"
 slug: gedenkveranstaltung
 description: Anmeldeseite mit begrenzter Platzzahl für eine Gedenkveranstaltung
 arch:
@@ -30,22 +30,25 @@ webui: "http://[HOST]:[PORT:8080]"
 homeassistant_api: true
 
 options:
-  untertitel: Gedenkveranstaltung
+  # Veranstaltung
   titel: 20. Jahrestag der Gasexplosion in Lehrberg
+  untertitel: Gedenkveranstaltung
   datum: ""
   uhrzeit: "9:30"
   ort: ""
-  ablauf: ""
   text: |-
     Vor zwanzig Jahren kam es in Lehrberg zu einer Gasexplosion. Zum Jahrestag lädt die Freiwillige Feuerwehr zu einer Gedenkveranstaltung ein.
 
     Der Vormittag beginnt mit einer kurzen Ansprache und dem gemeinsamen Gedenken. Danach sitzen wir bei Weißwürsten und Getränken zusammen. Eingeladen sind alle aus Lehrberg und den Nachbarorten, besonders die damaligen Einsatzkräfte und alle, die geholfen haben.
 
     Die Zahl der Plätze ist begrenzt, und Essen und Getränke müssen vorbestellt werden. Wir bitten deshalb um eine Anmeldung über diese Seite.
+  ablauf: ""
+  kontakt: ""
+  # Anmeldung
+  anmeldung_offen: true
   plaetze_gesamt: 120
   max_personen_pro_anmeldung: 10
   anmeldeschluss: ""
-  kontakt: ""
   essen:
     - Weißwürste
     - Wiener
@@ -55,17 +58,10 @@ options:
     - Helles
     - Helles, alkoholfrei
     - Alkoholfreies Getränk
-  anmeldung_offen: true
-  datenschutz_hinweis: Die Angaben werden nur für die Planung der Veranstaltung verwendet.
-  sensor_erstellen: true
-  benachrichtigung_dienst: ""
-  benachrichtigung_jede_anmeldung: true
-  benachrichtigung_schwellen: ""
-  oeffentliche_adresse: ""
-  impressum: ""
-  datenschutz: ""
-  veranstalter: ""
   email_abfragen: true
+  datenschutz_hinweis: Die Angaben werden nur für die Planung der Veranstaltung verwendet.
+  # Bestätigungsmail
+  veranstalter: ""
   smtp_server: ""
   smtp_port: 587
   smtp_verschluesselung: starttls
@@ -73,36 +69,42 @@ options:
   smtp_passwort: ""
   smtp_absender: ""
   smtp_antwort_an: ""
+  # Webseite und Rechtliches
+  oeffentliche_adresse: ""
+  impressum: ""
+  datenschutz: ""
   loeschfrist: 4 Wochen
   nur_fuer_ip: ""
+  # Home Assistant
+  sensor_erstellen: true
+  benachrichtigung_dienst: ""
+  benachrichtigung_jede_anmeldung: true
+  benachrichtigung_schwellen: ""
 
+# Die Reihenfolge hier ist die Reihenfolge in der Einstellungsseite. Die
+# Schluessel selbst bleiben, wie sie sind: ein umbenannter Schluessel wuerde
+# den gespeicherten Wert verlieren. Lesbare Namen und Erklaerungen stehen in
+# translations/de.yaml und translations/en.yaml.
 schema:
-  untertitel: str?
   titel: str
+  untertitel: str?
   datum: str?
   uhrzeit: str?
   ort: str?
-  ablauf: str?
   text: str?
+  ablauf: str?
+  kontakt: str?
+  anmeldung_offen: bool
   plaetze_gesamt: int(1,100000)
   max_personen_pro_anmeldung: int(1,999)
   anmeldeschluss: str?
-  kontakt: str?
   essen:
     - str
   getraenke:
     - str
-  anmeldung_offen: bool
-  datenschutz_hinweis: str?
-  sensor_erstellen: bool
-  benachrichtigung_dienst: str?
-  benachrichtigung_jede_anmeldung: bool
-  benachrichtigung_schwellen: str?
-  oeffentliche_adresse: str?
-  impressum: str?
-  datenschutz: str?
-  veranstalter: str?
   email_abfragen: bool
+  datenschutz_hinweis: str?
+  veranstalter: str?
   smtp_server: str?
   smtp_port: port
   smtp_verschluesselung: list(starttls|ssl|keine)
@@ -110,5 +112,12 @@ schema:
   smtp_passwort: password?
   smtp_absender: str?
   smtp_antwort_an: str?
+  oeffentliche_adresse: str?
+  impressum: str?
+  datenschutz: str?
   loeschfrist: str?
   nur_fuer_ip: str?
+  sensor_erstellen: bool
+  benachrichtigung_dienst: str?
+  benachrichtigung_jede_anmeldung: bool
+  benachrichtigung_schwellen: str?
