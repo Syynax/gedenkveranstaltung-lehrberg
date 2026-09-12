@@ -64,13 +64,15 @@ a:hover { color: var(--bronze-dunkel); }
   .seite--formular { max-width: 860px; padding: 56px 40px 64px; }
 
   /* Zwei Spalten: links wer, wie viele und die Anmerkung, rechts die
-     Bestellung. Die Felder behalten ihre Quelltext-Reihenfolge (wichtig für
-     Tastatur und Vorlesen) und werden nur im Gitter platziert. Die
-     Getränkeliste ist der längste Block und bekommt zwei Zeilen; die
-     Anmerkung daneben wächst mit, damit links kein Loch bleibt. */
+     Bestellung. Essen und Getränke stecken in einem eigenen Block, der über
+     alle vier Zeilen reicht - so hängen sie direkt untereinander, statt dass
+     sich die rechte Seite an den Zeilenhöhen links ausrichtet und ein Loch
+     zwischen Essen und Getränken lässt. Die letzte Zeile ist 1fr: Ist die
+     Bestellung höher als die linke Spalte, wächst nur die Anmerkung mit. */
   .seite--formular form {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr;
     gap: 30px 44px;
     align-items: start;
   }
@@ -78,8 +80,13 @@ a:hover { color: var(--bronze-dunkel); }
   .feld--email     { grid-column: 1; grid-row: 2; }
   .feld--personen  { grid-column: 1; grid-row: 3; }
   .feld--anmerkung { grid-column: 1; grid-row: 4; align-self: stretch; }
-  .feld--essen     { grid-column: 2; grid-row: 1 / span 2; }
-  .feld--getraenke { grid-column: 2; grid-row: 3 / span 2; }
+  .seite--formular .formular__bestellung {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+  }
   .feld--anmerkung textarea { flex: 1; min-height: 150px; }
   .feld--absenden {
     grid-column: 1 / -1;
@@ -122,8 +129,20 @@ a:hover { color: var(--bronze-dunkel); }
   .seite--start .start__aktion { order: 0; gap: 16px; }
 }
 
+/* Niedrige Fenster am Rechner: Die rechte Spalte würde beim Scrollen kleben
+   bleiben und ihr unteres Ende (Anmeldeschluss, Kontakt) unerreichbar machen. */
+@media (min-width: 820px) and (max-height: 760px) {
+  .seite--start .start__rand { position: static; }
+}
+
+/* Zwischen Handy und zweispaltiger Ansicht (Tablet hochkant, Handy quer):
+   etwas breiter, sonst stehen 440 px verloren in der Mitte. */
+@media (min-width: 600px) and (max-width: 819px) {
+  .seite:not(.seite--weit) { max-width: 560px; }
+}
+
 /* Kopf */
-.kopf { display: flex; flex-direction: column; gap: 14px; }
+.kopf { display: flex; flex-direction: column; gap: 14px; overflow-wrap: anywhere; }
 .kopf__strich { width: 46px; height: 2px; background: var(--bronze); }
 .kopf__ueber {
   font-size: 12px;
@@ -135,7 +154,7 @@ a:hover { color: var(--bronze-dunkel); }
 h1 {
   margin: 0;
   font-family: var(--serif);
-  font-size: clamp(31px, 9vw, 40px);
+  font-size: clamp(31px, 6vw + 10px, 40px);
   line-height: 1.08;
   font-weight: 500;
   color: var(--tinte);
@@ -344,6 +363,8 @@ h1.klein { font-size: clamp(27px, 7.5vw, 32px); line-height: 1.1; }
 
 /* Formular */
 form { display: flex; flex-direction: column; gap: 30px; }
+/* Am Handy durchsichtig: Essen und Getränke stehen wie alle Felder im Formular. */
+.formular__bestellung { display: contents; }
 
 /* Die Felder stehen im Quelltext in der Reihenfolge, in der man sie auf dem
    Handy sieht und mit der Tastatur durchläuft. Am Rechner ordnet sie das
@@ -352,6 +373,11 @@ form { display: flex; flex-direction: column; gap: 30px; }
 .feld__label { font-size: 17px; font-weight: 600; color: var(--tinte); }
 .feld__label .optional { font-weight: 400; color: var(--grau-2); }
 .feld__hilfe { font-size: 14px; color: var(--grau-2); }
+/* Fehler direkt am Feld: am Handy steht die Meldung oben sonst eine
+   Bildschirmhöhe entfernt von dem Feld, um das es geht. */
+.feld__fehler { font-size: 15px; font-weight: 600; color: #6E2C20; }
+.feld input[aria-invalid="true"],
+.feld [aria-invalid="true"] .zeile--menge { border-color: var(--rot); }
 
 input[type="text"], input[type="email"], textarea {
   width: 100%;
@@ -438,6 +464,11 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visib
 
 /* Zeile mit Mengenzaehler (nur beim Essen) */
 .zeile--menge { padding: 8px 10px 8px 16px; gap: 12px; cursor: default; }
+/* Der Name darf schrumpfen und umbrechen, die Zähler bleiben 44 px groß. */
+.zeile--menge .zeile__name { min-width: 0; overflow-wrap: anywhere; hyphens: auto; }
+@media (max-width: 359px) {
+  .zeile--menge { gap: 6px; padding-left: 12px; }
+}
 .zeile--menge:hover { border-color: var(--linie); }
 .schritt {
   width: 44px;
@@ -490,7 +521,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 /* Bestätigung */
 .haken { color: var(--bronze); }
 .zusammenfassung { gap: 16px; }
-.block { display: flex; flex-direction: column; gap: 6px; }
+.block { display: flex; flex-direction: column; gap: 6px; overflow-wrap: anywhere; }
 .block__titel {
   font-size: 13px;
   letter-spacing: 0.1em;
@@ -529,6 +560,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .kennzahl__wert { font-family: var(--serif); font-size: 30px; line-height: 1.1; color: var(--tinte); }
 
 .tabelle-rahmen {
+  /* positioniert, damit die unsichtbare Spaltenüberschrift "Löschen" im
+     Rahmen bleibt - sonst machte sie die Seite am Handy 744 px breit. */
+  position: relative;
   background: var(--karte);
   border: 1px solid var(--linie);
   border-radius: 4px;
@@ -548,11 +582,17 @@ th {
 tbody tr { border-bottom: 1px solid var(--linie-2); }
 tbody tr:last-child { border-bottom: none; }
 td { font-size: 15px; color: var(--grau); }
-td.name { font-weight: 600; color: var(--tinte); }
+td.name { font-weight: 600; color: var(--tinte); overflow-wrap: anywhere; }
 td.leer { color: var(--grau-3); }
 .zeit { white-space: nowrap; color: var(--grau-3); }
 
 .loeschen {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: -10px -10px -10px 0;
   background: none;
   border: none;
   padding: 6px;
@@ -569,7 +609,27 @@ td.leer { color: var(--grau-3); }
 
 @media (max-width: 720px) {
   .kennzahlen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  h1 { font-size: 34px; }
+}
+
+/* Verwaltung am Handy: Karten statt einer 760 px breiten Tabelle. Die
+   Feuerwehr schaut in der Home-Assistant-App darauf, dort ist seitliches
+   Scrollen durch eine Tabelle kaum zu bedienen. */
+@media (max-width: 720px) {
+  table, tbody { display: block; min-width: 0; }
+  thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+    padding: 14px 16px;
+  }
+  tbody td { display: block; padding: 0; overflow-wrap: anywhere; }
+  tbody td.name { grid-column: 1; grid-row: 1; }
+  tbody td:last-child { grid-column: 2; grid-row: 1; }
+  tbody td[data-label] { grid-column: 1 / -1; }
+  tbody td[data-label]::before { content: attr(data-label) ": "; color: var(--grau-3); }
+  /* leere Angaben ("—") auf der Karte weglassen */
+  tbody td[data-label]:has(> .leer:only-child) { display: none; }
 }
 
 .visually-hidden {
@@ -585,14 +645,15 @@ td.leer { color: var(--grau-3); }
 .fussleiste {
   max-width: 1020px;
   margin: 0 auto;
-  padding: 8px 24px 32px;
+  padding: 0 24px 20px;
   display: flex;
   justify-content: center;
-  gap: 12px;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
   color: var(--grau-2);
 }
-.fussleiste a { color: var(--grau-2); text-decoration: underline; text-underline-offset: 3px; }
+.fussleiste a { display: inline-block; padding: 12px 6px; color: var(--grau-2); text-decoration: underline; text-underline-offset: 3px; }
 .fussleiste a:hover { color: var(--tinte); }
 
 /* Rechtstexte */
@@ -621,6 +682,9 @@ td.leer { color: var(--grau-3); }
 /* Absage: bewusst kein Knopf, damit niemand versehentlich draufkommt */
 .absage-link {
   align-self: center;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   padding: 10px 12px;
   font-size: 15px;
   color: var(--grau-2);

@@ -914,6 +914,17 @@ def _auswahl(feldname, erlaubt):
     return [name for name in erlaubt if name in gewaehlt]
 
 
+class Formularfehler(str):
+    """Eine Fehlermeldung, die weiss, zu welchem Feld sie gehoert. Sie bleibt
+    ein gewoehnlicher Text - das Template zeigt sie oben wie bisher - und
+    markiert zusaetzlich das Feld selbst."""
+
+    def __new__(cls, text, feld=""):
+        neu = super().__new__(cls, text)
+        neu.feld = feld
+        return neu
+
+
 def _formular_lesen(opt, frei):
     """Formular auslesen und pruefen. Gibt die Werte und - falls etwas nicht
     stimmt - eine Meldung zurueck. "frei" ist die Zahl der Plaetze, die diese
@@ -928,46 +939,53 @@ def _formular_lesen(opt, frei):
     }
     try:
         werte["personen"] = _menge("personen")
-        for i, gericht in enumerate(opt["essen"]):
-            anzahl = _menge(f"essen_{i}")
-            if anzahl > 0:
-                werte["essen"][gericht] = anzahl
     except ValueError as problem:
-        return werte, str(problem)
+        return werte, Formularfehler(str(problem), "personen")
+    for i, gericht in enumerate(opt["essen"]):
+        try:
+            anzahl = _menge(f"essen_{i}")
+        except ValueError as problem:
+            return werte, Formularfehler(str(problem), "essen")
+        if anzahl > 0:
+            werte["essen"][gericht] = anzahl
 
     personen = werte["personen"]
     stueck = sum(werte["essen"].values())
     if len(werte["name"]) < 2:
-        return werte, "Bitte tragen Sie einen Namen ein."
+        return werte, Formularfehler("Bitte tragen Sie einen Namen ein.", "name")
     if personen < 1:
-        return werte, "Bitte geben Sie mindestens eine Person an."
+        return werte, Formularfehler("Bitte geben Sie mindestens eine Person an.", "personen")
     if opt["email_abfragen"]:
         # Pflichtfeld: ohne Adresse gibt es weder Bestaetigung noch den Link
         # zum Aendern und Absagen, und genau daran haengt die Planung.
         if not werte["email"]:
-            return werte, "Bitte tragen Sie eine E-Mail-Adresse ein."
+            return werte, Formularfehler("Bitte tragen Sie eine E-Mail-Adresse ein.", "email")
         if not EMAIL_MUSTER.fullmatch(werte["email"]):
-            return werte, (
+            return werte, Formularfehler(
                 "Die E-Mail-Adresse sieht nicht vollständig aus. "
-                "Bitte prüfen Sie die Schreibweise."
+                "Bitte prüfen Sie die Schreibweise.",
+                "email",
             )
     if personen > opt["max_personen_pro_anmeldung"]:
-        return werte, (
+        return werte, Formularfehler(
             "Pro Anmeldung sind höchstens "
-            f"{opt['max_personen_pro_anmeldung']} Personen möglich."
+            f"{opt['max_personen_pro_anmeldung']} Personen möglich.",
+            "personen",
         )
     if personen > frei:
-        return werte, (
+        return werte, Formularfehler(
             f"Es sind nur noch {frei} Plätze frei. "
-            "Bitte passen Sie die Personenzahl an."
+            "Bitte passen Sie die Personenzahl an.",
+            "personen",
         )
     if stueck > personen * 10:
         # Die Zahl sind Stueck, nicht Portionen je Person - eine Person nimmt
         # durchaus zwei Weisswuerste. Die Grenze faengt nur Zahlendreher ab.
-        return werte, (
+        return werte, Formularfehler(
             f"Das sind {stueck} Stück für {personen} "
             f"{'Person' if personen == 1 else 'Personen'}. "
-            "Bitte prüfen Sie die Zahlen noch einmal."
+            "Bitte prüfen Sie die Zahlen noch einmal.",
+            "essen",
         )
     return werte, None
 
@@ -1313,6 +1331,9 @@ def csv_export():
 # --------------------------------------------------------------------------
 
 
+ERGAENZUNGSSTRICH = re.compile(r"(?<=\s)-(?=\w)")
+
+
 @app.template_filter("zeilen")
 def zeilen(text):
     """Einzeiliges Feld, mehrzeiliger Text.
@@ -1325,7 +1346,11 @@ def zeilen(text):
     teile = []
     for zeile in (text or "").splitlines():
         teile.extend(zeile.split("|"))
-    return "\n".join(t.strip() for t in teile if t.strip())
+    ergebnis = "\n".join(t.strip() for t in teile if t.strip())
+    # "Kameradinnen und -kameraden": Nach dem Strich darf der Browser umbrechen,
+    # dann steht "und -" allein am Zeilenende. Ein Wortverbinder haelt den
+    # Strich am Wort.
+    return ERGAENZUNGSSTRICH.sub("-\u2060", ergebnis)
 
 
 @app.template_filter("uhrzeit")

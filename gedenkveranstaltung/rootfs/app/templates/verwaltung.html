@@ -96,15 +96,15 @@
             {% if a.abgesagt %}<span class="merker">abgesagt</span>{% endif %}
             {% if a.email %}<div style="font-weight: 400; font-size: 13px; color: var(--grau-2);">{{ a.email }}</div>{% endif %}
           </td>
-          <td>{{ a.personen }}</td>
-          <td>
+          <td data-label="Personen">{{ a.personen }}</td>
+          <td data-label="Essen">
             {% if a.essen %}{% for gericht, menge in a.essen.items() %}{{ menge }} {{ gericht }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}<span class="leer">—</span>{% endif %}
           </td>
-          <td>
+          <td data-label="Getränke">
             {% if a.getraenke %}{{ a.getraenke | join(', ') }}{% else %}<span class="leer">—</span>{% endif %}
           </td>
-          <td>{% if a.anmerkung %}{{ a.anmerkung }}{% else %}<span class="leer">—</span>{% endif %}</td>
-          <td class="zeit">{{ a.zeit | uhrzeit }}</td>
+          <td data-label="Anmerkung">{% if a.anmerkung %}{{ a.anmerkung }}{% else %}<span class="leer">—</span>{% endif %}</td>
+          <td class="zeit" data-label="Eingang">{{ a.zeit | uhrzeit }}</td>
           <td>
             {# Der Name geht als Attribut hinein, nicht in den Skripttext: sonst
                koennte ein Name mit Anfuehrungszeichen aus dem confirm() ausbrechen. #}

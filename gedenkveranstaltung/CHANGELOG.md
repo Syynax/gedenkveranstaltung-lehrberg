@@ -1,5 +1,33 @@
 # Änderungen
 
+## 1.12.0
+
+Alle Seiten auf Handy, Tablet und PC durchgeprüft, bei 320 bis 1920 px Breite.
+Behoben:
+
+- Verwaltung am Handy: Die Seite ließ sich seitlich verschieben, weil die
+  unsichtbare Spaltenüberschrift „Löschen“ aus der Tabelle ragte. Außerdem
+  zeigt die Verwaltung unter 720 px Karten statt einer 760 px breiten Tabelle,
+  leere Angaben fallen dort weg. Der Löschen-Knopf ist 44 px groß.
+- Formular am PC: Zwischen Essen und Getränken klaffte ein Loch, weil sich die
+  rechte Spalte an den Zeilenhöhen links ausrichtete. Die Bestellung ist jetzt
+  ein eigener Block.
+- Formular: Ein Fehler wird zusätzlich direkt am Feld angezeigt, das Feld rot
+  umrandet und angesprungen. Am Handy lag es sonst eine Bildschirmhöhe unter
+  der Meldung.
+- Formular bei 320 px: Lange Gerichtnamen drückten den Plus-Knopf an den Rand.
+- „Feuerwehrkameradinnen und -“ brach auf iPhones mit dem Strich am
+  Zeilenende um. Der Strich bleibt jetzt am Wort.
+- Lange E-Mail-Adressen und Namen ohne Trennstelle ragten auf der
+  Bestätigungsseite aus der Karte.
+- „9:30 Uhr“ bricht nicht mehr zwischen Zahl und „Uhr“ um.
+- Die Überschrift wächst stetig mit der Breite, statt zwischen 34, 40 und 38 px
+  zu springen.
+- Tablet hochkant und Handy quer: Die Seiten nutzen 560 statt 440 px.
+- Links in der Fußleiste und „Anmeldung absagen“ sind 44 px hoch.
+- Rechte Spalte der Startseite klebt am PC nur noch, wenn das Fenster hoch
+  genug ist, damit ihr Ende nie unerreichbar wird.
+
 ## 1.11.0
 
 - Der Ablauf ist ein Zeitstrahl: ein Kreis je Punkt, verbunden durch eine

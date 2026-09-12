@@ -30,18 +30,20 @@
     <div class="feld feld--name">
       <label class="feld__label" for="name">Wer kommt?</label>
       <div class="feld__hilfe">Name, unter dem die Anmeldung geführt wird.</div>
-      <input id="name" name="name" type="text" required maxlength="80"
+      <input id="name" name="name" type="text" required maxlength="80"{{ teile.fehlerattr(fehler, 'name') }}
              autocomplete="name" placeholder="Vor- und Nachname"
              value="{{ eingaben.name or '' }}">
+      {{ teile.fehlertext(fehler, 'name') }}
     </div>
 
     {% if opt.email_abfragen %}
     <div class="feld feld--email">
       <label class="feld__label" for="email">E-Mail</label>
       <div class="feld__hilfe">Wir schicken Ihnen die Bestätigung und den Link, mit dem Sie Ihre Anmeldung später ändern oder absagen können. Sonst wird die Adresse nicht verwendet.</div>
-      <input id="email" name="email" type="email" maxlength="120" required
+      <input id="email" name="email" type="email" maxlength="120" required{{ teile.fehlerattr(fehler, 'email') }}
              autocomplete="email" inputmode="email" placeholder="name@beispiel.de"
              value="{{ eingaben.email or '' }}">
+      {{ teile.fehlertext(fehler, 'email') }}
     </div>
     {% endif %}
 
@@ -49,13 +51,16 @@
       <label class="feld__label" for="personen">Wie viele Personen?</label>
       <div class="personen">
         <button type="button" class="schritt-gross" data-schritt="-1" data-ziel="personen" aria-label="Eine Person weniger">{{ teile.minus(20) }}</button>
-        <input class="personen__anzeige" id="personen" name="personen" type="number"
+        <input class="personen__anzeige" id="personen" name="personen" type="number"{{ teile.fehlerattr(fehler, 'personen') }}
                inputmode="numeric" min="1" max="{{ [opt.max_personen_pro_anmeldung, frei] | min }}"
                required value="{{ eingaben.personen or 1 }}">
         <button type="button" class="schritt-gross" data-schritt="1" data-ziel="personen" aria-label="Eine Person mehr">{{ teile.plus(20) }}</button>
       </div>
+      {{ teile.fehlertext(fehler, 'personen') }}
       <div class="feld__hilfe">Höchstens {{ [opt.max_personen_pro_anmeldung, frei] | min }} Personen pro Anmeldung.</div>
     </div>
+
+    <div class="formular__bestellung">
 
     {% if opt.essen %}
     <div class="feld feld--essen">
@@ -64,7 +69,8 @@
         <span class="wahl__zaehler" data-zaehler></span>
       </div>
       <div class="feld__hilfe">Angabe in Stück.</div>
-      <div class="wahl__liste" role="group" aria-labelledby="essen-titel">
+      {{ teile.fehlertext(fehler, 'essen') }}
+      <div class="wahl__liste" role="group" aria-labelledby="essen-titel"{{ teile.fehlerattr(fehler, 'essen') }}>
         {% for gericht in opt.essen %}
         <div class="zeile zeile--menge">
           <label class="zeile__name" for="essen_{{ loop.index0 }}">{{ gericht }}</label>
@@ -95,6 +101,8 @@
     </div>
     {% endif %}
 
+    </div>
+
     <div class="feld feld--anmerkung">
       <label class="feld__label" for="anmerkung">Anmerkung <span class="optional">(optional)</span></label>
       <textarea id="anmerkung" name="anmerkung" rows="3" maxlength="500">{{ eingaben.anmerkung or '' }}</textarea>
@@ -117,6 +125,19 @@
   </form>
 
 </main>
+
+{% if fehler and fehler.feld %}
+<script>
+// Zum fehlerhaften Feld springen - am Handy liegt es sonst weit unter der Meldung.
+(function () {
+  var falsch = document.querySelector('[aria-invalid="true"]');
+  if (!falsch) return;
+  var ziel = falsch.matches('input, textarea') ? falsch : falsch.querySelector('input');
+  if (ziel) ziel.focus({ preventScroll: true });
+  falsch.closest('.feld').scrollIntoView({ block: 'center' });
+})();
+</script>
+{% endif %}
 
 <script>
 (function () {
