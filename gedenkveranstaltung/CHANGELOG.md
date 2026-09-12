@@ -1,5 +1,14 @@
 # Änderungen
 
+## 1.7.1
+
+- Aufräumen an der Testsperre: Der Rückfall auf `X-Forwarded-For` war wirkungslos,
+  weil waitress diese Kopfzeilen ohne `trusted_proxy` verwirft — er ist raus.
+  Maßgeblich ist `Cf-Connecting-Ip` von Cloudflare; fehlt sie, zählt die
+  tatsächliche Absenderadresse. Als „aus dem Haus" gilt jetzt nur noch eine
+  private Adresse, nicht mehr jede Anfrage ohne Kopfzeile. Damit greift die
+  Sperre auch bei einer direkten Portfreigabe am Router.
+
 ## 1.7.0
 
 - Neue Option `nur_fuer_ip`: Zum Testen vor dem Aushang ist die Gästeseite nur

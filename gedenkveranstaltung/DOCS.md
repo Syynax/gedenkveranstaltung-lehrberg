@@ -152,10 +152,17 @@ Adresse und Pfad im Add-on-Protokoll.
 Zu beachten:
 
 * **Aus dem Heimnetz bleibt die Seite offen.** Gesperrt wird nur, was von außen
-  durch den Tunnel kommt. Ein Aufruf im eigenen WLAN über
-  `http://homeassistant.local:8080` zeigt also weiter die normale Seite — zum
-  Prüfen der Sperre muss man über die öffentliche Adresse gehen, etwa vom Handy
-  im Mobilfunknetz.
+  kommt. Ein Aufruf im eigenen WLAN über `http://homeassistant.local:8080` zeigt
+  also weiter die normale Seite — zum Prüfen der Sperre muss man über die
+  öffentliche Adresse gehen, etwa vom Handy im Mobilfunknetz.
+* **Die Adresse des Gastes kommt von Cloudflare.** Der Tunnel setzt dafür die
+  Kopfzeile `Cf-Connecting-Ip`; ohne sie zählt schlicht, von wo die Verbindung
+  kam. Andere Weiterleitungs-Kopfzeilen wertet das Add-on bewusst nicht aus,
+  weil sie jeder selbst schreiben kann. Wer die Seite später über einen anderen
+  Weg veröffentlicht — etwa das NGINX-Add-on auf demselben Rechner — sollte die
+  Sperre vorher einmal von außen prüfen: Dann sieht der Server nur noch den
+  Proxy und damit eine Adresse aus dem eigenen Netz, und die Sperre greift
+  nicht mehr.
 * **Der Watchdog läuft weiter.** Home Assistant prüft die Startseite
   regelmäßig; diese Prüfung kommt von innen und wird nicht gesperrt. Sonst
   würde das Add-on während der Testphase dauernd neu gestartet.

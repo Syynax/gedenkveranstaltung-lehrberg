@@ -563,29 +563,37 @@ def ueber_ingress():
 
 
 def besucher_adresse():
-    """Adresse des Gastes. Hinter dem Cloudflare-Tunnel steht in remote_addr nur
-    der Tunnel selbst - die echte Adresse kommt als Kopfzeile. Cf-Connecting-Ip
-    setzt Cloudflare selbst; aus X-Forwarded-For zaehlt der letzte Eintrag,
-    alles davor darf der Absender frei erfinden."""
-    adresse = (request.headers.get("Cf-Connecting-Ip") or "").strip()
-    if not adresse:
-        kette = [
-            teil.strip()
-            for teil in (request.headers.get("X-Forwarded-For") or "").split(",")
-            if teil.strip()
-        ]
-        adresse = kette[-1] if kette else ""
-    return adresse or request.remote_addr or ""
+    """Adresse des Gastes.
 
+    Hinter dem Cloudflare-Tunnel steht in remote_addr nur der Tunnel selbst -
+    die echte Adresse setzt Cloudflare als Cf-Connecting-Ip. Ohne diese
+    Kopfzeile gilt schlicht, von wo die Verbindung kam.
 
-def ueber_tunnel():
-    """Kam die Anfrage von aussen? Dann hat der Tunnel eine Kopfzeile mit der
-    Adresse des Gastes gesetzt. Ohne die stammt sie aus dem Haus - aus dem
-    Heimnetz oder vom Supervisor."""
-    return bool(
-        (request.headers.get("Cf-Connecting-Ip") or "").strip()
-        or (request.headers.get("X-Forwarded-For") or "").strip()
+    X-Forwarded-For wird bewusst nicht ausgewertet: waitress wirft alle
+    X-Forwarded-Kopfzeilen weg, solange kein trusted_proxy eingetragen ist, und
+    ihnen zu vertrauen hiesse, dass sich jeder eine beliebige Adresse ausstellen
+    kann.
+    """
+    return (request.headers.get("Cf-Connecting-Ip") or "").strip() or (
+        request.remote_addr or ""
     )
+
+
+def aus_dem_haus():
+    """Kam die Anfrage aus dem eigenen Netz?
+
+    Der Watchdog des Supervisors und Aufrufe aus dem Heimnetz haben eine private
+    Adresse und keine Kopfzeile von Cloudflare. Die bleiben von der Testsperre
+    unberuehrt - sonst bekaeme der Watchdog dauerhaft eine 503 und startete das
+    Add-on womoeglich im Kreis neu.
+    """
+    if (request.headers.get("Cf-Connecting-Ip") or "").strip():
+        return False
+    try:
+        wer = ipaddress.ip_address(request.remote_addr or "")
+    except ValueError:
+        return False
+    return wer.is_private or wer.is_loopback or wer.is_link_local
 
 
 def adressnetze(text):
@@ -630,15 +638,11 @@ def testsperre():
     sich mit einem Tippfehler selbst aus.
 
     Das ist eine Testsperre, kein Schutzwall: wer das Add-on am Tunnel vorbei
-    direkt erreicht, kann die Kopfzeile Cf-Connecting-Ip selbst setzen."""
+    direkt erreicht, kann die Kopfzeile Cf-Connecting-Ip selbst setzen. Und wer
+    aus dem Heimnetz kommt, wird gar nicht erst geprueft."""
     if ueber_ingress() or request.endpoint == "static":
         return None
-    # Anfragen ohne Weiterleitungs-Kopfzeile kommen aus dem Haus: der Watchdog
-    # des Supervisors (config.yaml) und Aufrufe aus dem Heimnetz. Die bleiben
-    # offen - sonst bekaeme der Watchdog dauerhaft eine 503 und startete das
-    # Add-on womoeglich im Kreis neu, und aus dem Heimnetz liesse sich die
-    # Seite waehrend der Testphase gar nicht mehr ansehen.
-    if not ueber_tunnel():
+    if aus_dem_haus():
         return None
     opt = optionen()
     netze = adressnetze(opt["nur_fuer_ip"])
