@@ -49,8 +49,13 @@ Uhrzeit, gehört sie zum nächsten Punkt:
 Beginn 9:30 | Andacht | Rückblick auf den Einsatz | Weißwurstfrühstück
 ```
 
-Das ergibt „9:30 Andacht“ und darunter die übrigen Punkte ohne Uhrzeit. Wer
-jedem Punkt eine Zeit geben will, schreibt sie jeweils davor:
+Am einfachsten ganz ohne Uhrzeit, die Reihenfolge zeigt der Zeitstrahl:
+
+```
+Andacht | Rückblick auf den Einsatz | Weißwurstfrühstück
+```
+
+Wer einem Punkt doch eine Zeit geben will, schreibt sie davor:
 
 ```
 9:30 | Andacht | 10:00 | Rückblick | 10:30 | Weißwurstfrühstück
@@ -62,8 +67,9 @@ Als Uhrzeit gelten `9:30`, `9.30`, `9:30 Uhr`, `ca. 12:30`, `ab 12:30`,
 dem Datum. Statt des Strichs gehen auch ein Semikolon oder eine neue Zeile, und
 ein versehentlich mitkopiertes `ablauf: |-` wird entfernt.
 
-Sobald ein Punkt eine Uhrzeit hat, bleibt die Spalte für alle stehen, damit die
-Texte bündig sind. Ist das Feld leer, entfällt der Kasten ganz.
+Dargestellt wird der Ablauf als Zeitstrahl: ein Kreis je Punkt, verbunden durch
+eine Linie. Uhrzeiten sind dafür nicht nötig. Wo doch eine steht, erscheint sie
+klein über dem Punkt. Ist das Feld leer, entfällt der Kasten ganz.
 
 ### Handy und Rechner
 

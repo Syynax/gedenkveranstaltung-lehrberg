@@ -21,9 +21,9 @@ configuration:
   ablauf:
     name: "Veranstaltung: Ablauf"
     description: >-
-      Punkte durch einen senkrechten Strich trennen. Eine Uhrzeit zwischen zwei
-      Strichen gehört zum nächsten Punkt. Beispiel: „Beginn 9:30 | Andacht |
-      Vortrag | Weißwurstfrühstück“. Leer = kein Ablauf.
+      Punkte durch einen senkrechten Strich trennen, z. B. „Andacht | Vortrag |
+      Weißwurstfrühstück“. Wird als Zeitstrahl gezeigt, Uhrzeiten sind nicht
+      nötig. Eine Uhrzeit vor einem Punkt erscheint klein darüber. Leer = kein Ablauf.
   kontakt:
     name: "Veranstaltung: Ansprechpartner"
     description: Name und Telefon oder E-Mail für Rückfragen. Steht auf der Seite und in der Mail.

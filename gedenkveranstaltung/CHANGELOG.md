@@ -1,5 +1,13 @@
 # Änderungen
 
+## 1.11.0
+
+- Der Ablauf ist ein Zeitstrahl: ein Kreis je Punkt, verbunden durch eine
+  Linie, der erste Kreis gefüllt. Die Reihenfolge trägt der Strahl, deshalb
+  sieht der Ablauf auch ganz ohne Uhrzeiten fertig aus. Bisher lebte die
+  Darstellung von der Zeitspalte, und ohne Zeiten blieb eine leere Lücke.
+- Eine Uhrzeit ist weiter möglich und steht dann klein über dem Punkt.
+
 ## 1.10.3
 
 - Die Vorschläge im Anmerkungsfeld sind raus. Das Feld ist jetzt leer.
