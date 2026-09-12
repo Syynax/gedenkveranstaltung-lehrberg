@@ -175,26 +175,32 @@ YAML_KOPF = re.compile(r"^\s*ablauf\s*:\s*(?:\|-?|>-?)?\s*", re.IGNORECASE)
 
 
 def ablauf_punkte(text):
-    """Der Ablauf aus den Optionen: eine Zeile je Punkt, Uhrzeit und Text durch
-    einen senkrechten Strich getrennt ("9:30 | Empfang").
+    """Der Ablauf aus den Optionen: ein Punkt je Zeile, Uhrzeit und Text durch
+    einen senkrechten Strich getrennt ("9:30 | Andacht").
 
     Das Feld in der Add-on-Oberflaeche ist einzeilig. Wer mehrere Punkte
     hineinkopiert, hat sie am Ende hintereinander stehen - und oft noch den
     YAML-Kopf "ablauf: |-" davor. Beides wird hier aufgeraeumt, damit die
     Seite nicht wegen eines Kopierfehlers Unsinn anzeigt.
+
+    Ein Semikolon trennt ebenfalls zwei Punkte. Das braucht, wer nur den
+    Beginn mit einer Uhrzeit versieht und den Rest ohne: ohne Strich davor
+    laesst sich ein neuer Punkt sonst nicht von der Fortsetzung des alten
+    unterscheiden, denn "Andacht" sieht aus wie eine Zeitangabe.
     """
     roh = YAML_KOPF.sub("", (text or "").strip())
     punkte = []
     for zeile in roh.splitlines():
-        for stueck in ZEIT_AM_ANFANG.split(zeile):
-            stueck = stueck.strip().lstrip("-").strip()
-            if not stueck:
-                continue
-            zeit, strich, beschreibung = stueck.partition("|")
-            if strich:
-                punkte.append({"zeit": zeit.strip(), "text": beschreibung.strip()})
-            else:
-                punkte.append({"zeit": "", "text": stueck})
+        for abschnitt in zeile.split(";"):
+            for stueck in ZEIT_AM_ANFANG.split(abschnitt):
+                stueck = stueck.strip().lstrip("-").strip()
+                if not stueck:
+                    continue
+                zeit, strich, beschreibung = stueck.partition("|")
+                if strich:
+                    punkte.append({"zeit": zeit.strip(), "text": beschreibung.strip()})
+                else:
+                    punkte.append({"zeit": "", "text": stueck})
     return punkte
 
 

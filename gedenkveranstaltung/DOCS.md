@@ -54,10 +54,22 @@ Uhrzeit und Text durch einen senkrechten Strich getrennt. In das Feld
 
 Statt einer Uhrzeit geht auch eine kurze Angabe wie `anschl.` oder `ca. 12:30`.
 
+Soll nur der Beginn eine Uhrzeit tragen und der Rest keine, trennt ein
+Semikolon die Punkte:
+
+```
+9:30 | Andacht; Rückblick auf den Einsatz; Weißwurstfrühstück; Ausklang
+```
+
+Das Semikolon ist dafür nötig, weil ein Punkt ohne Strich sonst nicht von der
+Fortsetzung des vorigen zu unterscheiden wäre. Sobald ein einziger Punkt eine
+Uhrzeit hat, bleibt die Spalte für alle stehen, damit die Texte untereinander
+bündig sind.
+
 Das Feld in der Add-on-Oberfläche ist einzeilig, alles landet also
 hintereinander. Das macht nichts: vor jedem neuen Punkt wird automatisch
-getrennt, und ein versehentlich mitkopiertes `ablauf: |-` wird entfernt. Zeilen ohne
-Strich stehen ohne Uhrzeit da. Ist das Feld leer, entfällt der Kasten ganz.
+getrennt, und ein versehentlich mitkopiertes `ablauf: |-` wird entfernt. Ist das
+Feld leer, entfällt der Kasten ganz.
 
 ### Handy und Rechner
 

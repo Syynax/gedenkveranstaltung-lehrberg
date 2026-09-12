@@ -1,5 +1,16 @@
 # Änderungen
 
+## 1.8.1
+
+- Im Ablauf trennt jetzt auch ein Semikolon zwei Punkte. Damit lässt sich nur
+  der Beginn mit einer Uhrzeit versehen und der Rest ohne: `9:30 | Andacht;
+  Rückblick auf den Einsatz; Weißwurstfrühstück`. Ohne eigenen Trenner ginge
+  das nicht, weil ein Punkt ohne Strich aussieht wie die Fortsetzung des
+  vorigen.
+- Punkte ohne Uhrzeit bleiben bündig mit denen, die eine haben. Die Spalte
+  bleibt stehen, sobald ein einziger Punkt eine Zeit trägt, und fällt weg,
+  wenn keiner eine hat.
+
 ## 1.8.0
 
 - Die Datenschutzerklärung wurde gegen den Code geprüft und dort nachgezogen,

@@ -104,10 +104,14 @@
     {% if ablauf %}
     <div class="ablauf">
       <div class="termin__label">Ablauf</div>
+      {# Sobald ein Punkt eine Uhrzeit hat, bekommt jeder Punkt die Spalte - auch
+         die leeren. Sonst ruecken die Texte ohne Zeit nach links und die Liste
+         franst aus. Hat kein Punkt eine Zeit, faellt die Spalte ganz weg. #}
+      {% set mit_zeit = ablauf | selectattr("zeit") | list | length > 0 %}
       <ol class="ablauf__liste">
         {% for punkt in ablauf %}
         <li class="ablauf__punkt">
-          {% if punkt.zeit %}<span class="ablauf__zeit">{{ punkt.zeit }}</span>{% endif %}
+          {% if mit_zeit %}<span class="ablauf__zeit">{{ punkt.zeit }}</span>{% endif %}
           <span class="ablauf__text">{{ punkt.text }}</span>
         </li>
         {% endfor %}
