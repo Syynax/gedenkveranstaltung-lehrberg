@@ -35,6 +35,27 @@
   </div>
   {% endif %}
 
+  {% if postausgang_fehlt %}
+  <div class="meldung meldung--fehler">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span>Es ist <b>kein Postausgang eingerichtet</b>. Die Gäste geben eine
+      Adresse an, bekommen aber keine Bestätigung und keinen Link zum Ändern
+      und Absagen. Einzutragen unter <b>E-Mail</b> in den Add-on-Einstellungen.</span>
+  </div>
+  {% endif %}
+
+  {% if mail_fehler %}
+  <div class="meldung meldung--fehler">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5h18v11H3z"></path><path d="M3 7l9 6 9-6"></path></svg>
+    <span>Bei <b>{{ mail_fehler | length }}</b>
+      {{ 'Anmeldung' if mail_fehler | length == 1 else 'Anmeldungen' }} kam die
+      Bestätigung nicht an: {{ mail_fehler | map(attribute='name') | join(', ') }}.
+      Diese Gäste haben keinen Link zum Ändern und Absagen — bitte anrufen oder
+      die Adresse von Hand anschreiben. Der Grund steht bei der jeweiligen
+      Zeile.</span>
+  </div>
+  {% endif %}
+
   <div class="kennzahlen">
     <div class="kennzahl">
       <span class="kennzahl__label">Anmeldungen</span>
@@ -95,6 +116,12 @@
             {{ a.name }}
             {% if a.abgesagt %}<span class="merker">abgesagt</span>{% endif %}
             {% if a.email %}<div style="font-weight: 400; font-size: 13px; color: var(--grau-2);">{{ a.email }}</div>{% endif %}
+            {% if a.mail and a.mail.stand == 'fehlgeschlagen' %}
+            <div class="mailfehler">
+              <b>Bestätigung nicht zugestellt</b>{% if a.mail.grund %} — {{ a.mail.grund }}{% endif %}
+              {% if a.mail.zeit %}<span class="zeit">({{ a.mail.zeit | uhrzeit }}{% if a.mail.art and a.mail.art != 'neu' %}, {{ a.mail.art }}{% endif %})</span>{% endif %}
+            </div>
+            {% endif %}
           </td>
           <td data-label="Personen">{{ a.personen }}</td>
           <td data-label="Essen">

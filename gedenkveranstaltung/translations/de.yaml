@@ -45,7 +45,9 @@ configuration:
       damit nichts – dafür den Hauptschalter oben benutzen.
   essen:
     name: "Anmeldung: Speisen"
-    description: Zur Auswahl mit Stückzahl, ein Gericht je Eintrag.
+    description: >-
+      Zur Auswahl mit Stückzahl, ein Gericht je Eintrag. Mit „Weißwürste | Paar“
+      bekommt das Gericht im Formular einen Knopf, der zwei auf einmal dazulegt.
   getraenke:
     name: "Anmeldung: Getränke"
     description: Zum Ankreuzen, ein Getränk je Eintrag.

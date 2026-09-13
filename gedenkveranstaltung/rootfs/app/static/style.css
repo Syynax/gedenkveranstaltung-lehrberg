@@ -496,6 +496,32 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visib
   border: none;
 }
 .menge.null { color: var(--grau-3); }
+
+/* Sammelknopf: ein Tipp legt gleich ein Paar dazu. Mit ihm sind es vier
+   Bedienelemente in einer Zeile - unter 430 px bekommt der Gerichtname
+   deshalb eine eigene Zeile, sonst bliebe für ihn kaum Platz. */
+.sammel {
+  height: 44px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tinte-2);
+  background: var(--karte-2);
+  border: 1px solid var(--rahmen);
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sammel:hover { background: var(--bronze-hell); border-color: var(--linie); }
+.js-aus .sammel { display: none; }
+
+@media (max-width: 429px) {
+  .zeile--sammel { flex-wrap: wrap; row-gap: 6px; justify-content: flex-end; }
+  .zeile--sammel .zeile__name { flex-basis: 100%; }
+}
+
 .js-aus .schritt { display: none; }
 .js-aus .menge { width: 64px; border: 1px solid var(--rahmen); background: var(--karte); }
 
@@ -702,6 +728,17 @@ td.leer { color: var(--grau-3); }
 /* Verwaltung: abgesagte Zeilen */
 tr.abgesagt td { color: var(--grau-3); }
 tr.abgesagt td.name { color: var(--grau-2); font-weight: 400; text-decoration: line-through; }
+/* Nicht zugestellte Bestaetigung, direkt an der betroffenen Anmeldung. */
+.mailfehler {
+  margin-top: 4px;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #6E2C20;
+  overflow-wrap: anywhere;
+}
+.mailfehler .zeit { color: inherit; opacity: 0.75; white-space: nowrap; }
+
 .merker {
   display: inline-block;
   padding: 2px 8px;

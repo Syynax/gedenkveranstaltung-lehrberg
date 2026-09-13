@@ -43,7 +43,9 @@ configuration:
     description: Only a note on the page. It does not close anything, use the main switch for that.
   essen:
     name: "Registration: food"
-    description: Chosen with a piece count, one dish per entry.
+    description: >-
+      Chosen with a piece count, one dish per entry. With "Weißwürste | Paar" the
+      dish gets a button in the form that adds two at once.
   getraenke:
     name: "Registration: drinks"
     description: Ticked, one drink per entry.

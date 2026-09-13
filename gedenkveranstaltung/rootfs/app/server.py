@@ -85,6 +85,34 @@ STANDARD_OPTIONEN = {
 }
 
 
+# Sammelknoepfe im Formular: ein Tipp legt gleich mehrere Stueck dazu. In den
+# Optionen steht dafuer "Weisswuerste | Paar" hinter dem Gericht. Der Name
+# bleibt "Weisswuerste" - er ist zugleich Schluessel im Datensatz, Spalte in
+# der CSV und Zeile in der Mail, daran darf sich nichts aendern.
+SAMMELKNOEPFE = {
+    "paar": {"name": "Paar", "schritt": 2},
+    "dutzend": {"name": "Dutzend", "schritt": 12},
+}
+_unbekannte_knoepfe = set()
+
+
+def gericht_zerlegen(eintrag):
+    """Ein Eintrag der Speisenliste als (Name, Sammelknopf oder None)."""
+    name, _, zusatz = str(eintrag).partition("|")
+    name, zusatz = name.strip(), zusatz.strip()
+    knopf = SAMMELKNOEPFE.get(zusatz.lower())
+    if zusatz and not knopf and zusatz not in _unbekannte_knoepfe:
+        # Einmal je Schreibweise melden - optionen() laeuft bei jedem Aufruf.
+        _unbekannte_knoepfe.add(zusatz)
+        moeglich = ", ".join(sorted(k["name"] for k in SAMMELKNOEPFE.values()))
+        print(
+            f"[anmeldung] Speisen: '{zusatz}' hinter '{name}' ist kein bekannter "
+            f"Sammelknopf ({moeglich}) und wird uebergangen",
+            flush=True,
+        )
+    return name, knopf
+
+
 def optionen():
     """Add-on-Optionen lesen. Wird bei jedem Zugriff gelesen, damit eine
     Aenderung in Home Assistant ohne Neustart der Seite wirkt."""
@@ -93,7 +121,11 @@ def optionen():
         werte.update(json.loads(OPTIONS_FILE.read_text(encoding="utf-8")))
     except (OSError, ValueError):
         pass
-    werte["essen"] = [str(x).strip() for x in werte.get("essen") or [] if str(x).strip()]
+    gerichte = [gericht_zerlegen(x) for x in werte.get("essen") or []]
+    werte["essen"] = [name for name, _ in gerichte if name]
+    werte["essen_knoepfe"] = {
+        name: knopf for name, knopf in gerichte if name and knopf
+    }
     werte["getraenke"] = [str(x).strip() for x in werte.get("getraenke") or [] if str(x).strip()]
     werte["plaetze_gesamt"] = max(1, int(werte.get("plaetze_gesamt") or 1))
     werte["max_personen_pro_anmeldung"] = max(
@@ -605,19 +637,55 @@ def _als_html(inhalt, titel):
     )
 
 
+def postausgang_fehlt(opt):
+    """Adressen werden abgefragt, aber es ist kein Postausgang eingerichtet -
+    dann geht bei keiner einzigen Anmeldung eine Bestaetigung raus."""
+    return bool(opt.get("email_abfragen")) and not (
+        (opt.get("smtp_server") or "").strip()
+        and (opt.get("smtp_absender") or opt.get("smtp_benutzer") or "").strip()
+    )
+
+
+def mailstand_merken(anmeldung_id, art, stand, grund=""):
+    """Das Ergebnis des Versands an der Anmeldung vermerken, damit es in der
+    Verwaltung sichtbar ist. Der Versand laeuft im Hintergrund, deshalb wird
+    hier frisch gelesen - inzwischen kann sich der Datensatz geaendert haben."""
+    if not anmeldung_id:
+        return
+    with _lock:
+        daten = _lesen()
+        eintrag = _suchen(daten, anmeldung_id)
+        if eintrag is None:
+            return
+        eintrag["mail"] = {
+            "stand": stand,
+            "art": art,
+            "zeit": datetime.now().astimezone().isoformat(timespec="seconds"),
+            "grund": str(grund)[:300],
+        }
+        _schreiben(daten)
+
+
 def bestaetigung_mailen(eintrag, art="neu"):
     """Schickt dem Gast eine Bestaetigung, wenn eine Adresse da ist und ein
-    Postausgang eingerichtet ist. Scheitert der Versand, steht das im Log -
-    die Anmeldung selbst ist da laengst gespeichert."""
+    Postausgang eingerichtet ist. Wie es ausgegangen ist, steht danach am
+    Datensatz und damit in der Verwaltung - die Anmeldung selbst ist zu diesem
+    Zeitpunkt laengst gespeichert."""
     empfaenger = (eintrag.get("email") or "").strip()
     opt = optionen()
     server = (opt.get("smtp_server") or "").strip()
     absender = (opt.get("smtp_absender") or opt.get("smtp_benutzer") or "").strip()
     if not empfaenger or not server or not absender:
+        # Kein Versuch, also auch kein Vermerk an der einzelnen Anmeldung: ein
+        # fehlender Postausgang betrifft alle und steht als Hinweis oben in der
+        # Verwaltung.
         return
 
     adresse = (opt.get("oeffentliche_adresse") or "").rstrip("/")
-    _mail_abschicken(opt, empfaenger, art, _mail_inhalt(opt, eintrag, art, adresse))
+    stand, grund = _mail_abschicken(
+        opt, empfaenger, art, _mail_inhalt(opt, eintrag, art, adresse)
+    )
+    mailstand_merken(eintrag.get("id"), art, stand, grund)
 
 
 def _mail_abschicken(opt, empfaenger, art, inhalt):
@@ -641,7 +709,12 @@ def _mail_abschicken(opt, empfaenger, art, inhalt):
     port = int(opt.get("smtp_port") or 587)
     verschluesselung = (opt.get("smtp_verschluesselung") or "starttls").lower()
     benutzer = (opt.get("smtp_benutzer") or "").strip()
-    passwort = opt.get("smtp_passwort") or ""
+    # Auch das Passwort bereinigen: Beim Einfuegen in das Feld in Home Assistant
+    # rutscht leicht ein Leerzeichen oder Zeilenumbruch mit, und SMTP ist
+    # zeilenweise - der Server lehnt die Anmeldung dann mit 535 ab, ohne dass
+    # man dem Feld etwas ansieht. Ein Passwort mit Leerzeichen am Rand vergibt
+    # kein Mailanbieter.
+    passwort = (opt.get("smtp_passwort") or "").strip()
     try:
         if verschluesselung == "ssl":
             verbindung = smtplib.SMTP_SSL(server, port, timeout=20,
@@ -655,8 +728,25 @@ def _mail_abschicken(opt, empfaenger, art, inhalt):
                 verbindung.login(benutzer, passwort)
             verbindung.send_message(nachricht)
         print(f"[anmeldung] Mail ({art}) an {empfaenger} verschickt", flush=True)
+        return "zugestellt", ""
+    except smtplib.SMTPAuthenticationError as fehler:
+        # Der Server war erreichbar und hat die Zugangsdaten abgelehnt. Die
+        # Meldung allein hilft niemandem weiter, deshalb die haeufigen Ursachen
+        # gleich dazu.
+        print(
+            f"[anmeldung] Mail an {empfaenger} fehlgeschlagen: {fehler}\n"
+            f"[anmeldung] Der Mailserver hat Benutzer '{benutzer}' abgelehnt. "
+            "Haeufigste Ursachen: Benutzername muss meist die vollstaendige "
+            "Adresse sein (nicht nur der Teil vor dem @); Postfach-Passwort "
+            "statt Konto-Passwort; bei Zwei-Faktor-Anmeldung ein eigenes "
+            "App-Passwort; bei GMX und Web.de muss der Zugang fuer "
+            "E-Mail-Programme erst im Webmailer freigeschaltet werden.",
+            flush=True,
+        )
+        return "fehlgeschlagen", "Der Mailserver hat die Zugangsdaten abgelehnt"
     except (smtplib.SMTPException, OSError) as fehler:
         print(f"[anmeldung] Mail an {empfaenger} fehlgeschlagen: {fehler}", flush=True)
+        return "fehlgeschlagen", f"{type(fehler).__name__}: {fehler}"
 
 
 def _nachbereiten(arbeit):
@@ -1249,6 +1339,12 @@ def verwaltung():
         essen_summe=essen_summe,
         getraenke_summe=nachfrage(anmeldungen, stand["opt"]["getraenke"]),
         portionen_gesamt=sum(essen_summe.values()),
+        # Nicht zugestellte Bestaetigungen: wer keine bekommen hat, hat auch
+        # keinen Link zum Aendern und Absagen und muss angerufen werden.
+        mail_fehler=[
+            a for a in alle if (a.get("mail") or {}).get("stand") == "fehlgeschlagen"
+        ],
+        postausgang_fehlt=postausgang_fehlt(stand["opt"]),
         **stand,
     )
 
@@ -1303,7 +1399,7 @@ def csv_export():
     puffer = io.StringIO()
     schreiber = csv.writer(puffer, delimiter=";", lineterminator="\r\n")
     kopf = (["Status", "Name", "Personen"] + opt["essen"] + opt["getraenke"]
-            + ["Anmerkung", "E-Mail", "Eingang", "Abgesagt am"])
+            + ["Anmerkung", "E-Mail", "Bestätigungsmail", "Eingang", "Abgesagt am"])
     schreiber.writerow(kopf)
     # Abgesagte stehen mit drin, aber deutlich als solche - so laesst sich in
     # Excel filtern und man sieht trotzdem, wer abgesprungen ist.
@@ -1315,7 +1411,8 @@ def csv_export():
              a.get("name", ""), a.get("personen", 0)]
             + [gewaehlt_essen.get(g, 0) for g in opt["essen"]]
             + ["ja" if g in gewaehlt_trinken else "" for g in opt["getraenke"]]
-            + [a.get("anmerkung", ""), a.get("email", ""), a.get("zeit", ""),
+            + [a.get("anmerkung", ""), a.get("email", ""),
+               (a.get("mail") or {}).get("stand", ""), a.get("zeit", ""),
                a.get("abgesagt", "")]
         )
         schreiber.writerow([_csv_feld(f) for f in zeile])

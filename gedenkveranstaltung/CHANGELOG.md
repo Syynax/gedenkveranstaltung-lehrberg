@@ -1,5 +1,33 @@
 # Änderungen
 
+## 1.13.0
+
+- Beim Essen gibt es einen Knopf, der gleich ein Paar dazulegt. Weißwürste
+  bestellt niemand stückweise, und viermal auf Plus zu tippen für zwei Paar war
+  umständlich. Eingetragen wird das in den Optionen als `Weißwürste | Paar`;
+  ohne Zusatz bleibt alles wie bisher. Gezählt wird weiterhin in Stück — der
+  Name des Gerichts ändert sich nicht, Datensätze, CSV-Spalten und Mails
+  bleiben also unverändert.
+- Unter 430 Pixeln bekommt der Gerichtname eine eigene Zeile, sonst wäre mit
+  dem vierten Knopf kaum Platz für ihn geblieben.
+- **Scheitert eine Bestätigungsmail, steht das jetzt in der Verwaltung** — an
+  der betroffenen Anmeldung mit Grund und Zeitpunkt, dazu oben eine Meldung mit
+  allen Namen. Bisher stand das nur im Protokoll, und da schaut niemand nach.
+  Seit die Adresse Pflichtfeld ist, hat ein Gast ohne Mail auch keinen Link zum
+  Ändern und Absagen — diese Gäste muss die Orga anrufen. Der Stand steht
+  außerdem als Spalte in der CSV, und ein geglückter Versand räumt den Vermerk
+  wieder weg.
+- Ist gar kein Postausgang eingerichtet, obwohl Adressen abgefragt werden,
+  steht das als eigene Meldung oben in der Verwaltung. Das betrifft alle
+  Anmeldungen und gehört nicht an jede einzelne Zeile.
+- Das SMTP-Passwort wird von Leerzeichen und Zeilenumbrüchen am Rand befreit.
+  Beim Einfügen in das Feld in Home Assistant rutscht so etwas leicht mit, und
+  der Mailserver lehnt die Anmeldung dann mit „535 Incorrect authentication
+  data“ ab, ohne dass man dem Feld etwas ansieht. Der Benutzername wurde schon
+  vorher bereinigt.
+- Wird die Anmeldung am Mailserver abgelehnt, steht im Protokoll jetzt, woran
+  es üblicherweise liegt, statt nur des Fehlercodes.
+
 ## 1.12.0
 
 Alle Seiten auf Handy, Tablet und PC durchgeprüft, bei 320 bis 1920 px Breite.

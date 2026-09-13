@@ -68,12 +68,18 @@
         <span class="feld__label" id="essen-titel">Was möchten Sie essen?</span>
         <span class="wahl__zaehler" data-zaehler></span>
       </div>
-      <div class="feld__hilfe">Angabe in Stück.</div>
+      <div class="feld__hilfe">Angabe in Stück.{% if opt.essen_knoepfe %} Ein Tipp auf „Paar“ legt zwei dazu.{% endif %}</div>
       {{ teile.fehlertext(fehler, 'essen') }}
       <div class="wahl__liste" role="group" aria-labelledby="essen-titel"{{ teile.fehlerattr(fehler, 'essen') }}>
         {% for gericht in opt.essen %}
-        <div class="zeile zeile--menge">
+        {% set knopf = (opt.essen_knoepfe or {}).get(gericht) %}
+        <div class="zeile zeile--menge{% if knopf %} zeile--sammel{% endif %}">
           <label class="zeile__name" for="essen_{{ loop.index0 }}">{{ gericht }}</label>
+          {% if knopf %}
+          {# Ein Tipp statt zweier: Weisswuerste bestellt man paarweise. #}
+          <button type="button" class="sammel" data-schritt="{{ knopf.schritt }}" data-ziel="essen_{{ loop.index0 }}"
+                  aria-label="{{ gericht }}: ein {{ knopf.name }} dazu, also {{ knopf.schritt }} Stück">+&nbsp;{{ knopf.name }}</button>
+          {% endif %}
           <button type="button" class="schritt" data-schritt="-1" data-ziel="essen_{{ loop.index0 }}" aria-label="{{ gericht }}: eine Portion weniger">{{ teile.minus(18) }}</button>
           <input class="menge" id="essen_{{ loop.index0 }}" name="essen_{{ loop.index0 }}"
                  type="number" inputmode="numeric" min="0" max="99"

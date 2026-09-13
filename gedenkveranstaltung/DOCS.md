@@ -37,6 +37,25 @@ Essen und Getränke werden unterschiedlich abgefragt:
   Zahlendreher (mehr als zehn Stück je angemeldeter Person).
 * **Getränke** nur als Häkchen, für den groben Überblick. Keine Mengen.
 
+Für Gerichte, die man paarweise bestellt, gibt es einen Knopf, der zwei auf
+einmal dazulegt. Dazu in den Optionen einen senkrechten Strich hinter das
+Gericht setzen:
+
+```yaml
+essen:
+  - Weißwürste | Paar
+  - Wiener | Paar
+  - Brezen
+```
+
+Neben `Paar` (zwei) versteht das Feld auch `Dutzend` (zwölf). Gerichte ohne
+Zusatz behalten nur Plus und Minus. Steht dort etwas anderes, wird es
+übergangen und einmal im Add-on-Protokoll vermerkt.
+
+Wichtig: Der Zusatz steuert nur den Knopf. **Gezählt wird weiter in Stück**,
+und das Gericht heißt überall schlicht „Weißwürste" — in der Verwaltung, im
+CSV-Export und in der Bestätigungsmail. Ein Paar erscheint dort also als 2.
+
 Auf die Platzzahl zählt allein die Anzahl der Personen.
 
 ### Ablauf der Veranstaltung
@@ -114,7 +133,7 @@ Klammern braucht man nur in der YAML-Ansicht.
 | Plätze insgesamt (`plaetze_gesamt`) | Obergrenze über alle Anmeldungen, gezählt in Personen |
 | höchstens Personen je Anmeldung (`max_personen_pro_anmeldung`) | Bremse gegen Zahlendreher |
 | Anmeldeschluss (`anmeldeschluss`) | Nur ein Hinweis, schließt nichts automatisch |
-| Speisen (`essen`) | Gerichte zur Auswahl mit Stückzahl |
+| Speisen (`essen`) | Gerichte zur Auswahl mit Stückzahl. `Weißwürste \| Paar` gibt dem Gericht einen Knopf für zwei auf einmal |
 | Getränke (`getraenke`) | Getränke zum Ankreuzen |
 | E-Mail-Adresse abfragen (`email_abfragen`) | An = Pflichtfeld mit Bestätigungsmail |
 | Hinweis unter dem Absende-Knopf (`datenschutz_hinweis`) | Eine Zeile Kleingedrucktes |
@@ -231,6 +250,12 @@ Zu beachten:
   Angabe.
 * **Anmeldung schließen** — sofort wirksam, jederzeit wieder zu öffnen. Der
   Schalter ist unabhängig von der Option `anmeldung_offen`.
+* **Nicht zugestellte Bestätigungen** — Scheitert der Versand, steht der Grund
+  direkt an der betroffenen Anmeldung, und oben erscheint eine Meldung mit
+  allen Namen. Diese Gäste haben **keinen Link zum Ändern und Absagen** und
+  müssen angerufen oder von Hand angeschrieben werden. Klappt ein späterer
+  Versand — etwa nach einer Änderung — verschwindet der Vermerk wieder. In der
+  CSV steht der Stand in der Spalte `Bestätigungsmail`.
 * **Löschen** — entfernt eine Anmeldung endgültig. Für Absagen ist das
   meistens nicht nötig: Sagt jemand selbst über seinen Link ab, bleibt die
   Zeile durchgestrichen stehen und der Platz ist trotzdem frei.
