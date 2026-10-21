@@ -38,6 +38,21 @@ Add-ons" auf.
 Alles Weitere — Optionen, Sensor, CSV-Export, Daten und Backups — steht in
 [DOCS.md](gedenkveranstaltung/DOCS.md).
 
+## Zweites Add-on: Ausflug Anmeldung
+
+Im Ordner `ausflug/` liegt ein zweites Add-on aus demselben Baukasten: die
+Anmeldung zum Vereinsausflug der Feuerwehr Lehrberg. Gäste melden sich als
+Mitglieder und Nichtmitglieder mit unterschiedlichem Preis an und können den
+Betrag gleich auf der Bestätigungsseite per PayPal bezahlen; ohne PayPal steht
+dort ein Hinweis wie „Bitte bar beim Ausflug zahlen“. Die Verwaltung zeigt je
+Anmeldung Betrag und Zahlungsstand samt Summen, Barzahlungen lassen sich von
+Hand vermerken. Das Add-on heißt in Home Assistant **Ausflug Anmeldung**
+(Slug `ausflug`), die Gästeseite läuft auf Port **8081**, sodass beide Add-ons
+gleichzeitig laufen können. Alle Angaben zum Ausflug, die Preise und die
+PayPal-Zugangsdaten werden in den Add-on-Optionen eingetragen — wie, steht in
+[ausflug/DOCS.md](ausflug/DOCS.md), samt Anleitung für PayPal (erst Sandbox,
+dann live).
+
 ## Was noch offen ist
 
 * Datum, Uhrzeit, Ort, Anmeldeschluss und Kontakt sind absichtlich leer

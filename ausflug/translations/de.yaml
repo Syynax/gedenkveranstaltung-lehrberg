@@ -1,0 +1,150 @@
+configuration:
+  # --- Ausflug: was auf der Startseite steht ----------------------------------
+  titel:
+    name: "Ausflug: Titel"
+    description: Die große Überschrift der Seite, auch Betreff der Bestätigungsmail.
+  untertitel:
+    name: "Ausflug: Überzeile"
+    description: Kleine Zeile in Großbuchstaben über dem Titel, z. B. „Vereinsausflug“.
+  datum:
+    name: "Ausflug: Datum"
+    description: Ausgeschrieben, so wie es dastehen soll, z. B. „Samstag, 12. Juni 2027“.
+  uhrzeit:
+    name: "Ausflug: Abfahrt"
+    description: Nur die Uhrzeit, z. B. „7:00“. Angezeigt wird „Abfahrt 7:00 Uhr“.
+  ort:
+    name: "Ausflug: Treffpunkt"
+    description: Wo es losgeht, z. B. „Feuerwehrgerätehaus Lehrberg“.
+  ziel:
+    name: "Ausflug: Ziel"
+    description: Wohin es geht, z. B. „Bodensee“. Leer = wird nicht angezeigt.
+  text:
+    name: "Ausflug: Einladungstext"
+    description: Der Fließtext auf der Startseite. Ein senkrechter Strich beginnt einen neuen Absatz.
+  ablauf:
+    name: "Ausflug: Ablauf"
+    description: >-
+      Punkte durch einen senkrechten Strich trennen, z. B. „Abfahrt | Führung |
+      Mittagessen | Rückfahrt“. Wird als Zeitstrahl gezeigt, Uhrzeiten sind nicht
+      nötig. Eine Uhrzeit vor einem Punkt erscheint klein darüber. Leer = kein Ablauf.
+  kontakt:
+    name: "Ausflug: Ansprechpartner"
+    description: Name und Telefon oder E-Mail für Rückfragen. Steht auf der Seite und in der Mail.
+
+  # --- Anmeldung ---------------------------------------------------------------
+  anmeldung_offen:
+    name: "Anmeldung: geöffnet"
+    description: Hauptschalter. Aus = niemand kann sich anmelden, die Startseite bleibt sichtbar.
+  plaetze_gesamt:
+    name: "Anmeldung: Plätze insgesamt"
+    description: Obergrenze über alle Anmeldungen zusammen, z. B. die Sitzplätze im Bus. Gezählt werden Personen, Mitglieder und Nichtmitglieder zusammen.
+  max_personen_pro_anmeldung:
+    name: "Anmeldung: höchstens Personen je Anmeldung"
+    description: Mitglieder und Nichtmitglieder zusammen. Bremse gegen Zahlendreher.
+  anmeldeschluss:
+    name: "Anmeldung: Anmeldeschluss"
+    description: >-
+      Nur ein Hinweis auf der Seite, z. B. „bis 20. September“. Geschlossen wird
+      damit nichts – dafür den Hauptschalter oben benutzen.
+  essen:
+    name: "Anmeldung: Speisen vorbestellen"
+    description: >-
+      Optional. Zur Auswahl mit Stückzahl, ein Gericht je Eintrag. Mit „Brezen |
+      Paar“ bekommt das Gericht einen Knopf, der zwei auf einmal dazulegt. Leer =
+      keine Essensbestellung im Formular.
+  getraenke:
+    name: "Anmeldung: Getränke vorbestellen"
+    description: Optional. Zum Ankreuzen, ein Getränk je Eintrag. Leer = keine Getränkeabfrage.
+  email_abfragen:
+    name: "Anmeldung: E-Mail-Adresse abfragen"
+    description: An = Pflichtfeld im Formular, jeder Gast bekommt eine Bestätigung. Aus = kein E-Mail-Feld.
+  datenschutz_hinweis:
+    name: "Anmeldung: Hinweis unter dem Absende-Knopf"
+    description: Eine kurze Zeile Kleingedrucktes. Leer = kein Hinweis.
+
+  # --- Preise und Zahlung --------------------------------------------------------
+  preis_mitglied:
+    name: "Zahlung: Preis für Mitglieder"
+    description: In Euro je Person, z. B. „15“, „15,50“ oder „15.50“.
+  preis_nichtmitglied:
+    name: "Zahlung: Preis für Nichtmitglieder"
+    description: In Euro je Person, z. B. „25“ oder „25,00“.
+  paypal_client_id:
+    name: "Zahlung: PayPal Client-ID"
+    description: Aus dem PayPal-Developer-Dashboard (Apps & Credentials). Leer = kein PayPal, stattdessen der Hinweis unten.
+  paypal_secret:
+    name: "Zahlung: PayPal Secret"
+    description: Gehört zur Client-ID. Bleibt auf dem Server und wird nie an Browser oder Protokoll weitergegeben.
+  paypal_modus:
+    name: "Zahlung: PayPal-Modus"
+    description: sandbox = Testbetrieb mit Testkonten, kein echtes Geld. live = echte Zahlungen. Die Zugangsdaten sind je Modus verschieden.
+  zahlung_hinweis:
+    name: "Zahlung: Hinweis ohne PayPal"
+    description: Steht statt des PayPal-Knopfs, solange PayPal nicht eingerichtet ist, z. B. „Bitte bar beim Ausflug zahlen.“
+
+  # --- Bestätigungsmail --------------------------------------------------------
+  veranstalter:
+    name: "E-Mail: Unterschrift"
+    description: Name unter jeder Mail, z. B. „Freiwillige Feuerwehr Lehrberg“.
+  smtp_server:
+    name: "E-Mail: Mailserver"
+    description: Postausgang, z. B. „mail.smtp2go.com“. Leer = es werden keine Mails verschickt.
+  smtp_port:
+    name: "E-Mail: Port"
+    description: Meist 587 mit STARTTLS, manchmal 465 mit SSL.
+  smtp_verschluesselung:
+    name: "E-Mail: Verschlüsselung"
+    description: starttls bei Port 587, ssl bei Port 465. „keine“ nur für einen Mailserver im eigenen Netz.
+  smtp_benutzer:
+    name: "E-Mail: Benutzername"
+    description: Zugang beim Mailanbieter.
+  smtp_passwort:
+    name: "E-Mail: Passwort"
+    description: Passwort oder App-Passwort beim Mailanbieter.
+  smtp_absender:
+    name: "E-Mail: Absenderadresse"
+    description: Von dieser Adresse kommt die Mail, z. B. „anmeldung@fflehrberg.de“. Die Domain muss beim Anbieter bestätigt sein.
+  smtp_antwort_an:
+    name: "E-Mail: Antworten gehen an"
+    description: Wohin „Antworten“ der Gäste geht, falls die Absenderadresse kein echtes Postfach hat.
+
+  # --- Webseite und Rechtliches --------------------------------------------------
+  oeffentliche_adresse:
+    name: "Webseite: öffentliche Adresse"
+    description: >-
+      So erreichen Gäste die Seite, z. B. „https://ausflug.fflehrberg.de“. Nötig
+      für die Links in der Mail, auch den Bezahl-Link, und die Vorschau beim
+      Teilen per WhatsApp.
+  impressum:
+    name: "Webseite: Impressum"
+    description: >-
+      Name, Anschrift, Vertretung, Kontakt. Ein senkrechter Strich beginnt eine
+      neue Zeile. Erscheint auch als Verantwortlicher im Datenschutz.
+  datenschutz:
+    name: "Webseite: eigene Datenschutzerklärung"
+    description: Leer lassen = die eingebaute Erklärung, die genau zu diesem Add-on passt, PayPal eingeschlossen.
+  loeschfrist:
+    name: "Webseite: Löschfrist"
+    description: Wie lange nach dem Ausflug die Daten gelöscht werden, z. B. „4 Wochen“. Steht in der Datenschutzerklärung.
+  nur_fuer_ip:
+    name: "Webseite: vorab nur sichtbar für"
+    description: >-
+      Zum Testen vor der Veröffentlichung: IP-Adressen oder Bereiche, durch Komma
+      getrennt. Alle anderen sehen „Noch nicht freigeschaltet“. Leer = für alle sichtbar.
+
+  # --- Home Assistant ------------------------------------------------------------
+  sensor_erstellen:
+    name: "Home Assistant: Sensor anlegen"
+    description: Legt sensor.ausflug_freie_plaetze mit Plätzen, Beträgen, Essen und Getränken an.
+  benachrichtigung_dienst:
+    name: "Home Assistant: Benachrichtigung an"
+    description: Notify-Aktion oder -Entität, z. B. „notify.handy_cedric“. Leer = keine Nachrichten.
+  benachrichtigung_jede_anmeldung:
+    name: "Home Assistant: bei jeder Anmeldung benachrichtigen"
+    description: Aus = nur noch Nachrichten beim Erreichen der Schwellen und wenn Geld zu erstatten ist.
+  benachrichtigung_schwellen:
+    name: "Home Assistant: Schwellen"
+    description: Belegte Plätze, bei denen eine Nachricht kommt, z. B. „30, 45“. Leer = keine.
+
+network:
+  8081/tcp: Öffentliche Anmeldeseite für den Ausflug

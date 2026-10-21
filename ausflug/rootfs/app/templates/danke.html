@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% import "teile.html" as teile %}
+
+{% block titel %}{% if eintrag.abgesagt %}Anmeldung abgesagt{% else %}Anmeldung bestätigt{% endif %} – {{ opt.titel }}{% endblock %}
+
+{% block inhalt %}
+{% set geld = zahlstand(eintrag) %}
+<main class="seite seite--schmal">
+
+  {% if eintrag.abgesagt %}
+
+  <div class="kopf">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--grau-2)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"></path></svg>
+    <h1 class="klein">Ihre Anmeldung ist abgesagt.</h1>
+    <p class="fliess">Die Plätze sind wieder frei. Falls Sie es sich anders überlegen, können Sie sich neu anmelden, solange noch Plätze da sind.</p>
+    {% if geld.zuviel > 0 %}
+    <p class="fliess">Sie hatten bereits {{ geld.bezahlt | euro }} bezahlt. Um die Erstattung kümmert sich das Organisationsteam.</p>
+    {% endif %}
+  </div>
+
+  {% else %}
+
+  <div class="kopf">
+    <svg class="haken" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M7.5 12.4l3.1 3.1 6-6.4"></path></svg>
+    <h1 class="klein">{% if request.args.get('bezahlt') and geld.bezahlt > 0 %}Vielen Dank, Ihre Zahlung ist eingegangen.{% elif request.args.get('geaendert') %}Ihre Änderungen sind gespeichert.{% else %}Vielen Dank für Ihre Anmeldung.{% endif %}</h1>
+    <p class="fliess">Ihre Plätze sind reserviert. Wir freuen uns, dass Sie mitfahren.</p>
+  </div>
+
+  {% endif %}
+
+  {# Bezahlen. Der Knopf von PayPal fragt beim Server nach einer Order über
+     den offenen Betrag - welcher Betrag das ist, entscheidet allein der
+     Server. Ohne eingerichtetes PayPal steht hier der Hinweis aus den
+     Optionen, zum Beispiel "Bitte bar beim Ausflug zahlen". #}
+  {% if not eintrag.abgesagt and geld.offen > 0 %}
+  <div class="karte zahlung" id="bezahlen">
+    <div class="block">
+      <div class="block__titel">{% if geld.bezahlt > 0 %}Noch offen{% else %}Zu bezahlen{% endif %}</div>
+      <div class="zahlung__betrag">{{ geld.offen | euro }}</div>
+      {% if geld.bezahlt > 0 %}
+      <div style="font-size: 15px; color: var(--grau-2);">Gesamt {{ geld.betrag | euro }}, davon {{ geld.bezahlt | euro }} bereits bezahlt.</div>
+      {% endif %}
+    </div>
+    {% if opt.paypal_aktiv %}
+    <div class="meldung meldung--fehler" role="alert" data-zahlung-fehler hidden>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+      <span data-zahlung-text></span>
+    </div>
+    <div class="zahlung__knoepfe" id="paypal-knoepfe"
+         data-erstellen="{{ url_for('zahlung_erstellen', anmeldung_id=eintrag.id) }}"
+         data-abschliessen="{{ url_for('zahlung_abschliessen', anmeldung_id=eintrag.id) }}"
+         data-fertig="{{ url_for('danke', anmeldung_id=eintrag.id, bezahlt=1) }}"></div>
+    <noscript><div class="hinweis-klein">Zum Bezahlen mit PayPal braucht diese Seite JavaScript.</div></noscript>
+    {% if opt.paypal_modus == 'sandbox' %}
+    <div class="hinweis-klein">Testbetrieb: PayPal läuft im Sandbox-Modus, es wird kein echtes Geld bewegt.</div>
+    {% endif %}
+    {% elif opt.zahlung_hinweis %}
+    <div style="font-size: 16px; color: var(--tinte-2);">{{ opt.zahlung_hinweis }}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="karte zusammenfassung{% if eintrag.abgesagt %} karte--verblasst{% endif %}">
+
+    <div class="block">
+      <div class="block__titel">{% if eintrag.abgesagt %}Abgesagt{% else %}Angemeldet{% endif %}</div>
+      <div class="block__name">{{ eintrag.name }}</div>
+      <div style="font-size: 16px; color: var(--grau);">{{ personen_text(eintrag) }}</div>
+      {% if eintrag.email %}
+      <div style="font-size: 15px; color: var(--grau-2);">Bestätigung an {{ eintrag.email }}</div>
+      {% endif %}
+    </div>
+
+    {% if geld.stand != 'frei' %}
+    <div class="trenner"></div>
+    <div class="block">
+      <div class="block__titel">Betrag</div>
+      {% if eintrag.mitglieder %}
+      <div class="posten"><span>{{ eintrag.mitglieder }} × Mitglied</span><span>{{ (eintrag.mitglieder * eintrag.preis_mitglied_cent) | euro }}</span></div>
+      {% endif %}
+      {% if eintrag.nichtmitglieder %}
+      <div class="posten"><span>{{ eintrag.nichtmitglieder }} × Nichtmitglied</span><span>{{ (eintrag.nichtmitglieder * eintrag.preis_nichtmitglied_cent) | euro }}</span></div>
+      {% endif %}
+      <div class="posten posten--summe"><span>Gesamt</span><span>{{ geld.betrag | euro }}</span></div>
+      {% if not eintrag.abgesagt %}
+      <div class="posten"><span>Zahlung</span><span>{% if geld.stand == 'bezahlt' %}bezahlt{% elif geld.stand == 'teilweise' %}{{ geld.bezahlt | euro }} bezahlt{% else %}offen{% endif %}</span></div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if eintrag.essen %}
+    <div class="trenner"></div>
+    <div class="block">
+      <div class="block__titel">Essen</div>
+      {% for gericht, menge in eintrag.essen.items() %}
+      <div class="posten"><span>{{ gericht }}</span><span>{{ menge }} Stück</span></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if eintrag.getraenke %}
+    <div class="block">
+      <div class="block__titel">Getränke</div>
+      {% for getraenk in eintrag.getraenke %}
+      <div class="posten"><span>{{ getraenk }}</span></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if eintrag.anmerkung %}
+    <div class="trenner"></div>
+    <div class="block">
+      <div class="block__titel">Anmerkung</div>
+      <div style="font-size: 16px; color: var(--tinte-2);">{{ eintrag.anmerkung }}</div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {% if not eintrag.abgesagt %}
+  {{ teile.eckdaten(opt) }}
+
+  <div class="unten">
+    <a class="knopf knopf--zweit" href="{{ url_for('aendern', anmeldung_id=eintrag.id) }}">Anmeldung ändern</a>
+    <a class="absage-link" href="{{ url_for('absagen', anmeldung_id=eintrag.id) }}">Anmeldung absagen</a>
+    <div class="hinweis-klein" style="text-align: left;">
+      Diese Seite gehört nur zu Ihrer Anmeldung. Legen Sie den Link ab, dann
+      können Sie jederzeit hierher zurück{% if geld.offen > 0 and opt.paypal_aktiv %}, auch zum Bezahlen{% endif %}.{% if opt.kontakt %} Bei Fragen: {{ opt.kontakt }}.{% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="unten">
+    <a class="knopf knopf--zweit" href="{{ url_for('start') }}">Zur Startseite</a>
+    {% if opt.kontakt %}
+    <div class="hinweis-klein">Bei Fragen: {{ opt.kontakt }}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</main>
+
+{% if not eintrag.abgesagt and geld.offen > 0 and opt.paypal_aktiv %}
+{# Das Skript von PayPal kommt von paypal.com - anders geht der Knopf nicht.
+   Die Client-ID ist öffentlich und darf in der Seite stehen; das Secret
+   bleibt auf dem Server. #}
+<script src="https://www.paypal.com/sdk/js?client-id={{ opt.paypal_client_id | urlencode }}&currency=EUR&intent=capture&locale=de_DE"
+        data-page-type="checkout" defer></script>
+<script>
+(function () {
+  var ziel = document.getElementById('paypal-knoepfe');
+  var fehler = document.querySelector('[data-zahlung-fehler]');
+  var fehlertext = document.querySelector('[data-zahlung-text]');
+
+  function melden(text) {
+    fehlertext.textContent = text;
+    fehler.hidden = false;
+  }
+
+  function senden(adresse, daten) {
+    return fetch(adresse, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(daten || {})
+    }).then(function (antwort) {
+      return antwort.json().catch(function () { return {}; }).then(function (inhalt) {
+        inhalt.status = antwort.status;
+        return inhalt;
+      });
+    });
+  }
+
+  function starten() {
+    if (!window.paypal || !paypal.Buttons) {
+      melden('Der Bezahlknopf von PayPal konnte nicht geladen werden. Bitte laden Sie die Seite neu.');
+      return;
+    }
+    paypal.Buttons({
+      style: { layout: 'vertical', shape: 'rect', label: 'pay' },
+      // Der Betrag steht nicht hier: der Server legt die Order an.
+      createOrder: function () {
+        fehler.hidden = true;
+        return senden(ziel.dataset.erstellen).then(function (inhalt) {
+          if (!inhalt.order_id) { throw new Error(inhalt.fehler || 'Die Zahlung konnte nicht vorbereitet werden.'); }
+          return inhalt.order_id;
+        });
+      },
+      onApprove: function (daten, aktionen) {
+        return senden(ziel.dataset.abschliessen, { order_id: daten.orderID }).then(function (inhalt) {
+          if (inhalt.neu_versuchen) { return aktionen.restart(); }
+          if (!inhalt.ok) { throw new Error(inhalt.fehler || 'Die Zahlung konnte nicht abgeschlossen werden.'); }
+          window.location.href = ziel.dataset.fertig;
+        });
+      },
+      onError: function (problem) {
+        melden((problem && problem.message) || 'Bei der Zahlung ist ein Fehler aufgetreten.');
+      }
+    }).render(ziel);
+  }
+
+  if (window.paypal) { starten(); }
+  else { document.querySelector('script[src*="paypal.com/sdk/js"]').addEventListener('load', starten); }
+  window.addEventListener('error', function (ereignis) {
+    if (ereignis.target && ereignis.target.src && ereignis.target.src.indexOf('paypal.com') !== -1) {
+      melden('Der Bezahlknopf von PayPal konnte nicht geladen werden. Bitte laden Sie die Seite neu.');
+    }
+  }, true);
+})();
+</script>
+{% endif %}
+{% endblock %}

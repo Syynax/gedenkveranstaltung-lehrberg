@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block titel %}Anmeldungen – Verwaltung{% endblock %}
+
+{% block inhalt %}
+<main class="seite seite--weit">
+
+  <div class="verwaltung__kopf">
+    <div class="kopf" style="gap: 6px;">
+      <div class="kopf__ueber">Verwaltung</div>
+      <h1 class="klein">Anmeldungen</h1>
+    </div>
+    <div class="verwaltung__aktionen">
+      <a class="knopf knopf--zweit knopf--klein" href="{{ url_for('csv_export') }}">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;" aria-hidden="true"><path d="M12 3v12"></path><path d="M7.5 10.5L12 15l4.5-4.5"></path><path d="M4 19h16"></path></svg>
+        CSV herunterladen
+      </a>
+      <form method="post" action="{{ url_for('umschalten') }}" style="margin: 0;">
+        <button type="submit" class="knopf knopf--klein{% if manuell_geschlossen %} knopf--zweit{% endif %}">
+          {% if manuell_geschlossen %}Anmeldung wieder öffnen{% else %}Anmeldung schließen{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {% if manuell_geschlossen %}
+  <div class="meldung meldung--info">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span>Die Anmeldung ist von Hand geschlossen. Besucher sehen nur noch die Startseite.</span>
+  </div>
+  {% elif not opt.anmeldung_offen %}
+  <div class="meldung meldung--info">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span>In den Add-on-Einstellungen ist <b>anmeldung_offen</b> ausgeschaltet. Es sind keine Anmeldungen möglich.</span>
+  </div>
+  {% endif %}
+
+  {% if opt.preisfehler %}
+  <div class="meldung meldung--fehler">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span>Der Preis in <b>{{ opt.preisfehler | join(', ') }}</b> lässt sich nicht lesen
+      und gilt bis zur Korrektur als 0 €. Erlaubt sind Angaben wie
+      <b>15</b>, <b>15,50</b> oder <b>15.50</b>.</span>
+  </div>
+  {% endif %}
+
+  {% if not opt.paypal_aktiv %}
+  <div class="meldung meldung--info">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span><b>PayPal ist nicht eingerichtet.</b> Die Gäste sehen keinen
+      Bezahlknopf{% if opt.zahlung_hinweis %}, sondern den Hinweis „{{ opt.zahlung_hinweis }}“{% endif %}.
+      Zahlungen lassen sich unten von Hand als bar bezahlt vermerken.</span>
+  </div>
+  {% elif opt.paypal_modus == 'sandbox' %}
+  <div class="meldung meldung--fehler">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span><b>PayPal läuft im Sandbox-Modus.</b> Es wird kein echtes Geld
+      bewegt. Für den Ausflug <b>paypal_modus</b> auf <b>live</b> stellen und
+      die Live-Zugangsdaten eintragen.</span>
+  </div>
+  {% endif %}
+
+  {% if postausgang_fehlt %}
+  <div class="meldung meldung--fehler">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span>Es ist <b>kein Postausgang eingerichtet</b>. Die Gäste geben eine
+      Adresse an, bekommen aber keine Bestätigung und keinen Link zum Ändern,
+      Absagen und Bezahlen. Einzutragen unter <b>E-Mail</b> in den
+      Add-on-Einstellungen.</span>
+  </div>
+  {% endif %}
+
+  {% if mail_fehler %}
+  <div class="meldung meldung--fehler">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5h18v11H3z"></path><path d="M3 7l9 6 9-6"></path></svg>
+    <span>Bei <b>{{ mail_fehler | length }}</b>
+      {{ 'Anmeldung' if mail_fehler | length == 1 else 'Anmeldungen' }} kam die
+      Bestätigung nicht an: {{ mail_fehler | map(attribute='name') | join(', ') }}.
+      Diese Gäste haben keinen Link zum Ändern, Absagen und Bezahlen — bitte
+      anrufen oder die Adresse von Hand anschreiben. Der Grund steht bei der
+      jeweiligen Zeile.</span>
+  </div>
+  {% endif %}
+
+  {% if zahlungsprobleme %}
+  <div class="meldung meldung--fehler">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span><b>Nicht verbuchte PayPal-Zahlung</b> bei
+      {{ zahlungsprobleme | map(attribute='name') | join(', ') }}. PayPal hat
+      etwas abgebucht, das nicht zur Anmeldung passt. Bitte im PayPal-Konto
+      nachsehen und von Hand klären; Grund und Capture-ID stehen bei der
+      jeweiligen Zeile.</span>
+  </div>
+  {% endif %}
+
+  {% if zu_erstatten %}
+  <div class="meldung meldung--info">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span><b>Zu erstatten: {{ geld.zuviel | euro }}</b> an
+      {% for a in zu_erstatten %}{{ a.name }} ({{ zahlstand(a).zuviel | euro }}{% if a.abgesagt %}, abgesagt{% endif %}){% if not loop.last %}, {% endif %}{% endfor %}.
+      Erstattet wird von Hand, etwa über „Rückzahlung“ im PayPal-Konto. Danach
+      hier in der Zeile „Erstattung vermerken“.</span>
+  </div>
+  {% endif %}
+
+  <div class="kennzahlen">
+    <div class="kennzahl">
+      <span class="kennzahl__label">Anmeldungen</span>
+      <span class="kennzahl__wert">{{ anmeldungen | length }}</span>
+    </div>
+    <div class="kennzahl">
+      <span class="kennzahl__label">Personen</span>
+      <span class="kennzahl__wert">{{ belegt }}</span>
+      <span class="kennzahl__zusatz">{{ mitglieder }} Mitgl. · {{ nichtmitglieder }} Nichtmitgl.</span>
+    </div>
+    <div class="kennzahl">
+      <span class="kennzahl__label">Freie Plätze</span>
+      <span class="kennzahl__wert">{{ frei }}</span>
+    </div>
+    <div class="kennzahl">
+      <span class="kennzahl__label">Bezahlt</span>
+      <span class="kennzahl__wert">{{ geld.bezahlt_anzahl }}</span>
+      <span class="kennzahl__zusatz">von {{ anmeldungen | length }} Anmeldungen</span>
+    </div>
+  </div>
+
+  {# Summen in Euro. Gerechnet wird in server.py in ganzen Cent. #}
+  <div class="kennzahlen kennzahlen--geld">
+    <div class="kennzahl">
+      <span class="kennzahl__label">Erwartet</span>
+      <span class="kennzahl__wert">{{ geld.erwartet | euro }}</span>
+    </div>
+    <div class="kennzahl">
+      <span class="kennzahl__label">Eingegangen</span>
+      <span class="kennzahl__wert">{{ geld.eingegangen | euro }}</span>
+    </div>
+    <div class="kennzahl">
+      <span class="kennzahl__label">Offen</span>
+      <span class="kennzahl__wert">{{ geld.offen | euro }}</span>
+    </div>
+  </div>
+
+  {% if essen_summe %}
+  <div class="karte" style="gap: 8px;">
+    <div style="font-size: 14px; color: var(--grau-2);">Bestellte Stückzahlen ({{ portionen_gesamt }} Stück)</div>
+    <div class="summenliste">
+      {% for gericht, menge in essen_summe.items() %}<span><b>{{ menge }}×</b> {{ gericht }}</span>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if getraenke_summe %}
+  <div class="karte" style="gap: 8px;">
+    <div style="font-size: 14px; color: var(--grau-2);">
+      Getränke, grob — Personen, in deren Anmeldung das angekreuzt ist
+    </div>
+    <div class="summenliste">
+      {% for getraenk, menge in getraenke_summe.items() %}<span><b>{{ menge }}</b> {{ getraenk }}</span>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if anmeldungen or abgesagte %}
+  <div class="tabelle-rahmen">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th style="width: 92px;">Pers.</th>
+          <th style="width: 210px;">Zahlung</th>
+          {% if essen_spalte %}<th>Essen</th>{% endif %}
+          {% if getraenke_spalte %}<th>Getränke</th>{% endif %}
+          <th>Anmerkung</th>
+          <th style="width: 120px;">Eingang</th>
+          <th style="width: 56px;"><span class="visually-hidden">Löschen</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in anmeldungen + abgesagte %}
+        {% set z = zahlstand(a) %}
+        <tr{% if a.abgesagt %} class="abgesagt"{% endif %}>
+          <td class="name">
+            {{ a.name }}
+            {% if a.abgesagt %}<span class="merker">abgesagt</span>{% endif %}
+            {% if a.email %}<div style="font-weight: 400; font-size: 13px; color: var(--grau-2);">{{ a.email }}</div>{% endif %}
+            {% if a.mail and a.mail.stand == 'fehlgeschlagen' %}
+            <div class="mailfehler">
+              <b>Bestätigung nicht zugestellt</b>{% if a.mail.grund %} — {{ a.mail.grund }}{% endif %}
+              {% if a.mail.zeit %}<span class="zeit">({{ a.mail.zeit | uhrzeit }}{% if a.mail.art and a.mail.art != 'neu' %}, {{ a.mail.art }}{% endif %})</span>{% endif %}
+            </div>
+            {% endif %}
+          </td>
+          <td data-label="Personen">
+            {{ a.personen }}
+            <div class="klein">{{ a.mitglieder or 0 }} M · {{ a.nichtmitglieder or 0 }} N</div>
+          </td>
+          <td data-label="Zahlung" class="zahlspalte">
+            {% if z.stand == 'frei' %}
+            <span class="leer">—</span>
+            {% else %}
+            <div><b>{{ z.betrag | euro }}</b>{% if a.abgesagt %} <span class="klein">(entfällt)</span>{% endif %}</div>
+            {% if z.stand == 'bezahlt' and not a.abgesagt %}
+            <div class="zahlung__stand zahlung__stand--bezahlt">bezahlt</div>
+            {% elif z.offen > 0 %}
+            <div class="zahlung__stand zahlung__stand--offen">offen {{ z.offen | euro }}{% if z.bezahlt > 0 %}, {{ z.bezahlt | euro }} bezahlt{% endif %}</div>
+            {% endif %}
+            {% for zahlung in z.zahlungen %}
+            <div class="klein">
+              {% if zahlung.art == 'paypal' %}PayPal {{ zahlung.betrag_cent | euro }}, {{ zahlung.zeit | uhrzeit }}<br><span class="kennung" title="PayPal-Capture-ID">{{ zahlung.capture_id }}</span>
+              {% elif zahlung.art == 'bar' %}bar {{ zahlung.betrag_cent | euro }}, {{ zahlung.zeit | uhrzeit }}
+              {% elif zahlung.art == 'erstattung' %}erstattet {{ (0 - zahlung.betrag_cent) | euro }}, {{ zahlung.zeit | uhrzeit }}
+              {% endif %}
+            </div>
+            {% endfor %}
+            {% if z.zuviel > 0 %}
+            <div class="mailfehler"><b>{{ z.zuviel | euro }} zu erstatten</b>{% if a.abgesagt %} — abgesagt nach Zahlung{% else %} — Anmeldung verkleinert{% endif %}</div>
+            {% endif %}
+            {% for p in a.zahlungsprobleme or [] %}
+            <div class="mailfehler"><b>Nicht verbucht:</b> {{ p.grund }}{% if p.capture_id %} <span class="kennung">{{ p.capture_id }}</span>{% endif %} <span class="zeit">({{ p.zeit | uhrzeit }})</span></div>
+            {% endfor %}
+            <div class="zahl-aktionen">
+              {% if z.offen > 0 and not a.abgesagt %}
+              <form method="post" action="{{ url_for('bar_bezahlt', anmeldung_id=a.id) }}" data-name="{{ a.name }}" data-betrag="{{ z.offen | euro }}"
+                    onsubmit="return confirm(this.dataset.betrag + ' von ' + this.dataset.name + ' als bar bezahlt vermerken?');">
+                <button type="submit" class="mini">Als bar bezahlt markieren</button>
+              </form>
+              {% endif %}
+              {% if z.bar %}
+              <form method="post" action="{{ url_for('bar_zuruecknehmen', anmeldung_id=a.id) }}" data-name="{{ a.name }}"
+                    onsubmit="return confirm('Barzahlung von ' + this.dataset.name + ' zurücknehmen?');">
+                <button type="submit" class="mini">Barzahlung zurücknehmen</button>
+              </form>
+              {% endif %}
+              {% if z.zuviel > 0 %}
+              <form method="post" action="{{ url_for('erstattung_vermerken', anmeldung_id=a.id) }}" data-name="{{ a.name }}" data-betrag="{{ z.zuviel | euro }}"
+                    onsubmit="return confirm(this.dataset.betrag + ' an ' + this.dataset.name + ' erstattet?');">
+                <button type="submit" class="mini">Erstattung vermerken</button>
+              </form>
+              {% endif %}
+              {% if a.zahlungsprobleme %}
+              <form method="post" action="{{ url_for('problem_erledigt', anmeldung_id=a.id) }}">
+                <button type="submit" class="mini">Als geklärt markieren</button>
+              </form>
+              {% endif %}
+            </div>
+            {% endif %}
+          </td>
+          {% if essen_spalte %}
+          <td data-label="Essen">
+            {% if a.essen %}{% for gericht, menge in a.essen.items() %}{{ menge }} {{ gericht }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}<span class="leer">—</span>{% endif %}
+          </td>
+          {% endif %}
+          {% if getraenke_spalte %}
+          <td data-label="Getränke">
+            {% if a.getraenke %}{{ a.getraenke | join(', ') }}{% else %}<span class="leer">—</span>{% endif %}
+          </td>
+          {% endif %}
+          <td data-label="Anmerkung">{% if a.anmerkung %}{{ a.anmerkung }}{% else %}<span class="leer">—</span>{% endif %}</td>
+          <td class="zeit" data-label="Eingang">{{ a.zeit | uhrzeit }}</td>
+          <td>
+            {# Der Name geht als Attribut hinein, nicht in den Skripttext: sonst
+               könnte ein Name mit Anführungszeichen aus dem confirm() ausbrechen. #}
+            <form method="post" action="{{ url_for('loeschen', anmeldung_id=a.id) }}" style="margin: 0;"
+                  data-name="{{ a.name }}"
+                  onsubmit="return confirm('Anmeldung von ' + this.dataset.name + ' wirklich löschen?');">
+              <button type="submit" class="loeschen" aria-label="Anmeldung von {{ a.name }} löschen">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"></path><path d="M9 7V5h6v2"></path><path d="M6.5 7l1 12h9l1-12"></path></svg>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="karte">
+    <div style="color: var(--grau);">Noch keine Anmeldungen eingegangen.</div>
+  </div>
+  {% endif %}
+
+  {% if abgesagte %}
+  <div class="fuss">
+    {{ abgesagte | length }} {% if abgesagte | length == 1 %}Absage{% else %}Absagen{% endif %}
+    über den Link in der Bestätigungsmail. Diese Zeilen zählen nicht mehr auf die
+    Plätze und stehen in der CSV mit dem Status „abgesagt“. Bereits Bezahltes
+    bleibt stehen, bis die Erstattung vermerkt ist.
+  </div>
+  {% endif %}
+
+  <div class="fuss">
+    Diese Seite ist nur über Home Assistant erreichbar. Die öffentliche Anmeldeseite läuft auf Port 8081 und braucht keinen Login.
+    {% if opt.paypal_aktiv %}Bezahlt wird über PayPal ({{ opt.paypal_modus }}); Rückzahlungen gehen nur von Hand über das PayPal-Konto.{% endif %}
+  </div>
+
+</main>
+{% endblock %}

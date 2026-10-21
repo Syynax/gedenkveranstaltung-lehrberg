@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block titel %}Anmeldung absagen – {{ opt.titel }}{% endblock %}
+
+{% block inhalt %}
+<main class="seite seite--schmal">
+
+  <div class="kopf">
+    <a class="zurueck" href="{{ url_for('danke', anmeldung_id=eintrag.id) }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+      Zurück
+    </a>
+    <h1 class="klein">Anmeldung absagen?</h1>
+    <p class="fliess">Damit werden Ihre Plätze wieder frei. Rückgängig machen können Sie das nicht — Sie können sich aber jederzeit neu anmelden, solange Plätze frei sind.</p>
+  </div>
+
+  <div class="karte zusammenfassung">
+    <div class="block">
+      <div class="block__titel">Angemeldet</div>
+      <div class="block__name">{{ eintrag.name }}</div>
+      <div style="font-size: 16px; color: var(--grau);">{{ personen_text(eintrag) }}</div>
+    </div>
+  </div>
+
+  {% set geld = zahlstand(eintrag) %}
+  {% if geld.bezahlt > 0 %}
+  {# Keine automatische Erstattung - das Geld gibt die Orga von Hand zurück.
+     Das soll man vor dem Absagen wissen, nicht erst danach. #}
+  <div class="meldung meldung--info">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span>Sie haben bereits {{ geld.bezahlt | euro }} bezahlt. Das Geld wird nicht automatisch zurückgebucht; um die Erstattung kümmert sich das Organisationsteam.{% if opt.kontakt %} Bei Fragen: {{ opt.kontakt }}.{% endif %}</span>
+  </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('absagen_bestaetigen', anmeldung_id=eintrag.id) }}" style="gap: 14px;">
+    <button type="submit" class="knopf knopf--warnung">Ja, Anmeldung absagen</button>
+    <a class="knopf knopf--zweit" href="{{ url_for('danke', anmeldung_id=eintrag.id) }}">Nein, Anmeldung behalten</a>
+  </form>
+
+</main>
+{% endblock %}

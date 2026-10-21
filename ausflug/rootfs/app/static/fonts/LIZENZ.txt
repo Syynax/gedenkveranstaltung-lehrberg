@@ -1,0 +1,23 @@
+Schriften in diesem Ordner
+==========================
+
+EB Garamond (eb-garamond-400.woff2, eb-garamond-500.woff2, eb-garamond-600.woff2)
+  Copyright 2017 The EB Garamond Project Authors (Georg Duffner)
+  Quelle: Google Fonts, Familie "EB Garamond"
+  https://fonts.google.com/specimen/EB+Garamond
+  Heruntergeladen von https://fonts.gstatic.com/s/ebgaramond/v33/SlGUmQSNjdsmc35JDF1K5GR1SDk.woff2
+  (Latin-Subset, Google-Fonts-Version v33)
+
+Source Sans 3 (source-sans-3-400.woff2, source-sans-3-500.woff2, source-sans-3-600.woff2)
+  Copyright 2010-2020 Adobe (http://www.adobe.com/), Paul D. Hunt
+  Quelle: Google Fonts, Familie "Source Sans 3"
+  https://fonts.google.com/specimen/Source+Sans+3
+  Heruntergeladen von https://fonts.gstatic.com/s/sourcesans3/v19/nwpStKy2OAdR1K-IwhWudF-R3w8aZQ.woff2
+  (Latin-Subset, Google-Fonts-Version v19)
+
+Beide Schriften stehen unter der SIL Open Font License, Version 1.1 (OFL-1.1).
+Lizenztext: https://openfontlicense.org/open-font-license-official-text/
+
+Die OFL erlaubt die freie Nutzung, Einbettung und Weitergabe der Schriften,
+auch zusammen mit Software. Die Schriften selbst dürfen nicht verkauft werden;
+abgeleitete Versionen dürfen die reservierten Schriftnamen nicht verwenden.

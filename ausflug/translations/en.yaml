@@ -1,0 +1,140 @@
+configuration:
+  # --- Trip: what the start page shows -----------------------------------------
+  titel:
+    name: "Trip: title"
+    description: The large heading of the page, also used as the subject of the confirmation mail.
+  untertitel:
+    name: "Trip: overline"
+    description: Small uppercase line above the title, e.g. "Vereinsausflug".
+  datum:
+    name: "Trip: date"
+    description: Written out exactly as it should appear, e.g. "Samstag, 12. Juni 2027".
+  uhrzeit:
+    name: "Trip: departure time"
+    description: Time only, e.g. "7:00". Shown as "Abfahrt 7:00 Uhr".
+  ort:
+    name: "Trip: meeting point"
+    description: Where the trip starts, e.g. "Feuerwehrgerätehaus Lehrberg".
+  ziel:
+    name: "Trip: destination"
+    description: Where the trip goes, e.g. "Bodensee". Empty = not shown.
+  text:
+    name: "Trip: invitation text"
+    description: Body text on the start page. A vertical bar starts a new paragraph.
+  ablauf:
+    name: "Trip: programme"
+    description: >-
+      Separate items with a vertical bar, e.g. "Abfahrt | Führung | Mittagessen |
+      Rückfahrt". Shown as a timeline, times are not needed. A time before an
+      item appears small above it. Empty = no programme.
+  kontakt:
+    name: "Trip: contact person"
+    description: Name and phone or e-mail for questions. Shown on the page and in the mail.
+
+  # --- Registration ---------------------------------------------------------------
+  anmeldung_offen:
+    name: "Registration: open"
+    description: Main switch. Off = nobody can register, the start page stays visible.
+  plaetze_gesamt:
+    name: "Registration: total seats"
+    description: Upper limit across all registrations, e.g. the seats on the bus. Counts persons, members and non-members together.
+  max_personen_pro_anmeldung:
+    name: "Registration: max. persons per registration"
+    description: Members and non-members together. Guards against typos.
+  anmeldeschluss:
+    name: "Registration: deadline"
+    description: Only a note on the page. It does not close anything, use the main switch for that.
+  essen:
+    name: "Registration: pre-order food"
+    description: >-
+      Optional. Chosen with a piece count, one dish per entry. With "Brezen | Paar"
+      the dish gets a button that adds two at once. Empty = no food order in the form.
+  getraenke:
+    name: "Registration: pre-order drinks"
+    description: Optional. Ticked, one drink per entry. Empty = no drinks question.
+  email_abfragen:
+    name: "Registration: ask for e-mail address"
+    description: On = required field, every guest gets a confirmation. Off = no e-mail field.
+  datenschutz_hinweis:
+    name: "Registration: note below the submit button"
+    description: One short line of small print. Empty = no note.
+
+  # --- Prices and payment ---------------------------------------------------------
+  preis_mitglied:
+    name: "Payment: price for members"
+    description: In euros per person, e.g. "15", "15,50" or "15.50".
+  preis_nichtmitglied:
+    name: "Payment: price for non-members"
+    description: In euros per person, e.g. "25" or "25,00".
+  paypal_client_id:
+    name: "Payment: PayPal client ID"
+    description: From the PayPal developer dashboard (Apps & Credentials). Empty = no PayPal, the note below is shown instead.
+  paypal_secret:
+    name: "Payment: PayPal secret"
+    description: Belongs to the client ID. Stays on the server and is never sent to the browser or written to the log.
+  paypal_modus:
+    name: "Payment: PayPal mode"
+    description: sandbox = test mode with test accounts, no real money. live = real payments. Credentials differ per mode.
+  zahlung_hinweis:
+    name: "Payment: note without PayPal"
+    description: Shown instead of the PayPal button while PayPal is not set up, e.g. "Bitte bar beim Ausflug zahlen."
+
+  # --- Confirmation mail ----------------------------------------------------------
+  veranstalter:
+    name: "E-mail: signature"
+    description: Name below every mail, e.g. "Freiwillige Feuerwehr Lehrberg".
+  smtp_server:
+    name: "E-mail: SMTP server"
+    description: Outgoing server, e.g. "mail.smtp2go.com". Empty = no mails are sent.
+  smtp_port:
+    name: "E-mail: port"
+    description: Usually 587 with STARTTLS, sometimes 465 with SSL.
+  smtp_verschluesselung:
+    name: "E-mail: encryption"
+    description: starttls for port 587, ssl for port 465. "keine" only for a server on your own network.
+  smtp_benutzer:
+    name: "E-mail: username"
+    description: Login at the mail provider.
+  smtp_passwort:
+    name: "E-mail: password"
+    description: Password or app password at the mail provider.
+  smtp_absender:
+    name: "E-mail: sender address"
+    description: The mail comes from this address. Its domain must be verified at the provider.
+  smtp_antwort_an:
+    name: "E-mail: replies go to"
+    description: Where guests' replies go if the sender address has no real mailbox.
+
+  # --- Website and legal ------------------------------------------------------------
+  oeffentliche_adresse:
+    name: "Website: public address"
+    description: How guests reach the page, e.g. "https://ausflug.fflehrberg.de". Needed for the links in the mail (including the payment link) and link previews.
+  impressum:
+    name: "Website: imprint"
+    description: Name, address, representative, contact. A vertical bar starts a new line. Also shown as the controller in the privacy policy.
+  datenschutz:
+    name: "Website: custom privacy policy"
+    description: Leave empty to use the built-in policy that matches this add-on, including PayPal.
+  loeschfrist:
+    name: "Website: deletion period"
+    description: How long after the trip the data is deleted, e.g. "4 Wochen". Shown in the privacy policy.
+  nur_fuer_ip:
+    name: "Website: visible in advance only for"
+    description: For testing before going live. IP addresses or ranges, comma separated. Everyone else sees "not yet available". Empty = visible to all.
+
+  # --- Home Assistant ----------------------------------------------------------------
+  sensor_erstellen:
+    name: "Home Assistant: create sensor"
+    description: Creates sensor.ausflug_freie_plaetze with seats, amounts, food and drinks.
+  benachrichtigung_dienst:
+    name: "Home Assistant: notify target"
+    description: Notify action or entity, e.g. "notify.mobile_app_phone". Empty = no notifications.
+  benachrichtigung_jede_anmeldung:
+    name: "Home Assistant: notify on every registration"
+    description: Off = only notify when a threshold is reached (and when money has to be refunded).
+  benachrichtigung_schwellen:
+    name: "Home Assistant: thresholds"
+    description: Occupied seats that trigger a notification, e.g. "30, 45". Empty = none.
+
+network:
+  8081/tcp: Public registration page for the trip
