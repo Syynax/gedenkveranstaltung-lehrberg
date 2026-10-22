@@ -1,5 +1,12 @@
 # Änderungen
 
+## 1.0.1
+
+- Neuer Standardtext für die Startseite: Weihnachtsmarkt in Ulm, am Abend
+  gemeinsames Essen in einem Lokal auf der Rückfahrt. Wer das Add-on schon
+  installiert hat, behält seinen gespeicherten Text und trägt den neuen in
+  der Konfiguration unter „Text“ ein.
+
 ## 1.0.0
 
 Erste Fassung, entstanden aus der Anmeldung zur Gedenkveranstaltung (1.13.0).
