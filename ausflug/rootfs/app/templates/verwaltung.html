@@ -44,12 +44,28 @@
   </div>
   {% endif %}
 
-  {% if not opt.paypal_aktiv %}
+  {% if opt.paypal_me_fehler %}
+  <div class="meldung meldung--fehler">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span>Der Eintrag in <b>paypal_me</b> lässt sich nicht lesen, deshalb gibt es
+      keinen PayPal-Link. Erlaubt sind nur Buchstaben und Ziffern, etwa
+      <b>feuerwehrlehrberg</b> oder <b>paypal.me/feuerwehrlehrberg</b>.</span>
+  </div>
+  {% endif %}
+
+  {% if opt.paypal_me_aktiv %}
+  <div class="meldung meldung--info">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span><b>Bezahlung über PayPal.me ({{ opt.paypal_me_name }}).</b> Die Gäste
+      bekommen einen Link mit dem offenen Betrag. Eingegangene Zahlungen
+      bitte in PayPal prüfen und unten von Hand als bezahlt markieren.</span>
+  </div>
+  {% elif not opt.paypal_aktiv %}
   <div class="meldung meldung--info">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
     <span><b>PayPal ist nicht eingerichtet.</b> Die Gäste sehen keinen
       Bezahlknopf{% if opt.zahlung_hinweis %}, sondern den Hinweis „{{ opt.zahlung_hinweis }}“{% endif %}.
-      Zahlungen lassen sich unten von Hand als bar bezahlt vermerken.</span>
+      Zahlungen lassen sich unten von Hand als bezahlt vermerken.</span>
   </div>
   {% elif opt.paypal_modus == 'sandbox' %}
   <div class="meldung meldung--fehler">
@@ -207,7 +223,7 @@
             {% for zahlung in z.zahlungen %}
             <div class="klein">
               {% if zahlung.art == 'paypal' %}PayPal {{ zahlung.betrag_cent | euro }}, {{ zahlung.zeit | uhrzeit }}<br><span class="kennung" title="PayPal-Capture-ID">{{ zahlung.capture_id }}</span>
-              {% elif zahlung.art == 'bar' %}bar {{ zahlung.betrag_cent | euro }}, {{ zahlung.zeit | uhrzeit }}
+              {% elif zahlung.art == 'bar' %}von Hand {{ zahlung.betrag_cent | euro }}, {{ zahlung.zeit | uhrzeit }}
               {% elif zahlung.art == 'erstattung' %}erstattet {{ (0 - zahlung.betrag_cent) | euro }}, {{ zahlung.zeit | uhrzeit }}
               {% endif %}
             </div>
@@ -221,14 +237,14 @@
             <div class="zahl-aktionen">
               {% if z.offen > 0 and not a.abgesagt %}
               <form method="post" action="{{ url_for('bar_bezahlt', anmeldung_id=a.id) }}" data-name="{{ a.name }}" data-betrag="{{ z.offen | euro }}"
-                    onsubmit="return confirm(this.dataset.betrag + ' von ' + this.dataset.name + ' als bar bezahlt vermerken?');">
-                <button type="submit" class="mini">Als bar bezahlt markieren</button>
+                    onsubmit="return confirm(this.dataset.betrag + ' von ' + this.dataset.name + ' als bezahlt vermerken?');">
+                <button type="submit" class="mini">Als bezahlt markieren</button>
               </form>
               {% endif %}
               {% if z.bar %}
               <form method="post" action="{{ url_for('bar_zuruecknehmen', anmeldung_id=a.id) }}" data-name="{{ a.name }}"
-                    onsubmit="return confirm('Barzahlung von ' + this.dataset.name + ' zurücknehmen?');">
-                <button type="submit" class="mini">Barzahlung zurücknehmen</button>
+                    onsubmit="return confirm('Von Hand vermerkte Zahlung von ' + this.dataset.name + ' zurücknehmen?');">
+                <button type="submit" class="mini">Von Hand vermerkte Zahlung zurücknehmen</button>
               </form>
               {% endif %}
               {% if z.zuviel > 0 %}

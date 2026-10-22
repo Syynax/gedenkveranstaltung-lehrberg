@@ -91,6 +91,7 @@ STANDARD_OPTIONEN = {
     "paypal_client_id": "",
     "paypal_secret": "",
     "paypal_modus": "sandbox",
+    "paypal_me": "",
     "zahlung_hinweis": "",
     "sensor_erstellen": True,
     "benachrichtigung_dienst": "",
@@ -168,6 +169,45 @@ def paypal_wert(cent):
     """Ganze Cent so, wie PayPal den Betrag erwartet: 1550 -> "15.50"."""
     cent = int(cent)
     return f"{cent // 100}.{cent % 100:02d}"
+
+
+# PayPal.me-Namen bestehen nur aus Buchstaben und Ziffern.
+PAYPAL_ME_MUSTER = re.compile(r"[A-Za-z0-9]+")
+PAYPAL_ME_VORSATZ = re.compile(
+    r"(?:https?://)?(?:www\.)?(?:paypal\.me|paypal\.com/paypalme)/", re.IGNORECASE
+)
+
+
+def paypal_me_lesen(roh):
+    """Der Name aus der Option paypal_me. Erlaubt sind der Name allein
+    ("feuerwehrlehrberg") und der Link in den üblichen Schreibweisen
+    ("paypal.me/name", "https://www.paypal.me/name/"). Rückgabe: (Name, Fehler).
+    Leer ist kein Fehler; alles, was kein PayPal.me-Name ist, schon - dann
+    gibt es keinen Link, damit kein falsches Ziel auf der Seite steht."""
+    text = str(roh or "").strip()
+    if not text:
+        return "", False
+    text = PAYPAL_ME_VORSATZ.sub("", text, count=1)
+    # Hinter dem Namen darf noch ein Betrag oder ein Schrägstrich stehen.
+    name = text.split("/", 1)[0].split("?", 1)[0].split("#", 1)[0]
+    if PAYPAL_ME_MUSTER.fullmatch(name):
+        return name, False
+    return "", True
+
+
+def paypal_me_link(opt, cent):
+    """Der PayPal.me-Link mit vorausgefülltem Betrag, oder "" wenn die
+    Variante nicht gilt oder nichts zu zahlen ist."""
+    if not opt.get("paypal_me_aktiv") or int(cent or 0) <= 0:
+        return ""
+    return f"https://www.paypal.com/paypalme/{opt['paypal_me_name']}/{paypal_wert(cent)}{WAEHRUNG}"
+
+
+def zahlung_betreff(opt, eintrag):
+    """Die Mitteilung, die der Gast bei PayPal angeben soll: der Titel des
+    Ausflugs und der Name der Anmeldung. PayPal.me füllt nur den Betrag aus,
+    die Mitteilung kann der Link nicht vorgeben."""
+    return f"{opt['titel']} – {eintrag.get('name', '')}".strip(" –")
 
 
 def paypal_in_cent(wert):
@@ -254,6 +294,11 @@ def optionen():
     werte["paypal_secret"] = (werte.get("paypal_secret") or "").strip()
     werte["paypal_modus"] = "live" if werte.get("paypal_modus") == "live" else "sandbox"
     werte["paypal_aktiv"] = bool(werte["paypal_client_id"] and werte["paypal_secret"])
+    # PayPal.me ist die einfache Variante ohne Geschäftskonto. Der Knopf mit
+    # Client-ID und Secret hat Vorrang; ein ungültiger Name wird trotzdem
+    # gemeldet, damit er nicht unbemerkt liegen bleibt.
+    werte["paypal_me_name"], werte["paypal_me_fehler"] = paypal_me_lesen(werte.get("paypal_me"))
+    werte["paypal_me_aktiv"] = bool(werte["paypal_me_name"]) and not werte["paypal_aktiv"]
     werte["plaetze_gesamt"] = max(1, int(werte.get("plaetze_gesamt") or 1))
     werte["max_personen_pro_anmeldung"] = max(
         1, int(werte.get("max_personen_pro_anmeldung") or 1)
@@ -315,6 +360,9 @@ def belegte_plaetze(daten, ausser=None):
 #   paypal      über den Knopf auf der Bestätigungsseite
 #   bar         in der Verwaltung von Hand als bezahlt markiert
 #   erstattung  in der Verwaltung vermerkt, negativer Betrag
+#   bar         (Name aus der Zeit vor PayPal.me, bleibt für gespeicherte Daten;
+#               gemeint ist "von Hand als bezahlt markiert", auch für Zahlungen,
+#               die in PayPal eingegangen sind)
 ZAHLARTEN = {"paypal": "PayPal", "bar": "bar", "erstattung": "Erstattung"}
 
 
@@ -731,8 +779,16 @@ def _mail_inhalt(opt, eintrag, art, adresse):
         )
 
     bezahlen_moeglich = stand["offen"] > 0 and opt.get("paypal_aktiv")
+    me_link = paypal_me_link(opt, stand["offen"])
     if stand["offen"] > 0:
-        if bezahlen_moeglich and adresse:
+        if me_link:
+            inhalt["absaetze"].append(
+                f"Offen sind noch {euro(stand['offen'])}. Bezahlen können Sie "
+                "über den PayPal-Link unten; der Betrag ist dort schon "
+                "eingetragen. Bitte geben Sie bei PayPal als Mitteilung an: "
+                f"{zahlung_betreff(opt, eintrag)}"
+            )
+        elif bezahlen_moeglich and adresse:
             inhalt["absaetze"].append(
                 f"Offen sind noch {euro(stand['offen'])}. Über „Jetzt bezahlen“ "
                 "unten können Sie den Betrag direkt per PayPal bezahlen."
@@ -801,6 +857,11 @@ def _mail_inhalt(opt, eintrag, art, adresse):
             "Bitte behalten Sie diese Mail, bis der Ausflug vorbei ist. "
             "Die Links gelten nur für Ihre Anmeldung."
         )
+    if me_link:
+        # Auch ohne öffentliche Adresse: der Link führt direkt zu PayPal.
+        inhalt["links"].insert(0, (f"Jetzt {euro(stand['offen'])} mit PayPal bezahlen", me_link))
+        if not adresse:
+            inhalt["links_titel"] = "Bezahlen"
     return inhalt
 
 
@@ -1550,6 +1611,8 @@ def vorlagen_werte():
         "zahlstand": zahlstand,
         "personen_text": personen_text,
         "preis_aufstellung": preis_aufstellung,
+        "paypal_me_link": paypal_me_link,
+        "zahlung_betreff": zahlung_betreff,
     }
 
 
@@ -1943,7 +2006,8 @@ def danke(anmeldung_id):
 @app.get("/anmeldung/<anmeldung_id>/bezahlen")
 def bezahlen(anmeldung_id):
     """Der Bezahl-Link aus der Mail. Bezahlt wird auf der Bestätigungsseite,
-    der Link springt dort direkt zum PayPal-Knopf."""
+    der Link springt dort direkt zum PayPal-Knopf (oder, bei PayPal.me, zum
+    Betrag mit der Mitteilung zum Kopieren)."""
     return redirect(url_for("danke", anmeldung_id=anmeldung_id, _anchor="bezahlen"))
 
 

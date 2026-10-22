@@ -785,6 +785,12 @@ tr.abgesagt td.name { color: var(--grau-2); font-weight: 400; text-decoration: l
 .zahlung__betrag { font-family: var(--serif); font-size: 32px; line-height: 1.1; color: var(--tinte); }
 /* PayPal setzt seine Knöpfe in einen eigenen Rahmen; der braucht nur Platz. */
 .zahlung__knoepfe { min-height: 48px; }
+/* PayPal.me: die Mitteilung zum Kopieren, Feld und Knopf nebeneinander. */
+.kopierfeld { display: flex; flex-direction: column; gap: 8px; }
+.kopierfeld__zeile { display: flex; gap: 8px; align-items: stretch; }
+.kopierfeld__zeile input { flex: 1; min-width: 0; }
+.kopierfeld__zeile .knopf { flex-shrink: 0; height: 54px; }
+.kopierfeld__rueckmeldung { min-height: 21px; text-align: left; font-weight: 600; color: #3F6B2E; }
 .posten--summe { font-weight: 600; color: var(--tinte); }
 .posten--summe span:last-child { color: var(--tinte); }
 

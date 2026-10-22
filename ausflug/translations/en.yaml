@@ -75,6 +75,9 @@ configuration:
   paypal_modus:
     name: "Payment: PayPal mode"
     description: sandbox = test mode with test accounts, no real money. live = real payments. Credentials differ per mode.
+  paypal_me:
+    name: "Payment: PayPal.me name or link"
+    description: Simple option without a business account. Your PayPal.me name or link, e.g. "paypal.me/feuerwehrlehrberg" or just "feuerwehrlehrberg" (letters and digits only). Guests get a link with the open amount. Only used while client ID and secret are empty.
   zahlung_hinweis:
     name: "Payment: note without PayPal"
     description: Shown instead of the PayPal button while PayPal is not set up, e.g. "Bitte bar beim Ausflug zahlen."

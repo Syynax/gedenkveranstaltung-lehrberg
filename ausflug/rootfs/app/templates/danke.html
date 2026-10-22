@@ -54,6 +54,20 @@
     {% if opt.paypal_modus == 'sandbox' %}
     <div class="hinweis-klein">Testbetrieb: PayPal läuft im Sandbox-Modus, es wird kein echtes Geld bewegt.</div>
     {% endif %}
+    {% elif opt.paypal_me_aktiv %}
+    {# PayPal.me: der Link füllt nur den Betrag aus, die Mitteilung nicht.
+       Deshalb steht sie hier zum Kopieren. Betrag und Link kommen allein vom
+       Server. #}
+    <div class="kopierfeld">
+      <label class="feld__label" for="zahlung-betreff">Bitte als Mitteilung bei PayPal angeben:</label>
+      <div class="kopierfeld__zeile">
+        <input type="text" id="zahlung-betreff" value="{{ zahlung_betreff(opt, eintrag) }}" readonly>
+        <button type="button" class="knopf knopf--zweit knopf--klein" data-kopieren="zahlung-betreff">Kopieren</button>
+      </div>
+      <div class="hinweis-klein kopierfeld__rueckmeldung" role="status" aria-live="polite" data-kopiert></div>
+    </div>
+    <a class="knopf" href="{{ paypal_me_link(opt, geld.offen) }}" target="_blank" rel="noopener">Mit PayPal bezahlen</a>
+    <div class="hinweis-klein" style="text-align: left;">Die Zahlung wird vom Organisationsteam von Hand abgehakt; das kann etwas dauern.</div>
     {% elif opt.zahlung_hinweis %}
     <div style="font-size: 16px; color: var(--tinte-2);">{{ opt.zahlung_hinweis }}</div>
     {% endif %}
@@ -125,7 +139,7 @@
     <a class="absage-link" href="{{ url_for('absagen', anmeldung_id=eintrag.id) }}">Anmeldung absagen</a>
     <div class="hinweis-klein" style="text-align: left;">
       Diese Seite gehört nur zu Ihrer Anmeldung. Legen Sie den Link ab, dann
-      können Sie jederzeit hierher zurück{% if geld.offen > 0 and opt.paypal_aktiv %}, auch zum Bezahlen{% endif %}.{% if opt.kontakt %} Bei Fragen: {{ opt.kontakt }}.{% endif %}
+      können Sie jederzeit hierher zurück{% if geld.offen > 0 and (opt.paypal_aktiv or opt.paypal_me_aktiv) %}, auch zum Bezahlen{% endif %}.{% if opt.kontakt %} Bei Fragen: {{ opt.kontakt }}.{% endif %}
     </div>
   </div>
   {% else %}
@@ -138,6 +152,40 @@
   {% endif %}
 
 </main>
+
+{% if not eintrag.abgesagt and geld.offen > 0 and opt.paypal_me_aktiv %}
+<script>
+(function () {
+  var knopf = document.querySelector('[data-kopieren]');
+  var meldung = document.querySelector('[data-kopiert]');
+  if (!knopf) { return; }
+  var feld = document.getElementById(knopf.dataset.kopieren);
+
+  function zeigen(text) {
+    meldung.textContent = text;
+    setTimeout(function () { meldung.textContent = ''; }, 2500);
+  }
+
+  function ersatz() {
+    // Ohne Zwischenablage-Schnittstelle (ältere Browser, kein https).
+    feld.focus();
+    feld.select();
+    feld.setSelectionRange(0, feld.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    zeigen(ok ? 'Kopiert' : 'Bitte den Text markieren und selbst kopieren.');
+  }
+
+  knopf.addEventListener('click', function () {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(feld.value).then(function () { zeigen('Kopiert'); }, ersatz);
+    } else {
+      ersatz();
+    }
+  });
+})();
+</script>
+{% endif %}
 
 {% if not eintrag.abgesagt and geld.offen > 0 and opt.paypal_aktiv %}
 {# Das Skript von PayPal kommt von paypal.com - anders geht der Knopf nicht.

@@ -78,6 +78,9 @@ configuration:
   paypal_modus:
     name: "Zahlung: PayPal-Modus"
     description: sandbox = Testbetrieb mit Testkonten, kein echtes Geld. live = echte Zahlungen. Die Zugangsdaten sind je Modus verschieden.
+  paypal_me:
+    name: "Zahlung: PayPal.me-Name oder Link"
+    description: Einfache Variante ohne Geschäftskonto. Dein PayPal.me-Name oder Link, z. B. „paypal.me/feuerwehrlehrberg“ oder nur „feuerwehrlehrberg“ (nur Buchstaben und Ziffern). Gäste bekommen einen Link mit dem offenen Betrag. Gilt nur, wenn Client-ID und Secret leer sind.
   zahlung_hinweis:
     name: "Zahlung: Hinweis ohne PayPal"
     description: Steht statt des PayPal-Knopfs, solange PayPal nicht eingerichtet ist, z. B. „Bitte bar beim Ausflug zahlen.“

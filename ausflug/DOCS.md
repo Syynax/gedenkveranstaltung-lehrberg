@@ -156,6 +156,40 @@ Ist PayPal nicht eingerichtet (Client-ID oder Secret leer), gibt es keinen
 Knopf. Stattdessen steht `zahlung_hinweis` auf der Bestätigungsseite, im
 Formular und in der Mail, zum Beispiel „Bitte bar beim Ausflug zahlen.“
 
+### Bezahlen ohne Geschäftskonto: PayPal.me
+
+Wer kein PayPal-Geschäftskonto hat und deshalb keine Client-ID und kein Secret
+bekommt, nutzt PayPal.me:
+
+1. In PayPal einen **PayPal.me-Link** anlegen (in der PayPal-App oder auf
+   paypal.com unter „PayPal.Me“) und den Namen merken, z. B.
+   `feuerwehrlehrberg`.
+2. In der Add-on-Konfiguration `paypal_me` eintragen. Der Name allein genügt,
+   ebenso `paypal.me/feuerwehrlehrberg` oder der ganze Link mit `https://`.
+   Erlaubt sind nur Buchstaben und Ziffern; alles andere zeigt die Verwaltung
+   als rote Meldung, und es gibt dann keinen Link.
+3. `paypal_client_id` und `paypal_secret` **leer lassen.** Sind beide gesetzt,
+   gilt der PayPal-Knopf von oben, auch wenn `paypal_me` gefüllt ist.
+
+Der Gast sieht auf der Bestätigungsseite (und über „Jetzt bezahlen“ in der
+Mail) den offenen Betrag, ein Feld mit der Mitteilung und den Knopf „Mit
+PayPal bezahlen“. Der Link hat die Form
+`https://www.paypal.com/paypalme/<name>/<betrag>EUR`; der Betrag ist der
+**offene** Betrag und wird auf dem Server gerechnet — nach einer Teilzahlung
+steht der Rest im Link, bei bezahlter Anmeldung gibt es keinen Knopf.
+
+PayPal.me füllt nur den Betrag aus, **nicht** die Mitteilung. Deshalb steht
+über dem Knopf die Mitteilung `<Titel> – <Name der Anmeldung>` zum Kopieren
+(Knopf „Kopieren“). Der Titel ist die Option `titel`; eine eigene Option dafür
+gibt es nicht. Die Mitteilung hilft euch beim Zuordnen, ist aber Sache des
+Gastes: PayPal kann sie weglassen.
+
+Das Add-on erfährt **nicht**, ob bezahlt wurde. Ihr gleicht die Zahlungen in
+PayPal ab und markiert die Anmeldung in der Verwaltung mit **Als bezahlt
+markieren**. Erst dann wechselt der Stand auf „bezahlt“ und die Mail „Zahlung
+erhalten“ geht raus. Der Gast sieht den Hinweis, dass das von Hand geschieht
+und etwas dauern kann.
+
 ### PayPal einrichten — Schritt für Schritt
 
 Für echte Zahlungen braucht ihr ein **PayPal-Geschäftskonto** für den Verein.
@@ -268,6 +302,7 @@ werden.
 | PayPal Client-ID (`paypal_client_id`) | Aus dem PayPal-Developer-Dashboard. Leer = kein PayPal |
 | PayPal Secret (`paypal_secret`) | Gehört zur Client-ID, bleibt auf dem Server |
 | PayPal-Modus (`paypal_modus`) | `sandbox` zum Testen, `live` für echte Zahlungen |
+| PayPal.me-Name oder Link (`paypal_me`) | Einfache Variante ohne Geschäftskonto, nur wirksam bei leerer Client-ID/Secret |
 | Hinweis ohne PayPal (`zahlung_hinweis`) | Steht statt des Knopfs, solange PayPal fehlt |
 
 **E-Mail** — die Bestätigungsmail
@@ -404,7 +439,8 @@ Anmeldung neu geschrieben.
 Die Mail nennt die Aufteilung (z. B. „3 Personen (2 Mitglieder, 1
 Nichtmitglied)“), den Gesamtbetrag mit Aufstellung, den Zahlungsstand und —
 solange etwas offen ist und PayPal eingerichtet ist — als großen Knopf den
-Link **Jetzt … € bezahlen**. Ohne PayPal steht dort `zahlung_hinweis`. Nach
+Link **Jetzt … € bezahlen**. Mit PayPal.me stehen dort Betrag, Mitteilung und der direkte PayPal.me-Link.
+Ohne PayPal steht dort `zahlung_hinweis`. Nach
 einer PayPal-Zahlung bekommt der Gast eine kurze Mail „Zahlung erhalten“.
 
 Für die Links muss `oeffentliche_adresse` gesetzt sein. Postausgang, Port und
@@ -429,12 +465,13 @@ einfache Weg. Die Absenderdomain muss dort verifiziert sein.
 
 Beide Seiten sind über die Fußzeile jeder öffentlichen Seite erreichbar.
 `/datenschutz` zeigt ohne weiteres Zutun eine eingebaute Erklärung, die genau
-beschreibt, was dieses Add-on tut. Ist PayPal eingerichtet, enthält sie einen
-Abschnitt **Bezahlung mit PayPal**: welche Angaben an PayPal gehen (Betrag,
+beschreibt, was dieses Add-on tut. Ist PayPal eingerichtet (Knopf oder PayPal.me), enthält sie einen
+Abschnitt **Bezahlung mit PayPal**. Beim Knopf: welche Angaben an PayPal gehen (Betrag,
 Währung, Titel, Kennung der Anmeldung — nicht Name oder E-Mail), dass der
 Bezahlknopf von paypal.com geladen wird, was PayPal zurückmeldet und dass
 Zahlungsbelege länger aufbewahrt werden müssen als die übrigen
-Anmeldedaten.
+Anmeldedaten. Bei PayPal.me steht dort stattdessen, dass die Seite nichts an
+PayPal übermittelt und der Gast seine Angaben bei PayPal selbst eingibt.
 
 Das ist kein Rechtsrat. Vor dem offiziellen Start sollte jemand darüber
 schauen — vor allem, ob ein Auftragsverarbeitungsvertrag oder eine eigene

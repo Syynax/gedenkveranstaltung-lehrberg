@@ -1,5 +1,25 @@
 # Änderungen
 
+## 1.1.0
+
+- **Bezahlen ohne Geschäftskonto: PayPal.me.** Neue Option `paypal_me` (Name
+  oder Link, z. B. „paypal.me/feuerwehrlehrberg“). Der Gast sieht den offenen
+  Betrag, die Mitteilung zum Kopieren („Titel – Name der Anmeldung“) und den
+  Knopf „Mit PayPal bezahlen“, der einen PayPal.me-Link mit eingetragenem
+  Betrag öffnet. Der Betrag kommt immer vom Server; nach einer Teilzahlung
+  steht der Rest im Link. Die Mitteilung kann PayPal.me nicht vorausfüllen,
+  deshalb das Kopierfeld.
+- **Vorrang:** Sind Client-ID und Secret gesetzt, gilt wie bisher der
+  PayPal-Knopf. Sonst gilt PayPal.me, sonst der Hinweis `zahlung_hinweis`.
+- Die Bestätigungsmail enthält bei PayPal.me Betrag, Mitteilung und den
+  direkten Link. Ein ungültiger Name in `paypal_me` steht als rote Meldung in
+  der Verwaltung; dann gibt es keinen Link.
+- Verwaltung: „Als bezahlt markieren“ statt „Als bar bezahlt markieren“, denn
+  bei PayPal.me wird nach dem Abgleich in PayPal von Hand abgehakt. Gespeicherte
+  Zahlungen bleiben unverändert lesbar.
+- Datenschutzvorlage gilt für beide Varianten; bei PayPal.me geht nichts von
+  der Seite an PayPal.
+
 ## 1.0.1
 
 - Neuer Standardtext für die Startseite: Weihnachtsmarkt in Ulm, am Abend
