@@ -1,5 +1,18 @@
 # Änderungen
 
+## 1.2.0
+
+- **Dritte Bezahlvariante: Link über die E-Mail-Adresse.** Neue Option
+  `paypal_email` (Adresse des PayPal-Kontos). Der Gast bekommt den Knopf „Mit
+  PayPal bezahlen“; Betrag, Verwendungszweck (Titel – Name) und Anmelde-ID
+  (als Artikelnummer) sind im Link schon eingetragen, ein Kopierfeld entfällt.
+  PayPal wertet es als Kauf, der Empfänger zahlt Gebühren; ob es mit einem
+  Privatkonto klappt, bitte mit einer Testzahlung prüfen.
+- **Vorrang:** Client-ID und Secret, dann `paypal_me`, dann `paypal_email`,
+  dann `zahlung_hinweis`. Eine ungültige Adresse steht als rote Meldung in der
+  Verwaltung; dann gibt es keinen Link.
+- Bestätigungsmail, Seitentext und Datenschutzvorlage kennen die neue Variante.
+
 ## 1.1.0
 
 - **Bezahlen ohne Geschäftskonto: PayPal.me.** Neue Option `paypal_me` (Name

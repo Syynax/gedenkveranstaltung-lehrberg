@@ -81,6 +81,9 @@ configuration:
   paypal_me:
     name: "Zahlung: PayPal.me-Name oder Link"
     description: Einfache Variante ohne Geschäftskonto. Dein PayPal.me-Name oder Link, z. B. „paypal.me/feuerwehrlehrberg“ oder nur „feuerwehrlehrberg“ (nur Buchstaben und Ziffern). Gäste bekommen einen Link mit dem offenen Betrag. Gilt nur, wenn Client-ID und Secret leer sind.
+  paypal_email:
+    name: "Zahlung: PayPal-E-Mail-Adresse"
+    description: E-Mail-Adresse des PayPal-Kontos, das das Geld bekommt. Nur nötig, wenn es keinen PayPal.me-Namen gibt. PayPal wertet die Zahlung als Kauf; der Empfänger zahlt Gebühren. Betrag und Verwendungszweck sind im Link vorausgefüllt. Gilt nur, wenn Client-ID, Secret und PayPal.me-Name leer sind.
   zahlung_hinweis:
     name: "Zahlung: Hinweis ohne PayPal"
     description: Steht statt des PayPal-Knopfs, solange PayPal nicht eingerichtet ist, z. B. „Bitte bar beim Ausflug zahlen.“

@@ -1,5 +1,5 @@
 name: Ausflug Anmeldung
-version: "1.1.0"
+version: "1.2.0"
 slug: ausflug
 description: Anmeldeseite für einen Vereinsausflug, mit Preisen für Mitglieder und Nichtmitglieder und Zahlung per PayPal
 arch:
@@ -58,6 +58,7 @@ options:
   paypal_secret: ""
   paypal_modus: sandbox
   paypal_me: ""
+  paypal_email: ""
   zahlung_hinweis: Bitte bar beim Ausflug zahlen.
   # Bestätigungsmail
   veranstalter: ""
@@ -113,6 +114,7 @@ schema:
   paypal_secret: password?
   paypal_modus: list(sandbox|live)
   paypal_me: str?
+  paypal_email: str?
   zahlung_hinweis: str?
   veranstalter: str?
   smtp_server: str?

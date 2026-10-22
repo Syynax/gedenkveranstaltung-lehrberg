@@ -68,6 +68,11 @@
     </div>
     <a class="knopf" href="{{ paypal_me_link(opt, geld.offen) }}" target="_blank" rel="noopener">Mit PayPal bezahlen</a>
     <div class="hinweis-klein" style="text-align: left;">Die Zahlung wird vom Organisationsteam von Hand abgehakt; das kann etwas dauern.</div>
+    {% elif opt.paypal_email_aktiv %}
+    {# E-Mail-Link: Betrag, Verwendungszweck und Anmelde-ID stehen schon im
+       Link, den der Server baut. Ein Kopierfeld braucht es nicht. #}
+    <a class="knopf" href="{{ paypal_email_link(opt, eintrag, geld.offen) }}" target="_blank" rel="noopener">Mit PayPal bezahlen &ndash; {{ geld.offen | euro }}</a>
+    <div class="hinweis-klein" style="text-align: left;">Betrag und Verwendungszweck sind bereits eingetragen. Die Zahlung wird vom Organisationsteam von Hand abgehakt; das kann etwas dauern.</div>
     {% elif opt.zahlung_hinweis %}
     <div style="font-size: 16px; color: var(--tinte-2);">{{ opt.zahlung_hinweis }}</div>
     {% endif %}
@@ -139,7 +144,7 @@
     <a class="absage-link" href="{{ url_for('absagen', anmeldung_id=eintrag.id) }}">Anmeldung absagen</a>
     <div class="hinweis-klein" style="text-align: left;">
       Diese Seite gehört nur zu Ihrer Anmeldung. Legen Sie den Link ab, dann
-      können Sie jederzeit hierher zurück{% if geld.offen > 0 and (opt.paypal_aktiv or opt.paypal_me_aktiv) %}, auch zum Bezahlen{% endif %}.{% if opt.kontakt %} Bei Fragen: {{ opt.kontakt }}.{% endif %}
+      können Sie jederzeit hierher zurück{% if geld.offen > 0 and (opt.paypal_aktiv or opt.paypal_me_aktiv or opt.paypal_email_aktiv) %}, auch zum Bezahlen{% endif %}.{% if opt.kontakt %} Bei Fragen: {{ opt.kontakt }}.{% endif %}
     </div>
   </div>
   {% else %}
