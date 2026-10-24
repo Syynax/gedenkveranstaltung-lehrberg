@@ -77,7 +77,11 @@
         <span class="summe__label">Gesamt</span>
         <span class="summe__wert" data-summe>{{ (m * opt.preis_mitglied_cent + n * opt.preis_nichtmitglied_cent) | euro }}</span>
       </div>
-      {% if opt.paypal_aktiv %}
+      {% if opt.ueberweisung_aktiv and (opt.paypal_aktiv or opt.paypal_me_aktiv or opt.paypal_email_aktiv) %}
+      <div class="feld__hilfe">Bezahlt wird nach dem Absenden auf der Bestätigungsseite, per Überweisung (QR-Code) oder PayPal.</div>
+      {% elif opt.ueberweisung_aktiv %}
+      <div class="feld__hilfe">Bezahlt wird nach dem Absenden auf der Bestätigungsseite, per Überweisung (QR-Code).</div>
+      {% elif opt.paypal_aktiv %}
       <div class="feld__hilfe">Bezahlt wird nach dem Absenden auf der Bestätigungsseite, per PayPal.</div>
       {% elif opt.zahlung_hinweis %}
       <div class="feld__hilfe">{{ opt.zahlung_hinweis }}</div>

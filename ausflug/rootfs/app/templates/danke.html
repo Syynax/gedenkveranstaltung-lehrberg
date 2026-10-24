@@ -5,7 +5,10 @@
 
 {% block inhalt %}
 {% set geld = zahlstand(eintrag) %}
-<main class="seite seite--schmal">
+{# ue: die Überweisung per GiroCode (oder none), paypal_da: irgendeine PayPal-Variante #}
+{% set ue = ueberweisung(opt, eintrag, geld.offen) %}
+{% set paypal_da = opt.paypal_aktiv or opt.paypal_me_aktiv or opt.paypal_email_aktiv %}
+<main class="seite seite--schmal{% if ue and paypal_da %} seite--zahlwege{% endif %}">
 
   {% if eintrag.abgesagt %}
 
@@ -28,19 +31,14 @@
 
   {% endif %}
 
-  {# Bezahlen. Der Knopf von PayPal fragt beim Server nach einer Order über
-     den offenen Betrag - welcher Betrag das ist, entscheidet allein der
-     Server. Ohne eingerichtetes PayPal steht hier der Hinweis aus den
-     Optionen, zum Beispiel "Bitte bar beim Ausflug zahlen". #}
-  {% if not eintrag.abgesagt and geld.offen > 0 %}
-  <div class="karte zahlung" id="bezahlen">
-    <div class="block">
-      <div class="block__titel">{% if geld.bezahlt > 0 %}Noch offen{% else %}Zu bezahlen{% endif %}</div>
-      <div class="zahlung__betrag">{{ geld.offen | euro }}</div>
-      {% if geld.bezahlt > 0 %}
-      <div style="font-size: 15px; color: var(--grau-2);">Gesamt {{ geld.betrag | euro }}, davon {{ geld.bezahlt | euro }} bereits bezahlt.</div>
-      {% endif %}
-    </div>
+  {# Bezahlen. Zwei Wege, gleichberechtigt: die Überweisung per GiroCode und
+     PayPal (in der Variante, die eingerichtet ist). Sind beide da, stehen sie
+     als zwei Karten nebeneinander, am Handy untereinander; ist nur einer da,
+     steht nur der. Ohne beides steht hier der Hinweis aus den Optionen, zum
+     Beispiel "Bitte bar beim Ausflug zahlen".
+     Betrag, Verwendungszweck und QR-Code baut allein der Server. Der Knopf von
+     PayPal fragt beim Server nach einer Order über den offenen Betrag. #}
+  {% macro paypal_teil(opt, eintrag, geld, mit_handhinweis) %}
     {% if opt.paypal_aktiv %}
     <div class="meldung meldung--fehler" role="alert" data-zahlung-fehler hidden>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
@@ -62,17 +60,81 @@
       <label class="feld__label" for="zahlung-betreff">Bitte als Mitteilung bei PayPal angeben:</label>
       <div class="kopierfeld__zeile">
         <input type="text" id="zahlung-betreff" value="{{ zahlung_betreff(opt, eintrag) }}" readonly>
-        <button type="button" class="knopf knopf--zweit knopf--klein" data-kopieren="zahlung-betreff">Kopieren</button>
+        <button type="button" class="knopf knopf--zweit knopf--klein" data-kopieren="zahlung-betreff" aria-label="Mitteilung kopieren">Kopieren</button>
       </div>
-      <div class="hinweis-klein kopierfeld__rueckmeldung" role="status" aria-live="polite" data-kopiert></div>
     </div>
     <a class="knopf" href="{{ paypal_me_link(opt, geld.offen) }}" target="_blank" rel="noopener">Mit PayPal bezahlen</a>
+    {% if mit_handhinweis %}
     <div class="hinweis-klein" style="text-align: left;">Die Zahlung wird vom Organisationsteam von Hand abgehakt; das kann etwas dauern.</div>
+    {% endif %}
     {% elif opt.paypal_email_aktiv %}
     {# E-Mail-Link: Betrag, Verwendungszweck und Anmelde-ID stehen schon im
        Link, den der Server baut. Ein Kopierfeld braucht es nicht. #}
     <a class="knopf" href="{{ paypal_email_link(opt, eintrag, geld.offen) }}" target="_blank" rel="noopener">Mit PayPal bezahlen &ndash; {{ geld.offen | euro }}</a>
-    <div class="hinweis-klein" style="text-align: left;">Betrag und Verwendungszweck sind bereits eingetragen. Die Zahlung wird vom Organisationsteam von Hand abgehakt; das kann etwas dauern.</div>
+    <div class="hinweis-klein" style="text-align: left;">Betrag und Verwendungszweck sind bereits eingetragen.{% if mit_handhinweis %} Die Zahlung wird vom Organisationsteam von Hand abgehakt; das kann etwas dauern.{% endif %}</div>
+    {% endif %}
+  {% endmacro %}
+
+  {% if not eintrag.abgesagt and geld.offen > 0 %}
+  <div class="karte zahlung" id="bezahlen">
+    <div class="block">
+      <div class="block__titel">{% if geld.bezahlt > 0 %}Noch offen{% else %}Zu bezahlen{% endif %}</div>
+      <div class="zahlung__betrag">{{ geld.offen | euro }}</div>
+      {% if geld.bezahlt > 0 %}
+      <div style="font-size: 15px; color: var(--grau-2);">Gesamt {{ geld.betrag | euro }}, davon {{ geld.bezahlt | euro }} bereits bezahlt.</div>
+      {% endif %}
+    </div>
+    {% if ue %}
+    <div class="zahlwege{% if paypal_da %} zahlwege--zwei{% endif %}">
+      <section class="karte zahlweg" aria-labelledby="zahlweg-ueberweisung">
+        <div class="block__titel" id="zahlweg-ueberweisung">Überweisen</div>
+        {# Der QR-Code ist ein GiroCode (EPC-Standard); er entsteht auf dem
+           Server und steht als SVG direkt in der Seite. #}
+        <div class="girocode" role="img" aria-label="GiroCode: QR-Code mit den Überweisungsdaten zum Scannen mit der Banking-App">{{ girocode_svg(ue.inhalt) }}</div>
+        <div class="hinweis-klein">Mit der Banking-App scannen: Empfänger, IBAN, Betrag und Verwendungszweck sind schon ausgefüllt.</div>
+        <div class="kopierzeilen">
+          <div class="kopierzeile">
+            <div class="kopierzeile__text">
+              <span class="kopierzeile__label">Empfänger</span>
+              <span class="kopierzeile__wert" id="ueberweisung-empfaenger">{{ ue.empfaenger }}</span>
+            </div>
+            <button type="button" class="knopf knopf--zweit knopf--klein" data-kopieren="ueberweisung-empfaenger" aria-label="Empfänger kopieren">Kopieren</button>
+          </div>
+          <div class="kopierzeile">
+            <div class="kopierzeile__text">
+              <span class="kopierzeile__label">IBAN</span>
+              <span class="kopierzeile__wert" id="ueberweisung-iban" data-kopierwert="{{ ue.iban_kurz }}">{{ ue.iban }}</span>
+            </div>
+            <button type="button" class="knopf knopf--zweit knopf--klein" data-kopieren="ueberweisung-iban" aria-label="IBAN kopieren">Kopieren</button>
+          </div>
+          <div class="kopierzeile">
+            <div class="kopierzeile__text">
+              <span class="kopierzeile__label">Betrag</span>
+              <span class="kopierzeile__wert" id="ueberweisung-betrag" data-kopierwert="{{ ue.betrag_zahl }}">{{ ue.betrag }}</span>
+            </div>
+            <button type="button" class="knopf knopf--zweit knopf--klein" data-kopieren="ueberweisung-betrag" aria-label="Betrag kopieren">Kopieren</button>
+          </div>
+          <div class="kopierzeile">
+            <div class="kopierzeile__text">
+              <span class="kopierzeile__label">Verwendungszweck</span>
+              <span class="kopierzeile__wert" id="ueberweisung-zweck">{{ ue.zweck }}</span>
+            </div>
+            <button type="button" class="knopf knopf--zweit knopf--klein" data-kopieren="ueberweisung-zweck" aria-label="Verwendungszweck kopieren">Kopieren</button>
+          </div>
+        </div>
+      </section>
+      {% if paypal_da %}
+      <section class="karte zahlweg" aria-labelledby="zahlweg-paypal">
+        <div class="block__titel" id="zahlweg-paypal">Mit PayPal</div>
+        {{ paypal_teil(opt, eintrag, geld, false) }}
+      </section>
+      {% endif %}
+    </div>
+    {# Einmal unter beiden Karten. Mit dem PayPal-Knopf wird dort sofort
+       gebucht; nur die Überweisung hakt die Orga von Hand ab. #}
+    <div class="hinweis-klein" style="text-align: left;">{% if opt.paypal_aktiv %}Eine Überweisung wird vom Organisationsteam von Hand abgehakt; das kann etwas dauern. Eine Zahlung per PayPal ist sofort verbucht.{% else %}Die Zahlung wird vom Organisationsteam von Hand abgehakt; das kann etwas dauern.{% endif %}</div>
+    {% elif paypal_da %}
+    {{ paypal_teil(opt, eintrag, geld, true) }}
     {% elif opt.zahlung_hinweis %}
     <div style="font-size: 16px; color: var(--tinte-2);">{{ opt.zahlung_hinweis }}</div>
     {% endif %}
@@ -144,7 +206,7 @@
     <a class="absage-link" href="{{ url_for('absagen', anmeldung_id=eintrag.id) }}">Anmeldung absagen</a>
     <div class="hinweis-klein" style="text-align: left;">
       Diese Seite gehört nur zu Ihrer Anmeldung. Legen Sie den Link ab, dann
-      können Sie jederzeit hierher zurück{% if geld.offen > 0 and (opt.paypal_aktiv or opt.paypal_me_aktiv or opt.paypal_email_aktiv) %}, auch zum Bezahlen{% endif %}.{% if opt.kontakt %} Bei Fragen: {{ opt.kontakt }}.{% endif %}
+      können Sie jederzeit hierher zurück{% if geld.offen > 0 and (paypal_da or ue) %}, auch zum Bezahlen{% endif %}.{% if opt.kontakt %} Bei Fragen: {{ opt.kontakt }}.{% endif %}
     </div>
   </div>
   {% else %}
@@ -158,35 +220,75 @@
 
 </main>
 
-{% if not eintrag.abgesagt and geld.offen > 0 and opt.paypal_me_aktiv %}
+{% if not eintrag.abgesagt and geld.offen > 0 and (ue or opt.paypal_me_aktiv) %}
+{# Alle Knöpfe mit data-kopieren="<id>" kopieren den Inhalt des Elements mit
+   dieser id: bei einem Eingabefeld seinen Wert, sonst data-kopierwert oder den
+   sichtbaren Text. Die Rückmeldung erscheint am Knopf selbst; ein verstecktes
+   Feld liest sie Screenreadern vor. #}
+<div class="nur-vorleser" role="status" aria-live="polite" data-kopiert></div>
 <script>
 (function () {
-  var knopf = document.querySelector('[data-kopieren]');
-  var meldung = document.querySelector('[data-kopiert]');
-  if (!knopf) { return; }
-  var feld = document.getElementById(knopf.dataset.kopieren);
+  var ansage = document.querySelector('[data-kopiert]');
 
-  function zeigen(text) {
-    meldung.textContent = text;
-    setTimeout(function () { meldung.textContent = ''; }, 2500);
+  function inhalt(quelle) {
+    if (typeof quelle.value === 'string') { return quelle.value; }
+    return (quelle.dataset.kopierwert || quelle.textContent).trim();
   }
 
-  function ersatz() {
+  function markieren(quelle) {
+    if (quelle.select) {
+      quelle.focus();
+      quelle.select();
+      quelle.setSelectionRange(0, quelle.value.length);
+      return;
+    }
+    var bereich = document.createRange();
+    bereich.selectNodeContents(quelle);
+    var auswahl = window.getSelection();
+    auswahl.removeAllRanges();
+    auswahl.addRange(bereich);
+  }
+
+  function ersatz(quelle, text) {
     // Ohne Zwischenablage-Schnittstelle (ältere Browser, kein https).
-    feld.focus();
-    feld.select();
-    feld.setSelectionRange(0, feld.value.length);
+    var hilfe = document.createElement('textarea');
+    hilfe.value = text;
+    hilfe.setAttribute('readonly', '');
+    hilfe.style.position = 'fixed';
+    hilfe.style.opacity = '0';
+    document.body.appendChild(hilfe);
+    hilfe.select();
     var ok = false;
     try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-    zeigen(ok ? 'Kopiert' : 'Bitte den Text markieren und selbst kopieren.');
+    document.body.removeChild(hilfe);
+    if (!ok) { markieren(quelle); }
+    return ok;
   }
 
-  knopf.addEventListener('click', function () {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(feld.value).then(function () { zeigen('Kopiert'); }, ersatz);
-    } else {
-      ersatz();
+  Array.prototype.forEach.call(document.querySelectorAll('[data-kopieren]'), function (knopf) {
+    var quelle = document.getElementById(knopf.dataset.kopieren);
+    if (!quelle) { return; }
+    var ruhe = knopf.textContent;
+    var uhr = null;
+
+    function zeigen(ok) {
+      knopf.textContent = ok ? 'Kopiert' : 'Markiert';
+      if (ansage) { ansage.textContent = ok ? 'Kopiert' : 'Bitte den markierten Text selbst kopieren.'; }
+      clearTimeout(uhr);
+      uhr = setTimeout(function () {
+        knopf.textContent = ruhe;
+        if (ansage) { ansage.textContent = ''; }
+      }, 2500);
     }
+
+    knopf.addEventListener('click', function () {
+      var text = inhalt(quelle);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { zeigen(true); }, function () { zeigen(ersatz(quelle, text)); });
+      } else {
+        zeigen(ersatz(quelle, text));
+      }
+    });
   });
 })();
 </script>

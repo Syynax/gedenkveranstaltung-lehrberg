@@ -1,7 +1,8 @@
 # Ausflug Anmeldung
 
 Eine Anmeldeseite für den Vereinsausflug, mit begrenzter Platzzahl, Preisen
-für Mitglieder und Nichtmitglieder und Zahlung per PayPal. Gäste tragen sich
+für Mitglieder und Nichtmitglieder und Zahlung per Überweisung (GiroCode)
+oder PayPal. Gäste tragen sich
 ohne Login ein, die Organisation sieht die Liste samt Zahlungsstand in Home
 Assistant.
 
@@ -26,8 +27,8 @@ Die Verwaltung ist **nur** über Ingress erreichbar. Wer die Adresse auf Port
 2. Anmeldung: Name, E-Mail, **Mitglieder** und **Nichtmitglieder** als zwei
    Zahlen mit Plus und Minus, darunter der Gesamtbetrag, optional eine
    Anmerkung.
-3. Bestätigung mit Zusammenfassung, Betrag und — wenn PayPal eingerichtet ist —
-   dem PayPal-Knopf zum sofortigen Bezahlen.
+3. Bestätigung mit Zusammenfassung, Betrag und den eingerichteten Bezahlwegen:
+   einem QR-Code für die Überweisung und/oder PayPal. Die Gäste wählen.
 
 Die Bestätigungsseite ist zugleich der persönliche Zugang zur Anmeldung: Von
 dort lässt sie sich **ändern**, **absagen** und **bezahlen**. Die Adresse
@@ -107,8 +108,8 @@ preis_nichtmitglied: "25,00"
 ### Wenn sich eine Anmeldung ändert
 
 * **Mehr Personen nach der Zahlung:** Der Betrag steigt, der Unterschied ist
-  offen. Die Bestätigungsseite zeigt „Noch offen“ und den PayPal-Knopf für
-  genau diesen Rest.
+  offen. Die Bestätigungsseite zeigt „Noch offen“ und die Bezahlwege (QR-Code
+  für die Überweisung, PayPal) für genau diesen Rest.
 * **Weniger Personen nach der Zahlung:** Es ist zu viel bezahlt. Die
   Verwaltung zeigt oben „Zu erstatten“ und an der Zeile den Betrag. Erstattet
   wird **von Hand** (siehe unten), automatisch passiert nichts.
@@ -118,6 +119,104 @@ preis_nichtmitglied: "25,00"
 
 Bei „zu viel bezahlt“ kommt außerdem eine Nachricht über
 `benachrichtigung_dienst`, auch wenn `benachrichtigung_jede_anmeldung` aus ist.
+
+## Bezahlwege: Überweisung oder PayPal
+
+Gäste können wählen, wie sie bezahlen. Auf der Bestätigungsseite stehen die
+eingerichteten Wege als zwei Karten nebeneinander (am Handy untereinander):
+**Überweisen** mit QR-Code und **Mit PayPal**. Der offene Betrag steht darüber.
+
+| Eingerichtet | Der Gast sieht |
+| --- | --- |
+| Überweisung und PayPal | beide Karten, dazu einmal den Hinweis, dass Überweisungen von Hand abgehakt werden |
+| nur Überweisung | nur die Karte „Überweisen“ |
+| nur PayPal | nur PayPal, so wie in den Abschnitten unten beschrieben |
+| nichts von beidem | den Text aus `zahlung_hinweis`, z. B. „Bitte bar beim Ausflug zahlen.“ |
+
+Beide Wege sind gleichberechtigt und unabhängig voneinander. Welche
+**PayPal-Variante** gilt, entscheidet weiterhin die Reihenfolge Client-ID und
+Secret (Knopf), dann `paypal_me`, dann `paypal_email`. Die Überweisung ist
+eingerichtet, sobald `iban` und `kontoinhaber` stimmen.
+
+## Bezahlen per Überweisung (GiroCode)
+
+Ein **GiroCode** ist ein QR-Code nach dem EPC-Standard. Er enthält die
+komplette Überweisung: Empfänger, IBAN, Betrag und Verwendungszweck. Der Gast
+scannt ihn in der Banking-App seiner Bank, die Überweisung ist dann schon
+ausgefüllt, und er muss sie nur noch bestätigen. Praktisch alle deutschen
+Banking-Apps können das. Für die Zahlung selbst fallen keine Gebühren an
+(anders als bei PayPal; die gewöhnlichen Kontogebühren der Bank bleiben), und
+das Geld kommt direkt auf das Vereinskonto.
+
+### Einrichten
+
+```yaml
+iban: "DE89 3704 0044 0532 0130 00"
+kontoinhaber: Freiwillige Feuerwehr Lehrberg e. V.
+bic: ""
+```
+
+* `iban` ist die IBAN des Vereinskontos, mit oder ohne Leerzeichen und in
+  Groß- oder Kleinschreibung. Das Add-on prüft Aufbau, Länge und die
+  Prüfziffer (ISO 7064, Mod 97). Stimmt etwas nicht, steht oben in der
+  Verwaltung eine rote Meldung, und es gibt keine Überweisung. Leer = keine
+  Überweisung, ohne Meldung.
+* `kontoinhaber` ist **Pflicht**, sobald eine IBAN eingetragen ist: Der
+  GiroCode kann ohne Empfängernamen nicht erzeugt werden. Er gehört so
+  geschrieben, wie er bei der Bank steht, und wird auf 70 Zeichen gekürzt.
+  Fehlt er, zeigt die Verwaltung eine rote Meldung.
+* `bic` ist nur für Konten außerhalb des SEPA-Raums nötig; **für deutsche
+  Konten leer lassen.** Ist sie eingetragen, muss sie aus 8 oder 11
+  Buchstaben und Ziffern bestehen, sonst steht eine Meldung in der Verwaltung
+  und die BIC wird ignoriert.
+
+Stimmen die Angaben, steht in der Verwaltung die Meldung „Überweisung per
+QR-Code ist eingerichtet“ mit der IBAN.
+
+> **Vor der Einladung einmal selbst prüfen:** Das Add-on kann die
+> Prüfziffer kontrollieren, aber nicht wissen, ob die IBAN dem Verein gehört.
+> Nach dem Eintragen eine Testanmeldung machen, auf der Bestätigungsseite den
+> QR-Code mit der eigenen Banking-App scannen und prüfen, ob Empfänger, IBAN,
+> Betrag und Verwendungszweck stimmen. Abschicken muss man die Überweisung dafür
+> nicht.
+
+### Was der Gast sieht
+
+Auf der Karte **Überweisen** stehen der QR-Code mit dem Satz „Mit der
+Banking-App scannen: Empfänger, IBAN, Betrag und Verwendungszweck sind schon
+ausgefüllt.“ und darunter dieselben Angaben als Text, jede mit einem Knopf
+„Kopieren“ für alle, die lieber von Hand überweisen oder am Rechner sitzen.
+
+* Der **Betrag** ist immer der **offene** Betrag, auf dem Server gerechnet.
+  Nach einer Teilzahlung oder einer Änderung der Anmeldung steht der Rest im
+  Code; ist alles bezahlt, gibt es keinen Code.
+* Der **Verwendungszweck** ist `<Titel> - <Name der Anmeldung>` (die Option
+  `titel`, ein Bindestrich statt des Gedankenstrichs). Damit ordnet ihr die
+  Überweisung auf dem Kontoauszug zu. Zeichen, die im Überweisungsverkehr
+  nicht erlaubt sind (zum Beispiel `&`, `<`, `>` oder Anführungszeichen),
+  werden durch Leerzeichen ersetzt; Umlaute bleiben. Er wird auf 140 Zeichen
+  gekürzt, und der ganze Code darf höchstens 331 Byte lang sein.
+* Auch die **Bestätigungsmail** nennt Empfänger, IBAN, Betrag und
+  Verwendungszweck. Ist `oeffentliche_adresse` gesetzt, steht dort außerdem,
+  dass der QR-Code auf der Anmeldeseite zu finden ist (Link „Anmeldung
+  ansehen“).
+
+### Zahlungen abhaken
+
+Das Add-on erfährt **nicht**, wann eine Überweisung eingeht. Ihr gleicht das
+Vereinskonto ab und markiert die Anmeldung in der Verwaltung mit **Als
+bezahlt markieren**; erst dann wechselt der Stand auf „bezahlt“, und die Mail
+„Zahlung erhalten“ geht raus. Der Gast sieht den Hinweis, dass das von Hand
+geschieht und etwas dauern kann. Erstattet wird wie bei allen Zahlungen von
+Hand (siehe „Erstatten“ unten).
+
+### Technisches
+
+Der Code folgt dem EPC-Standard (EPC069-12, Version 002, SEPA-Überweisung,
+Zeichensatz UTF-8) und hat die Fehlerkorrektur-Stufe **M**. Er wird auf dem
+Server mit der Python-Bibliothek `segno` erzeugt und als SVG direkt in die
+Seite geschrieben: kein Dienst im Internet, keine Bilddatei, nichts wird an
+eine Bank übermittelt. Die Seite skaliert ihn je nach Bildschirm.
 
 ## Zahlung per PayPal
 
@@ -153,8 +252,9 @@ Das **Secret** verlässt den Server nie: Der Browser bekommt nur die Client-ID
 PayPals Fehlername und `debug_id`.
 
 Ist PayPal nicht eingerichtet (Client-ID oder Secret leer), gibt es keinen
-Knopf. Stattdessen steht `zahlung_hinweis` auf der Bestätigungsseite, im
-Formular und in der Mail, zum Beispiel „Bitte bar beim Ausflug zahlen.“
+Knopf. Stattdessen steht — solange auch keine Überweisung eingerichtet ist —
+`zahlung_hinweis` auf der Bestätigungsseite, im Formular und in der Mail,
+zum Beispiel „Bitte bar beim Ausflug zahlen.“
 
 ### Bezahlen ohne Geschäftskonto: PayPal.me
 
@@ -284,7 +384,9 @@ Das Add-on erstattet nie selbst. So geht es:
 In der Verwaltung hat jede Zeile mit offenem Betrag den Knopf **Als bar
 bezahlt markieren**. Er verbucht den offenen Betrag als Barzahlung. Ein
 versehentlicher Klick lässt sich mit **Barzahlung zurücknehmen** rückgängig
-machen; PayPal-Zahlungen bleiben davon unberührt.
+machen; PayPal-Zahlungen bleiben davon unberührt. Überweisungen, PayPal.me-
+und E-Mail-Zahlungen gleicht ihr mit Konto oder PayPal ab und hakt sie mit
+**Als bezahlt markieren** ab.
 
 ## Einstellungen
 
@@ -327,12 +429,15 @@ werden.
 | --- | --- |
 | Preis für Mitglieder (`preis_mitglied`) | Euro je Person, z. B. `15,00` |
 | Preis für Nichtmitglieder (`preis_nichtmitglied`) | Euro je Person, z. B. `25,00` |
+| Überweisung, IBAN (`iban`) | IBAN des Vereinskontos, mit oder ohne Leerzeichen, die Prüfziffer wird kontrolliert. Leer = keine Überweisung |
+| Überweisung, Kontoinhaber (`kontoinhaber`) | Name wie bei der Bank, Pflicht zur IBAN, höchstens 70 Zeichen |
+| Überweisung, BIC (`bic`) | Nur bei Konten außerhalb des SEPA-Raums; für deutsche Konten leer lassen |
 | PayPal Client-ID (`paypal_client_id`) | Aus dem PayPal-Developer-Dashboard. Leer = kein PayPal |
 | PayPal Secret (`paypal_secret`) | Gehört zur Client-ID, bleibt auf dem Server |
 | PayPal-Modus (`paypal_modus`) | `sandbox` zum Testen, `live` für echte Zahlungen |
 | PayPal.me-Name oder Link (`paypal_me`) | Einfache Variante ohne Geschäftskonto, nur wirksam bei leerer Client-ID/Secret |
 | PayPal-E-Mail-Adresse (`paypal_email`) | Link über die Adresse des PayPal-Kontos, nur wirksam ohne Client-ID/Secret und ohne `paypal_me` |
-| Hinweis ohne PayPal (`zahlung_hinweis`) | Steht statt des Knopfs, solange PayPal fehlt |
+| Hinweis ohne Überweisung und PayPal (`zahlung_hinweis`) | Steht statt der Bezahlwege, solange weder Überweisung noch PayPal eingerichtet ist |
 
 **E-Mail** — die Bestätigungsmail
 
@@ -467,9 +572,13 @@ Anmeldung neu geschrieben.
 
 Die Mail nennt die Aufteilung (z. B. „3 Personen (2 Mitglieder, 1
 Nichtmitglied)“), den Gesamtbetrag mit Aufstellung, den Zahlungsstand und —
-solange etwas offen ist und PayPal eingerichtet ist — als großen Knopf den
-Link **Jetzt … € bezahlen**. Mit PayPal.me stehen dort Betrag, Mitteilung und der direkte PayPal.me-Link, mit der E-Mail-Adresse Betrag und der direkte PayPal-Link (der Verwendungszweck ist darin vorausgefüllt).
-Ohne PayPal steht dort `zahlung_hinweis`. Nach
+solange etwas offen ist und die Überweisung eingerichtet ist — einen Absatz
+**Überweisung** mit Empfänger, IBAN, Betrag und Verwendungszweck (mit
+`oeffentliche_adresse` dazu der Hinweis auf den QR-Code auf der Anmeldeseite).
+Sind Überweisung und PayPal eingerichtet, steht die Überweisung zuerst, mit dem
+Satz „Sie können wählen, wie Sie bezahlen.“ Mit PayPal-Knopf kommt als großer
+Knopf der Link **Jetzt … € bezahlen**. Mit PayPal.me stehen dort Betrag, Mitteilung und der direkte PayPal.me-Link, mit der E-Mail-Adresse Betrag und der direkte PayPal-Link (der Verwendungszweck ist darin vorausgefüllt).
+Ohne Überweisung und PayPal steht dort `zahlung_hinweis`. Nach
 einer PayPal-Zahlung bekommt der Gast eine kurze Mail „Zahlung erhalten“.
 
 Für die Links muss `oeffentliche_adresse` gesetzt sein. Postausgang, Port und
@@ -494,7 +603,11 @@ einfache Weg. Die Absenderdomain muss dort verifiziert sein.
 
 Beide Seiten sind über die Fußzeile jeder öffentlichen Seite erreichbar.
 `/datenschutz` zeigt ohne weiteres Zutun eine eingebaute Erklärung, die genau
-beschreibt, was dieses Add-on tut. Ist PayPal eingerichtet (Knopf, PayPal.me oder E-Mail-Adresse), enthält sie einen
+beschreibt, was dieses Add-on tut. Ist die Überweisung eingerichtet, enthält sie
+einen Abschnitt **Bezahlung per Überweisung**: Die Seite übermittelt nichts an
+eine Bank, der QR-Code enthält nur die Kontodaten des Vereins, den Betrag und
+den Verwendungszweck, und der Gast überweist über seine eigene Bank. Ist PayPal
+eingerichtet (Knopf, PayPal.me oder E-Mail-Adresse), enthält sie einen
 Abschnitt **Bezahlung mit PayPal**. Beim Knopf: welche Angaben an PayPal gehen (Betrag,
 Währung, Titel, Kennung der Anmeldung — nicht Name oder E-Mail), dass der
 Bezahlknopf von paypal.com geladen wird, was PayPal zurückmeldet und dass

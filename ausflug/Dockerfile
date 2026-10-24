@@ -5,6 +5,10 @@ ENV LANG=C.UTF-8 \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
+# requirements.txt enthält auch segno, das den GiroCode (QR-Code für die
+# Überweisung) erzeugt. segno ist reines Python ohne eigene Abhängigkeiten und
+# kommt als fertiges Paket: Das Image braucht dafür keinen Compiler und keine
+# weiteren Alpine-Pakete.
 COPY requirements.txt /tmp/requirements.txt
 
 # --break-system-packages gibt es erst ab pip 23.0; auf älteren Basis-Images

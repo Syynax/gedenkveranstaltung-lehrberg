@@ -22,6 +22,7 @@ import smtplib
 import ssl
 import threading
 import time
+import unicodedata
 from email.message import EmailMessage
 from html import escape
 import urllib.error
@@ -30,6 +31,7 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
+import segno
 from flask import (
     Flask,
     Response,
@@ -40,6 +42,7 @@ from flask import (
     request,
     url_for,
 )
+from markupsafe import Markup
 from waitress import serve
 
 # Im Add-on immer 8081/8099. Die Variablen gibt es nur, damit sich zum Testen
@@ -88,6 +91,9 @@ STANDARD_OPTIONEN = {
     "datenschutz_hinweis": "Die Angaben werden nur für die Planung des Ausflugs verwendet.",
     "preis_mitglied": "15,00",
     "preis_nichtmitglied": "25,00",
+    "iban": "",
+    "kontoinhaber": "",
+    "bic": "",
     "paypal_client_id": "",
     "paypal_secret": "",
     "paypal_modus": "sandbox",
@@ -259,6 +265,166 @@ def paypal_in_cent(wert):
     return int(treffer.group(1)) * 100 + int((treffer.group(2) or "0").ljust(2, "0"))
 
 
+# --------------------------------------------------------------------------
+# Überweisung per GiroCode
+# --------------------------------------------------------------------------
+
+# Der GiroCode ist ein QR-Code nach dem EPC-Standard (EPC069-12, Version 002):
+# ein Text aus elf Zeilen, den die Banking-App als fertig ausgefüllte
+# SEPA-Überweisung öffnet. Alles darin baut der Server - Betrag und
+# Verwendungszweck kommen nie aus dem Browser.
+
+# Aufbau einer IBAN: zwei Buchstaben (Land), zwei Prüfziffern, dann bis zu 30
+# Buchstaben und Ziffern - insgesamt 15 bis 34 Zeichen.
+IBAN_MUSTER = re.compile(r"[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}")
+# Feste Längen der Länder, in denen ein Vereinskonto am ehesten liegt. Die
+# Prüfziffer allein übersieht eine verlorene Ziffer in jedem 97. Fall.
+IBAN_LAENGEN = {"DE": 22, "AT": 20, "CH": 21, "LI": 21}
+# BIC: 8 oder 11 Zeichen. Bei Konten im SEPA-Raum braucht der GiroCode sie nicht.
+BIC_MUSTER = re.compile(r"[A-Z0-9]{8}(?:[A-Z0-9]{3})?")
+# Der Standard verlangt für den Kontoinhaber höchstens 70 und für den
+# Verwendungszweck höchstens 140 Zeichen, den ganzen Text in höchstens 331 Byte.
+GIROCODE_NAME_MAX = 70
+GIROCODE_ZWECK_MAX = 140
+GIROCODE_BYTES_MAX = 331
+# Höchstbetrag laut Standard: 999 999 999,99 EUR.
+GIROCODE_CENT_MAX = 99_999_999_999
+# Im Verwendungszweck bleiben nur Zeichen, die jede Bank im SEPA-Verkehr
+# annimmt (dazu die Umlaute); alles andere wird zum Leerzeichen.
+GIROCODE_UNERLAUBT = re.compile(r"[^A-Za-z0-9ÄÖÜäöüß /\-?:().,'+]")
+
+
+def iban_lesen(roh):
+    """Die IBAN aus der Option iban. Rückgabe: (IBAN ohne Leerzeichen in
+    Großbuchstaben, Fehler). Leer ist kein Fehler; alles, was keine gültige
+    IBAN ist (Aufbau, Länge, Prüfziffer nach ISO 7064 Mod 97-10), schon - dann
+    gibt es keinen GiroCode, damit kein Geld auf ein falsches Konto läuft."""
+    text = re.sub(r"\s+", "", str(roh or "")).upper()
+    if not text:
+        return "", False
+    if not IBAN_MUSTER.fullmatch(text):
+        return "", True
+    if len(text) != IBAN_LAENGEN.get(text[:2], len(text)):
+        return "", True
+    # Die ersten vier Zeichen ans Ende, Buchstaben als Zahlen (A=10 ... Z=35;
+    # int(zeichen, 36) liefert genau das). Eine gültige IBAN lässt dann den
+    # Rest 1, wenn man die Zahl durch 97 teilt.
+    umgestellt = text[4:] + text[:4]
+    zahl = int("".join(str(int(zeichen, 36)) for zeichen in umgestellt))
+    if zahl % 97 != 1:
+        return "", True
+    return text, False
+
+
+def iban_gruppiert(iban):
+    """Die IBAN in Vierergruppen, wie sie auf Kontoauszügen steht."""
+    return " ".join(iban[i:i + 4] for i in range(0, len(iban), 4))
+
+
+def bic_lesen(roh):
+    """Die BIC aus der Option bic. Rückgabe: (BIC in Großbuchstaben, Fehler).
+    Leer ist kein Fehler; eine unlesbare BIC wird gemeldet und ignoriert - die
+    Überweisung geht auch ohne."""
+    text = re.sub(r"\s+", "", str(roh or "")).upper()
+    if not text:
+        return "", False
+    if BIC_MUSTER.fullmatch(text):
+        return text, False
+    return "", True
+
+
+def kontoinhaber_lesen(roh):
+    """Der Name des Kontoinhabers, einzeilig und auf die 70 Zeichen gekürzt,
+    die der GiroCode erlaubt. Ein Zeilenumbruch darin würde die Zeilen des
+    Codes verschieben."""
+    text = re.sub(r"[\x00-\x1f\x7f]", " ", str(roh or ""))
+    return " ".join(text.split())[:GIROCODE_NAME_MAX].rstrip()
+
+
+def girocode_zweck(opt, eintrag):
+    """Der Verwendungszweck, so wie ihn der GiroCode verträgt: der Betreff aus
+    zahlung_betreff, der Gedankenstrich als Bindestrich, Zeichen außerhalb des
+    erlaubten Vorrats als Leerzeichen, höchstens 140 Zeichen. NFC zuerst, damit
+    ein Umlaut aus Grundbuchstabe und Pünktchen nicht in zwei Teile zerfällt."""
+    text = unicodedata.normalize("NFC", zahlung_betreff(opt, eintrag))
+    text = GIROCODE_UNERLAUBT.sub(" ", text.replace("–", "-"))
+    return " ".join(text.split())[:GIROCODE_ZWECK_MAX].rstrip()
+
+
+def _girocode_bauen(opt, eintrag, cent):
+    """(Inhalt des GiroCodes, Verwendungszweck darin) - oder ("", ""), wenn die
+    Überweisung nicht eingerichtet ist oder nichts zu zahlen ist. Ist der Text
+    länger als 331 Byte (Umlaute zählen doppelt), wird der Verwendungszweck
+    gekürzt; er ist das Einzige, was sich kürzen lässt."""
+    cent = int(cent or 0)
+    if not opt.get("ueberweisung_aktiv") or not 0 < cent <= GIROCODE_CENT_MAX:
+        return "", ""
+    zweck = girocode_zweck(opt, eintrag)
+    while True:
+        inhalt = "\n".join([
+            "BCD",                            # Kennung
+            "002",                            # Version
+            "1",                              # Zeichensatz 1 = UTF-8
+            "SCT",                            # SEPA-Überweisung
+            opt.get("bic") or "",             # BIC, bei SEPA-Konten leer
+            opt["kontoinhaber"],              # Empfänger
+            opt["iban"],                      # IBAN ohne Leerzeichen
+            f"EUR{paypal_wert(cent)}",        # Betrag mit Punkt: EUR55.00
+            "",                               # Purpose-Code
+            "",                               # strukturierte Referenz
+            zweck,                            # Verwendungszweck
+        ])
+        if len(inhalt.encode("utf-8")) <= GIROCODE_BYTES_MAX:
+            return inhalt, zweck
+        if not zweck:
+            return "", ""
+        zweck = zweck[:-1].rstrip()
+
+
+def girocode_inhalt(opt, eintrag, cent):
+    """Der Text des GiroCodes für den Betrag "cent" (der offene Betrag der
+    Anmeldung): elf Zeilen, durch Zeilenumbrüche getrennt, keiner am Ende.
+    Leer, wenn es nichts zu überweisen gibt."""
+    return _girocode_bauen(opt, eintrag, cent)[0]
+
+
+def girocode_svg(inhalt):
+    """Der GiroCode als Inline-SVG für die Seite, oder "" wenn kein Inhalt da
+    ist. Fehlerkorrektur M, UTF-8 ohne ECI-Kennung wie bei den gängigen
+    Erzeugern, kein Micro-QR und keine stillschweigend höhere Stufe. Rand von
+    vier Modulen, damit jede App den Code findet; die Größe legt das CSS fest."""
+    if not inhalt:
+        return Markup("")
+    try:
+        code = segno.make_qr(inhalt, error="m", encoding="utf-8", boost_error=False)
+        svg = code.svg_inline(
+            border=4, dark="#000000", light="#FFFFFF", omitsize=True,
+            title="GiroCode zum Scannen mit der Banking-App",
+        )
+    except (ValueError, segno.DataOverflowError) as fehler:
+        print(f"[anmeldung] GiroCode konnte nicht erzeugt werden: {fehler}", flush=True)
+        return Markup("")
+    return Markup(svg)
+
+
+def ueberweisung_angaben(opt, eintrag, cent):
+    """Alles, was Seite und Mail zur Überweisung zeigen - oder None, wenn
+    keine eingerichtet ist oder nichts offen ist. "zweck" ist derselbe Text,
+    der im GiroCode steht; wer von Hand überweist, soll ihn genauso eintragen."""
+    inhalt, zweck = _girocode_bauen(opt, eintrag, cent)
+    if not inhalt:
+        return None
+    return {
+        "inhalt": inhalt,
+        "empfaenger": opt["kontoinhaber"],
+        "iban": opt["iban_anzeige"],
+        "iban_kurz": opt["iban"],
+        "betrag": euro(cent),
+        "betrag_zahl": euro_zahl(cent),
+        "zweck": zweck,
+    }
+
+
 def _preis_lesen(werte, schluessel):
     cent = preis_in_cent(werte.get(schluessel))
     if cent is None:
@@ -328,6 +494,16 @@ def optionen():
     werte["preisfehler"] = []
     werte["preis_mitglied_cent"] = _preis_lesen(werte, "preis_mitglied")
     werte["preis_nichtmitglied_cent"] = _preis_lesen(werte, "preis_nichtmitglied")
+    # Überweisung per GiroCode. Ohne gültige IBAN und ohne Kontoinhaber gibt es
+    # sie nicht; beides wird in der Verwaltung gemeldet, statt stillschweigend
+    # zu fehlen. Der Kontoinhaber ist Pflicht, weil der GiroCode ihn verlangt.
+    iban_eingetragen = bool(str(werte.get("iban") or "").strip())
+    werte["iban"], werte["iban_fehler"] = iban_lesen(werte.get("iban"))
+    werte["iban_anzeige"] = iban_gruppiert(werte["iban"])
+    werte["kontoinhaber"] = kontoinhaber_lesen(werte.get("kontoinhaber"))
+    werte["kontoinhaber_fehlt"] = iban_eingetragen and not werte["kontoinhaber"]
+    werte["bic"], werte["bic_fehler"] = bic_lesen(werte.get("bic"))
+    werte["ueberweisung_aktiv"] = bool(werte["iban"] and werte["kontoinhaber"])
     werte["paypal_client_id"] = (werte.get("paypal_client_id") or "").strip()
     # Ein Leerzeichen am Rand rutscht beim Einfügen leicht mit und führt bei
     # PayPal zu "invalid_client", ohne dass man dem Feld etwas ansieht.
@@ -832,35 +1008,64 @@ def _mail_inhalt(opt, eintrag, art, adresse):
     bezahlen_moeglich = stand["offen"] > 0 and opt.get("paypal_aktiv")
     me_link = paypal_me_link(opt, stand["offen"])
     email_link = paypal_email_link(opt, eintrag, stand["offen"])
+    ueberweisung_da = ueberweisung_angaben(opt, eintrag, stand["offen"])
+    paypal_absatz = ""
     if stand["offen"] > 0:
         if email_link:
-            inhalt["absaetze"].append(
+            paypal_absatz = (
                 f"Offen sind noch {euro(stand['offen'])}. Bezahlen können Sie "
                 "über den PayPal-Link unten; Betrag und Verwendungszweck sind "
                 "dort schon eingetragen."
             )
         elif me_link:
-            inhalt["absaetze"].append(
+            paypal_absatz = (
                 f"Offen sind noch {euro(stand['offen'])}. Bezahlen können Sie "
                 "über den PayPal-Link unten; der Betrag ist dort schon "
                 "eingetragen. Bitte geben Sie bei PayPal als Mitteilung an: "
                 f"{zahlung_betreff(opt, eintrag)}"
             )
         elif bezahlen_moeglich and adresse:
-            inhalt["absaetze"].append(
+            paypal_absatz = (
                 f"Offen sind noch {euro(stand['offen'])}. Über „Jetzt bezahlen“ "
                 "unten können Sie den Betrag direkt per PayPal bezahlen."
             )
         elif bezahlen_moeglich:
-            inhalt["absaetze"].append(
+            paypal_absatz = (
                 f"Offen sind noch {euro(stand['offen'])}. Bezahlen können Sie "
                 "auf der Bestätigungsseite Ihrer Anmeldung per PayPal."
             )
-        elif (opt.get("zahlung_hinweis") or "").strip():
-            inhalt["absaetze"].append(
+        elif (opt.get("zahlung_hinweis") or "").strip() and not ueberweisung_da:
+            # Der Hinweis gilt nur, solange kein Bezahlweg eingerichtet ist.
+            paypal_absatz = (
                 f"Offen sind noch {euro(stand['offen'])}. "
                 + opt["zahlung_hinweis"].strip()
             )
+    if ueberweisung_da:
+        # Erst die Überweisung, dann PayPal. Der Block steht zwischen den
+        # Absätzen; der Text- und der HTML-Satz setzen ihn als Angabenblock.
+        if paypal_absatz:
+            inhalt["absaetze"].append("Sie können wählen, wie Sie bezahlen.")
+        else:
+            inhalt["absaetze"].append(
+                f"Offen sind noch {euro(stand['offen'])}. Bezahlen können Sie "
+                "per Überweisung."
+            )
+        inhalt["absaetze"].append((
+            "Überweisung",
+            [
+                ("Empfänger", ueberweisung_da["empfaenger"]),
+                ("IBAN", ueberweisung_da["iban"]),
+                ("Betrag", ueberweisung_da["betrag"]),
+                ("Verwendungszweck", ueberweisung_da["zweck"]),
+            ],
+        ))
+        if adresse:
+            inhalt["absaetze"].append(
+                "Einen QR-Code zum Scannen mit der Banking-App finden Sie auf "
+                "Ihrer Anmeldeseite („Anmeldung ansehen“ unten)."
+            )
+    if paypal_absatz:
+        inhalt["absaetze"].append(paypal_absatz)
 
     inhalt["angaben"].append(("Angemeldet", personen_text(eintrag)))
     if stand["betrag"] > 0:
@@ -930,16 +1135,20 @@ def _mail_inhalt(opt, eintrag, art, adresse):
 def _als_text(inhalt):
     """Die Nur-Text-Fassung. Keine Spalten, die mit Leerzeichen aufgefüllt
     sind: in einer Proportionalschrift steht so etwas krumm."""
-    zeilen = [inhalt["anrede"], ""]
-    for absatz in inhalt["absaetze"]:
-        zeilen += [absatz, ""]
-
     def block(ueberschrift, paare):
         if not paare:
             return []
         raus = [ueberschrift, "-" * len(ueberschrift)]
         raus += [f"{name}: {wert}" for name, wert in paare]
         return raus + [""]
+
+    zeilen = [inhalt["anrede"], ""]
+    for absatz in inhalt["absaetze"]:
+        if isinstance(absatz, tuple):
+            # Ein Angabenblock zwischen den Absätzen: (Überschrift, Paare).
+            zeilen += block(*absatz)
+        else:
+            zeilen += [absatz, ""]
 
     zeilen += block("Ihre Angaben", inhalt["angaben"])
     zeilen += block("Termin", inhalt["termin"])
@@ -963,16 +1172,6 @@ MAIL_SERIF = "font-family:Georgia,'Times New Roman',serif;"
 
 def _als_html(inhalt, titel):
     """Die HTML-Fassung: dieselben Angaben wie im Text, nur gesetzt."""
-    teile = [
-        f'<tr><td style="{MAIL_SANS}padding:0 0 16px;font-size:17px;color:#221F1B;">'
-        f"{escape(inhalt['anrede'])}</td></tr>"
-    ]
-    for absatz in inhalt["absaetze"]:
-        teile.append(
-            f'<tr><td style="{MAIL_SANS}padding:0 0 14px;font-size:17px;'
-            f'line-height:1.5;color:#3B372F;">{escape(absatz)}</td></tr>'
-        )
-
     def ueberschrift(text):
         return (
             f'<tr><td style="{MAIL_SANS}padding:10px 0 6px;font-size:12px;'
@@ -1001,6 +1200,20 @@ def _als_html(inhalt, titel):
             + reihen
             + "</table></td></tr></table></td></tr>"
         )
+
+    teile = [
+        f'<tr><td style="{MAIL_SANS}padding:0 0 16px;font-size:17px;color:#221F1B;">'
+        f"{escape(inhalt['anrede'])}</td></tr>"
+    ]
+    for absatz in inhalt["absaetze"]:
+        if isinstance(absatz, tuple):
+            # Ein Angabenblock zwischen den Absätzen: (Überschrift, Paare).
+            teile.append(block(*absatz))
+        else:
+            teile.append(
+                f'<tr><td style="{MAIL_SANS}padding:0 0 14px;font-size:17px;'
+                f'line-height:1.5;color:#3B372F;">{escape(absatz)}</td></tr>'
+            )
 
     teile.append(block("Ihre Angaben", inhalt["angaben"]))
     teile.append(block("Termin", inhalt["termin"]))
@@ -1676,6 +1889,8 @@ def vorlagen_werte():
         "paypal_me_link": paypal_me_link,
         "paypal_email_link": paypal_email_link,
         "zahlung_betreff": zahlung_betreff,
+        "ueberweisung": ueberweisung_angaben,
+        "girocode_svg": girocode_svg,
     }
 
 
@@ -2069,8 +2284,8 @@ def danke(anmeldung_id):
 @app.get("/anmeldung/<anmeldung_id>/bezahlen")
 def bezahlen(anmeldung_id):
     """Der Bezahl-Link aus der Mail. Bezahlt wird auf der Bestätigungsseite,
-    der Link springt dort direkt zum PayPal-Knopf (oder, bei PayPal.me oder E-Mail-Link, zum
-    Betrag mit dem Knopf)."""
+    der Link springt dort direkt zum Abschnitt „Zu bezahlen“ mit dem QR-Code
+    für die Überweisung und dem PayPal-Knopf oder -Link."""
     return redirect(url_for("danke", anmeldung_id=anmeldung_id, _anchor="bezahlen"))
 
 

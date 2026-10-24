@@ -1,7 +1,7 @@
 name: Ausflug Anmeldung
-version: "1.2.0"
+version: "1.3.0"
 slug: ausflug
-description: Anmeldeseite für einen Vereinsausflug, mit Preisen für Mitglieder und Nichtmitglieder und Zahlung per PayPal
+description: Anmeldeseite für einen Vereinsausflug, mit Preisen für Mitglieder und Nichtmitglieder und Zahlung per Überweisung (GiroCode) oder PayPal
 arch:
   - aarch64
   - amd64
@@ -54,6 +54,9 @@ options:
   # Preise und Zahlung
   preis_mitglied: "15,00"
   preis_nichtmitglied: "25,00"
+  iban: ""
+  kontoinhaber: ""
+  bic: ""
   paypal_client_id: ""
   paypal_secret: ""
   paypal_modus: sandbox
@@ -110,6 +113,9 @@ schema:
   datenschutz_hinweis: str?
   preis_mitglied: str
   preis_nichtmitglied: str
+  iban: str?
+  kontoinhaber: str?
+  bic: str?
   paypal_client_id: str?
   paypal_secret: password?
   paypal_modus: list(sandbox|live)

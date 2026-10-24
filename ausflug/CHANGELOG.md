@@ -1,5 +1,33 @@
 # Änderungen
 
+## 1.3.0
+
+- **Überweisung per GiroCode als zusätzlicher, gleichberechtigter Bezahlweg.**
+  Neue Optionen `iban`, `kontoinhaber` und `bic` (nur außerhalb des
+  SEPA-Raums). Auf der Bestätigungsseite steht der QR-Code (EPC-Standard,
+  Version 002, Fehlerkorrektur M) mit dem **offenen** Betrag; die Banking-App
+  füllt Empfänger, IBAN, Betrag und Verwendungszweck („Titel - Name“) selbst
+  aus. Darunter dieselben Angaben als Text, jede mit „Kopieren“-Knopf. Der
+  Code entsteht auf dem Server mit der Bibliothek `segno` (reines Python,
+  neue Abhängigkeit) und steht als SVG in der Seite, ohne externen Dienst.
+- **Die Gäste wählen:** Sind Überweisung und PayPal eingerichtet, stehen zwei
+  Karten nebeneinander (am Handy untereinander). Ist nur eines eingerichtet,
+  steht nur dieses da; ist nichts eingerichtet, gilt wie bisher
+  `zahlung_hinweis`. Welche PayPal-Variante gilt, bleibt bei der alten
+  Vorrangliste.
+- **Prüfung:** Die IBAN wird auf Aufbau, Länge und Prüfziffer (Mod 97)
+  kontrolliert, der Kontoinhaber ist Pflicht, die BIC muss 8 oder 11 Zeichen
+  haben. Fehler stehen als rote Meldung in der Verwaltung; dann gibt es keine
+  Überweisung. Eingerichtet zeigt die Verwaltung eine Info mit der IBAN.
+- Die Bestätigungsmail nennt Empfänger, IBAN, Betrag und Verwendungszweck und
+  verweist (mit `oeffentliche_adresse`) auf den QR-Code auf der
+  Anmeldeseite. Sind beide Wege eingerichtet, steht die Überweisung vor PayPal.
+- Alle „Kopieren“-Knöpfe der Bestätigungsseite funktionieren mit einem
+  gemeinsamen Skript; die Rückmeldung „Kopiert“ erscheint am Knopf selbst.
+- Das Formular nennt die Überweisung im Hinweis unter dem Preis, die
+  Datenschutzvorlage hat einen Absatz „Bezahlung per Überweisung“, und die
+  Beschreibung der Optionen `zahlung_hinweis` und `datenschutz` ist angepasst.
+
 ## 1.2.0
 
 - **Dritte Bezahlvariante: Link über die E-Mail-Adresse.** Neue Option

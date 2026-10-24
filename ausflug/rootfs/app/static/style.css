@@ -790,7 +790,40 @@ tr.abgesagt td.name { color: var(--grau-2); font-weight: 400; text-decoration: l
 .kopierfeld__zeile { display: flex; gap: 8px; align-items: stretch; }
 .kopierfeld__zeile input { flex: 1; min-width: 0; }
 .kopierfeld__zeile .knopf { flex-shrink: 0; height: 54px; }
-.kopierfeld__rueckmeldung { min-height: 21px; text-align: left; font-weight: 600; color: #3F6B2E; }
+/* Bezahlen: Überweisung (GiroCode) und PayPal als zwei Karten, am Handy
+   untereinander. Mit zwei Karten bekommt die Seite am Rechner mehr Breite,
+   sonst blieben jeder Karte keine 200 px. */
+.zahlwege { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.zahlweg { padding: 16px; gap: 14px; }
+.girocode { width: 100%; max-width: 260px; margin: 0 auto; }
+.girocode svg { display: block; width: 100%; height: auto; shape-rendering: crispEdges; }
+.kopierzeilen { display: flex; flex-direction: column; gap: 12px; }
+.kopierzeile { display: flex; align-items: center; gap: 12px; }
+.kopierzeile__text { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow-wrap: anywhere; }
+.kopierzeile__label { font-size: 13px; color: var(--grau-3); }
+.kopierzeile__wert { font-size: 16px; color: var(--tinte); }
+/* "Kopiert" ist kürzer als "Kopieren"; die Breite soll sich dabei nicht ändern. */
+.kopierzeile .knopf, .kopierfeld__zeile .knopf { min-width: 104px; flex-shrink: 0; }
+/* In einer Karte ist wenig Platz: Feld und Knopf der Mitteilung stehen untereinander. */
+.zahlweg .kopierfeld__zeile { flex-direction: column; }
+.zahlweg .kopierfeld__zeile .knopf { height: 44px; }
+/* Ohne JavaScript tun die Kopieren-Knöpfe nichts. */
+.js-aus [data-kopieren] { display: none; }
+/* Nur für Screenreader: die Ansage "Kopiert". */
+.nur-vorleser {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@media (min-width: 820px) {
+  .seite--schmal.seite--zahlwege { max-width: 760px; }
+  .zahlwege--zwei { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .girocode { max-width: 220px; }
+}
+
 .posten--summe { font-weight: 600; color: var(--tinte); }
 .posten--summe span:last-child { color: var(--tinte); }
 

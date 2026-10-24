@@ -69,6 +69,22 @@ configuration:
   preis_nichtmitglied:
     name: "Zahlung: Preis für Nichtmitglieder"
     description: In Euro je Person, z. B. „25“ oder „25,00“.
+  iban:
+    name: "Zahlung: Überweisung, IBAN"
+    description: >-
+      IBAN des Vereinskontos, auf das überwiesen werden soll, z. B. „DE89 3704
+      0044 0532 0130 00“ (mit oder ohne Leerzeichen; die Prüfziffer wird
+      kontrolliert). Gäste scannen auf der Bestätigungsseite einen QR-Code
+      (GiroCode) mit ihrer Banking-App. Leer = keine Überweisung anbieten.
+  kontoinhaber:
+    name: "Zahlung: Überweisung, Kontoinhaber"
+    description: >-
+      Name des Kontoinhabers, so wie er bei der Bank steht, z. B. „Freiwillige
+      Feuerwehr Lehrberg e. V.“. Pflicht, sobald eine IBAN eingetragen ist;
+      höchstens 70 Zeichen.
+  bic:
+    name: "Zahlung: Überweisung, BIC"
+    description: BIC, nur nötig bei Konten außerhalb des SEPA-Raums; für deutsche Konten leer lassen.
   paypal_client_id:
     name: "Zahlung: PayPal Client-ID"
     description: Aus dem PayPal-Developer-Dashboard (Apps & Credentials). Leer = kein PayPal, stattdessen der Hinweis unten.
@@ -85,8 +101,8 @@ configuration:
     name: "Zahlung: PayPal-E-Mail-Adresse"
     description: E-Mail-Adresse des PayPal-Kontos, das das Geld bekommt. Nur nötig, wenn es keinen PayPal.me-Namen gibt. PayPal wertet die Zahlung als Kauf; der Empfänger zahlt Gebühren. Betrag und Verwendungszweck sind im Link vorausgefüllt. Gilt nur, wenn Client-ID, Secret und PayPal.me-Name leer sind.
   zahlung_hinweis:
-    name: "Zahlung: Hinweis ohne PayPal"
-    description: Steht statt des PayPal-Knopfs, solange PayPal nicht eingerichtet ist, z. B. „Bitte bar beim Ausflug zahlen.“
+    name: "Zahlung: Hinweis ohne Überweisung und PayPal"
+    description: Steht statt der Bezahlmöglichkeiten, solange weder Überweisung noch PayPal eingerichtet sind, z. B. „Bitte bar beim Ausflug zahlen.“
 
   # --- Bestätigungsmail --------------------------------------------------------
   veranstalter:
@@ -128,7 +144,7 @@ configuration:
       neue Zeile. Erscheint auch als Verantwortlicher im Datenschutz.
   datenschutz:
     name: "Webseite: eigene Datenschutzerklärung"
-    description: Leer lassen = die eingebaute Erklärung, die genau zu diesem Add-on passt, PayPal eingeschlossen.
+    description: Leer lassen = die eingebaute Erklärung, die genau zu diesem Add-on passt, Überweisung und PayPal eingeschlossen.
   loeschfrist:
     name: "Webseite: Löschfrist"
     description: Wie lange nach dem Ausflug die Daten gelöscht werden, z. B. „4 Wochen“. Steht in der Datenschutzerklärung.
