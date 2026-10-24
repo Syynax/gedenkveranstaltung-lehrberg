@@ -187,6 +187,13 @@ Banking-App scannen: Empfänger, IBAN, Betrag und Verwendungszweck sind schon
 ausgefüllt.“ und darunter dieselben Angaben als Text, jede mit einem Knopf
 „Kopieren“ für alle, die lieber von Hand überweisen oder am Rechner sitzen.
 
+* Unter dem QR-Code steht der Knopf **„QR-Code als Bild speichern“** (und, wo
+  der Browser es kann, **„Teilen“**). Am Handy lässt sich der Code auf dem
+  eigenen Bildschirm nicht scannen; stattdessen speichert der Gast das Bild
+  und wählt es in der Banking-App bei der QR-Code-Überweisung aus der
+  Galerie. Das Bild kommt von `/anmeldung/<id>/girocode.png`, ist wie die
+  Bestätigungsseite nur über die Anmelde-ID erreichbar und zeigt immer den
+  aktuell offenen Betrag.
 * Der **Betrag** ist immer der **offene** Betrag, auf dem Server gerechnet.
   Nach einer Teilzahlung oder einer Änderung der Anmeldung steht der Rest im
   Code; ist alles bezahlt, gibt es keinen Code.

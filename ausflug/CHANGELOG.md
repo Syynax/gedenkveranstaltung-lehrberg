@@ -1,5 +1,14 @@
 # Änderungen
 
+## 1.3.1
+
+- **GiroCode als Bild.** Am Handy lässt sich der QR-Code auf dem eigenen
+  Bildschirm nicht scannen. Unter dem Code gibt es jetzt „QR-Code als Bild
+  speichern“ und, wo der Browser es kann, „Teilen“; die Banking-App liest das
+  Bild aus der Galerie. Neue Adresse `/anmeldung/<id>/girocode.png` (PNG, nur
+  mit der Anmelde-ID erreichbar, immer der offene Betrag; 404, wenn nichts zu
+  überweisen ist).
+
 ## 1.3.0
 
 - **Überweisung per GiroCode als zusätzlicher, gleichberechtigter Bezahlweg.**

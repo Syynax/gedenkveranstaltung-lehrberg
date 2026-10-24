@@ -92,6 +92,15 @@
            Server und steht als SVG direkt in der Seite. #}
         <div class="girocode" role="img" aria-label="GiroCode: QR-Code mit den Überweisungsdaten zum Scannen mit der Banking-App">{{ girocode_svg(ue.inhalt) }}</div>
         <div class="hinweis-klein">Mit der Banking-App scannen: Empfänger, IBAN, Betrag und Verwendungszweck sind schon ausgefüllt.</div>
+        {# Am Handy lässt sich der eigene Bildschirm nicht scannen: das Bild
+           speichern oder teilen. "Teilen" zeigt erst das Skript, wenn der
+           Browser Dateien teilen kann; der Speichern-Link geht auch ohne. #}
+        <div class="girocode-bild" data-girocode-bild data-titel="{{ opt.titel }}">
+          <a class="knopf knopf--zweit knopf--klein" href="{{ url_for('girocode_png', anmeldung_id=eintrag.id) }}" download data-girocode-speichern>QR-Code als Bild speichern</a>
+          <button type="button" class="knopf knopf--zweit knopf--klein" data-girocode-teilen hidden>Teilen</button>
+          <div class="hinweis-klein" role="status" data-girocode-fehler hidden></div>
+          <div class="hinweis-klein">Am Handy: Bild speichern und in der Banking-App bei der QR-Code-Überweisung aus der Galerie wählen. Das können die meisten Banking-Apps.</div>
+        </div>
         <div class="kopierzeilen">
           <div class="kopierzeile">
             <div class="kopierzeile__text">
@@ -290,6 +299,36 @@
       }
     });
   });
+
+  {%- if ue %}
+  {# Bild des Codes: Speichern ist ein gewöhnlicher Link, Teilen braucht die
+     Web-Share-Schnittstelle mit Dateien. #}
+  var bild = document.querySelector('[data-girocode-bild]');
+  if (bild) {
+    var speichern = bild.querySelector('[data-girocode-speichern]');
+    var teilen = bild.querySelector('[data-girocode-teilen]');
+    var meldung = bild.querySelector('[data-girocode-fehler]');
+    var testdatei = null;
+    try { testdatei = new File([''], 'test.png', { type: 'image/png' }); } catch (e) { testdatei = null; }
+    if (teilen && testdatei && navigator.share && navigator.canShare && navigator.canShare({ files: [testdatei] })) {
+      teilen.hidden = false;
+      teilen.addEventListener('click', function () {
+        meldung.hidden = true;
+        fetch(speichern.href, { cache: 'no-store' }).then(function (antwort) {
+          if (!antwort.ok) { throw new Error('Bild nicht geladen'); }
+          return antwort.blob();
+        }).then(function (blob) {
+          var datei = new File([blob], 'ueberweisung.png', { type: 'image/png' });
+          return navigator.share({ files: [datei], title: 'Überweisung ' + (bild.dataset.titel || '') });
+        }).catch(function (fehler) {
+          if (fehler && fehler.name === 'AbortError') { return; }
+          meldung.textContent = 'Teilen hat nicht geklappt, bitte das Bild speichern.';
+          meldung.hidden = false;
+        });
+      });
+    }
+  }
+  {%- endif %}
 })();
 </script>
 {% endif %}

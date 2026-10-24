@@ -2289,6 +2289,47 @@ def bezahlen(anmeldung_id):
     return redirect(url_for("danke", anmeldung_id=anmeldung_id, _anchor="bezahlen"))
 
 
+def dateiname_ascii(text, laenge=30):
+    """Ein Dateiname-Teil nur aus a-z, 0-9 und Bindestrichen (Umlaute werden
+    ausgeschrieben), damit der Header Content-Disposition überall passt."""
+    text = str(text or "")
+    for alt, neu in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("Ä", "Ae"),
+                     ("Ö", "Oe"), ("Ü", "Ue"), ("ß", "ss")):
+        text = text.replace(alt, neu)
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.sub(r"[^A-Za-z0-9]+", "-", text).strip("-")[:laenge].strip("-")
+
+
+@app.get("/anmeldung/<anmeldung_id>/girocode.png")
+def girocode_png(anmeldung_id):
+    """Der GiroCode der Anmeldung als Bild zum Speichern oder Teilen: am Handy
+    lässt sich der QR-Code auf dem eigenen Bildschirm nicht scannen, die
+    Banking-App kann ihn aber aus der Galerie lesen. Wie die Bestätigungsseite
+    nur über die Anmelde-ID erreichbar; Inhalt und Betrag baut allein der
+    Server (offener Betrag). 404, wenn es nichts zu überweisen gibt."""
+    opt = optionen()
+    with _lock:
+        eintrag = _suchen(_lesen(), anmeldung_id)
+    if eintrag is None or eintrag.get("abgesagt"):
+        abort(404)
+    offen = zahlstand(eintrag)["offen"]
+    inhalt = girocode_inhalt(opt, eintrag, offen)
+    if not inhalt:
+        abort(404)
+    try:
+        code = segno.make_qr(inhalt, error="m", encoding="utf-8", boost_error=False)
+        puffer = io.BytesIO()
+        code.save(puffer, kind="png", scale=10, border=4, dark="#000000", light="#FFFFFF")
+    except (ValueError, segno.DataOverflowError) as fehler:
+        print(f"[anmeldung] GiroCode-Bild konnte nicht erzeugt werden: {fehler}", flush=True)
+        abort(404)
+    teile = [t for t in ("ueberweisung", dateiname_ascii(opt.get("titel")), euro_zahl(offen).replace(",", "-").replace(".", "-")) if t]
+    antwort = Response(puffer.getvalue(), mimetype="image/png")
+    antwort.headers["Content-Disposition"] = f'attachment; filename="{"-".join(teile)}.png"'
+    antwort.headers["Cache-Control"] = "no-store"
+    return antwort
+
+
 def _antwort(text, status):
     """Antwort an den PayPal-Knopf. Der Text wird dem Gast so angezeigt."""
     return jsonify({"fehler": text}), status

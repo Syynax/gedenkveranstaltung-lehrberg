@@ -797,6 +797,8 @@ tr.abgesagt td.name { color: var(--grau-2); font-weight: 400; text-decoration: l
 .zahlweg { padding: 16px; gap: 14px; }
 .girocode { width: 100%; max-width: 260px; margin: 0 auto; }
 .girocode svg { display: block; width: 100%; height: auto; shape-rendering: crispEdges; }
+.girocode-bild { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.girocode-bild[hidden], .girocode-bild [hidden] { display: none; }
 .kopierzeilen { display: flex; flex-direction: column; gap: 12px; }
 .kopierzeile { display: flex; align-items: center; gap: 12px; }
 .kopierzeile__text { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow-wrap: anywhere; }
