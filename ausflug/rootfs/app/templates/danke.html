@@ -97,9 +97,9 @@
            Browser Dateien teilen kann; der Speichern-Link geht auch ohne. #}
         <div class="girocode-bild" data-girocode-bild data-titel="{{ opt.titel }}">
           <a class="knopf knopf--zweit knopf--klein" href="{{ url_for('girocode_png', anmeldung_id=eintrag.id) }}" download data-girocode-speichern>QR-Code als Bild speichern</a>
-          <button type="button" class="knopf knopf--zweit knopf--klein" data-girocode-teilen hidden>Teilen</button>
+          <button type="button" class="knopf knopf--zweit knopf--klein" data-girocode-teilen hidden>QR-Code an Banking-App senden</button>
           <div class="hinweis-klein" role="status" data-girocode-fehler hidden></div>
-          <div class="hinweis-klein">Am Handy: Bild speichern und in der Banking-App bei der QR-Code-Überweisung aus der Galerie wählen. Das können die meisten Banking-Apps.</div>
+          <div class="hinweis-klein">Sie lesen das hier am Handy? Dann können Sie den Code auf dem eigenen Bildschirm nicht abscannen. Tippen Sie auf „QR-Code an Banking-App senden“ und wählen Sie Ihre Banking-App aus, oder speichern Sie das Bild und wählen Sie es in der Banking-App bei der QR-Code-Überweisung aus der Galerie. Das können die meisten Banking-Apps.</div>
         </div>
         <div class="kopierzeilen">
           <div class="kopierzeile">

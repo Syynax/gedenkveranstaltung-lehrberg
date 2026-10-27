@@ -1,5 +1,11 @@
 # Änderungen
 
+## 1.3.2
+
+- Der Knopf „Teilen“ unter dem QR-Code heißt jetzt „QR-Code an Banking-App
+  senden“, und der Hinweis darunter erklärt, warum es ihn gibt: Am Handy lässt
+  sich der eigene Bildschirm nicht abscannen.
+
 ## 1.3.1
 
 - **GiroCode als Bild.** Am Handy lässt sich der QR-Code auf dem eigenen
