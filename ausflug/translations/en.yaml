@@ -37,10 +37,10 @@ configuration:
     description: Main switch. Off = nobody can register, the start page stays visible.
   plaetze_gesamt:
     name: "Registration: total seats"
-    description: Upper limit across all registrations, e.g. the seats on the bus. Counts persons, members and non-members together.
+    description: Upper limit across all registrations, e.g. the seats on the bus. Counts persons, members, non-members and children together.
   max_personen_pro_anmeldung:
     name: "Registration: max. persons per registration"
-    description: Members and non-members together. Guards against typos.
+    description: Members, non-members and children together. Guards against typos.
   anmeldeschluss:
     name: "Registration: deadline"
     description: Only a note on the page. It does not close anything, use the main switch for that.
@@ -66,6 +66,9 @@ configuration:
   preis_nichtmitglied:
     name: "Payment: price for non-members"
     description: In euros per person, e.g. "25" or "25,00".
+  preis_kind:
+    name: "Payment: price for children up to 14"
+    description: Price per child up to 14 years in euros, default 0 = free of charge.
   iban:
     name: "Payment: bank transfer, IBAN"
     description: >-

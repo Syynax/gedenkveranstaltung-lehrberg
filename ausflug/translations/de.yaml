@@ -37,10 +37,10 @@ configuration:
     description: Hauptschalter. Aus = niemand kann sich anmelden, die Startseite bleibt sichtbar.
   plaetze_gesamt:
     name: "Anmeldung: Plätze insgesamt"
-    description: Obergrenze über alle Anmeldungen zusammen, z. B. die Sitzplätze im Bus. Gezählt werden Personen, Mitglieder und Nichtmitglieder zusammen.
+    description: Obergrenze über alle Anmeldungen zusammen, z. B. die Sitzplätze im Bus. Gezählt werden Personen, Mitglieder, Nichtmitglieder und Kinder zusammen.
   max_personen_pro_anmeldung:
     name: "Anmeldung: höchstens Personen je Anmeldung"
-    description: Mitglieder und Nichtmitglieder zusammen. Bremse gegen Zahlendreher.
+    description: Mitglieder, Nichtmitglieder und Kinder zusammen. Bremse gegen Zahlendreher.
   anmeldeschluss:
     name: "Anmeldung: Anmeldeschluss"
     description: >-
@@ -69,6 +69,9 @@ configuration:
   preis_nichtmitglied:
     name: "Zahlung: Preis für Nichtmitglieder"
     description: In Euro je Person, z. B. „25“ oder „25,00“.
+  preis_kind:
+    name: "Zahlung: Preis für Kinder bis 14 Jahre"
+    description: Preis je Kind bis 14 Jahre in Euro, Standard 0 = kostenlos.
   iban:
     name: "Zahlung: Überweisung, IBAN"
     description: >-

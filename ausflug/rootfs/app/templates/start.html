@@ -62,6 +62,7 @@
             <div class="termin__label">Preis je Person</div>
             <div class="posten"><span>Mitglieder</span><span>{{ opt.preis_mitglied_cent | euro }}</span></div>
             <div class="posten"><span>Nichtmitglieder</span><span>{{ opt.preis_nichtmitglied_cent | euro }}</span></div>
+            <div class="posten"><span>Kinder bis 14 Jahre</span><span>{% if opt.preis_kind_cent %}{{ opt.preis_kind_cent | euro }}{% else %}kostenlos{% endif %}</span></div>
           </div>
           {% endif %}
         </div>

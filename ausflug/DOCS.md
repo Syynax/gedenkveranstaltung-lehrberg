@@ -24,9 +24,9 @@ Die Verwaltung ist **nur** über Ingress erreichbar. Wer die Adresse auf Port
 
 1. Startseite: Titel, Datum, Abfahrt, Treffpunkt, Ziel, Einladungstext, die
    Preise je Person und wie viele Plätze noch frei sind.
-2. Anmeldung: Name, E-Mail, **Mitglieder** und **Nichtmitglieder** als zwei
-   Zahlen mit Plus und Minus, darunter der Gesamtbetrag, optional eine
-   Anmerkung.
+2. Anmeldung: Name, E-Mail, **Mitglieder**, **Nichtmitglieder** und
+   **Kinder bis 14 Jahre** als drei Zahlen mit Plus und Minus, darunter der
+   Gesamtbetrag, optional eine Anmerkung.
 3. Bestätigung mit Zusammenfassung, Betrag und den eingerichteten Bezahlwegen:
    einem QR-Code für die Überweisung und/oder PayPal. Die Gäste wählen.
 
@@ -43,9 +43,14 @@ und in der CSV steht sie mit dem Status `abgesagt`.
 
 ### Personen und Plätze
 
-* Auf die Platzzahl zählen Mitglieder und Nichtmitglieder zusammen.
-* `max_personen_pro_anmeldung` gilt ebenfalls für die Summe.
-* Mindestens eine Person muss angemeldet sein — 0 und 0 wird abgelehnt.
+* Auf die Platzzahl zählen Mitglieder, Nichtmitglieder und Kinder zusammen —
+  auch ein kostenloses Kind belegt einen Sitzplatz.
+* `max_personen_pro_anmeldung` gilt ebenfalls für die Summe aller drei.
+* Mindestens eine **erwachsene** Person (Mitglied oder Nichtmitglied) muss
+  angemeldet sein. Eine Anmeldung nur mit Kindern wird abgelehnt („Bitte
+  mindestens eine erwachsene Person angeben.“), 0, 0 und 0 ebenso.
+* Anmeldungen aus der Zeit vor 1.4.0 haben kein Feld `kinder`; sie zählen
+  überall mit 0 Kindern.
 * Ob jemand Mitglied ist, prüft die Seite nicht. Sie verlässt sich auf die
   Angabe des Gastes; die Verwaltung zeigt die Aufteilung je Anmeldung.
 
@@ -89,6 +94,7 @@ Ohne Uhrzeiten geht es genauso. Ist das Feld leer, entfällt der Kasten.
 ```yaml
 preis_mitglied: "15,00"
 preis_nichtmitglied: "25,00"
+preis_kind: "0"
 ```
 
 * Eingetragen wird in Euro je Person, so wie man es schreibt: `15`, `15,5`,
@@ -98,7 +104,8 @@ preis_nichtmitglied: "25,00"
 * Intern wird **in ganzen Cent** gerechnet und gespeichert, nie mit
   Kommazahlen. So gibt es keine Rundungsfehler beim Aufsummieren.
 * Der Betrag wird **immer auf dem Server** berechnet: Mitglieder × Preis für
-  Mitglieder + Nichtmitglieder × Preis für Nichtmitglieder. Was der Browser als
+  Mitglieder + Nichtmitglieder × Preis für Nichtmitglieder + Kinder × Preis
+  für Kinder (Standard 0, dann heißt es überall „kostenlos“). Was der Browser als
   Summe anzeigt, ist nur Anzeige und wird beim Speichern nicht übernommen.
 * An jeder Anmeldung stehen die Einzelpreise, die beim Speichern galten. Ändert
   ihr die Preise später, bleiben bestehende Anmeldungen, wie sie sind — bis
@@ -422,8 +429,8 @@ werden.
 | Feld | Bedeutung |
 | --- | --- |
 | geöffnet (`anmeldung_offen`) | Hauptschalter. Aus = keine Anmeldung möglich |
-| Plätze insgesamt (`plaetze_gesamt`) | Obergrenze über alle Anmeldungen, Mitglieder und Nichtmitglieder zusammen |
-| höchstens Personen je Anmeldung (`max_personen_pro_anmeldung`) | Gilt für die Summe aus Mitgliedern und Nichtmitgliedern |
+| Plätze insgesamt (`plaetze_gesamt`) | Obergrenze über alle Anmeldungen, Mitglieder, Nichtmitglieder und Kinder zusammen |
+| höchstens Personen je Anmeldung (`max_personen_pro_anmeldung`) | Gilt für die Summe aus Mitgliedern, Nichtmitgliedern und Kindern |
 | Anmeldeschluss (`anmeldeschluss`) | Nur ein Hinweis, schließt nichts automatisch |
 | Speisen vorbestellen (`essen`) | Optional, Standard leer. Gerichte mit Stückzahl |
 | Getränke vorbestellen (`getraenke`) | Optional, Standard leer. Getränke zum Ankreuzen |
@@ -436,6 +443,7 @@ werden.
 | --- | --- |
 | Preis für Mitglieder (`preis_mitglied`) | Euro je Person, z. B. `15,00` |
 | Preis für Nichtmitglieder (`preis_nichtmitglied`) | Euro je Person, z. B. `25,00` |
+| Preis für Kinder bis 14 Jahre (`preis_kind`) | Euro je Kind, Standard `0` = kostenlos |
 | Überweisung, IBAN (`iban`) | IBAN des Vereinskontos, mit oder ohne Leerzeichen, die Prüfziffer wird kontrolliert. Leer = keine Überweisung |
 | Überweisung, Kontoinhaber (`kontoinhaber`) | Name wie bei der Bank, Pflicht zur IBAN, höchstens 70 Zeichen |
 | Überweisung, BIC (`bic`) | Nur bei Konten außerhalb des SEPA-Raums; für deutsche Konten leer lassen |
@@ -492,18 +500,19 @@ das Verhalten ist dasselbe.
 
 ## Verwaltung
 
-* **Kennzahlen** — Anmeldungen, Personen (mit Aufteilung Mitglieder und
-  Nichtmitglieder), freie Plätze und wie viele Anmeldungen bezahlt sind.
+* **Kennzahlen** — Anmeldungen, Personen (mit Aufteilung Mitglieder,
+  Nichtmitglieder und Kinder), freie Plätze und wie viele Anmeldungen bezahlt sind.
   Darunter die Summen **erwartet** (alle Beträge aktiver Anmeldungen),
   **eingegangen** (alles tatsächlich Gezahlte, abzüglich vermerkter
   Erstattungen) und **offen**.
-* **Je Anmeldung** — Personen (M/N), Betrag, Stand „bezahlt“ oder „offen“,
+* **Je Anmeldung** — Personen (M/N/K), Betrag, Stand „bezahlt“ oder „offen“,
   jede Zahlung mit Art, Betrag, Zeitpunkt und bei PayPal der Capture-ID, dazu
   „zu erstatten“ und nicht verbuchte Zahlungen. Knöpfe: **Als bar bezahlt
   markieren**, **Barzahlung zurücknehmen**, **Erstattung vermerken**, **Als
   geklärt markieren**.
 * **CSV herunterladen** — Semikolon-getrennt und mit BOM für Excel. Spalten
-  `Mitglieder`, `Nichtmitglieder`, `Personen`, `Betrag (€)`, `Bezahlt (€)`,
+  `Mitglieder`, `Nichtmitglieder`, `Kinder`, `Personen` (Summe aller drei),
+  `Betrag (€)`, `Bezahlt (€)`,
   `Offen (€)`, `Zu erstatten (€)`, `Zahlungsart`, `PayPal-Capture-ID`,
   `Bezahlt am`; Beträge mit Komma, damit Excel damit rechnet. Spalten für
   Essen und Getränke nur, wenn es die Listen gibt. Beginnt ein Name oder eine
@@ -530,9 +539,9 @@ meldet:
 
 | Event | Daten |
 | --- | --- |
-| `ausflug_anmeldung` | `name`, `personen`, `mitglieder`, `nichtmitglieder`, `betrag_cent`, `bezahlt_cent`, `offen_cent`, `essen`, `getraenke`, `anmerkung`, `anmeldungen`, `belegte_plaetze`, `freie_plaetze`, `ausgebucht` |
+| `ausflug_anmeldung` | `name`, `personen`, `mitglieder`, `nichtmitglieder`, `kinder`, `betrag_cent`, `bezahlt_cent`, `offen_cent`, `essen`, `getraenke`, `anmerkung`, `anmeldungen`, `belegte_plaetze`, `freie_plaetze`, `ausgebucht` |
 | `ausflug_aenderung` | wie oben ohne die Platzangaben |
-| `ausflug_absage` | `name`, `personen`, `mitglieder`, `nichtmitglieder`, Beträge, `freie_plaetze` |
+| `ausflug_absage` | `name`, `personen`, `mitglieder`, `nichtmitglieder`, `kinder`, Beträge, `freie_plaetze` |
 | `ausflug_zahlung` | `name`, `personen`, Beträge, `art`, `zahlung_cent` |
 
 Beträge kommen in Cent (`5500` = 55,00 €).
@@ -556,7 +565,7 @@ automation:
 Bei `sensor_erstellen: true` schreibt das Add-on nach jeder Änderung
 `sensor.ausflug_freie_plaetze`. Zustand ist die Zahl der freien Plätze, dazu
 kommen als Attribute `plaetze_gesamt`, `belegte_plaetze`, `anmeldungen`,
-`mitglieder`, `nichtmitglieder`, `anmeldung_offen`, `summe_erwartet`,
+`mitglieder`, `nichtmitglieder`, `kinder`, `anmeldung_offen`, `summe_erwartet`,
 `summe_eingegangen`, `summe_offen`, `summe_zu_erstatten` (in Euro),
 `anmeldungen_bezahlt`, `essen` und `getraenke`. Gezählt werden nur aktive
 Anmeldungen; `summe_eingegangen` enthält auch Zahlungen inzwischen Abgesagter.
@@ -577,8 +586,9 @@ Anmeldung neu geschrieben.
 
 ## Bestätigungsmail
 
-Die Mail nennt die Aufteilung (z. B. „3 Personen (2 Mitglieder, 1
-Nichtmitglied)“), den Gesamtbetrag mit Aufstellung, den Zahlungsstand und —
+Die Mail nennt die Aufteilung (z. B. „5 Personen (2 Mitglieder, 1
+Nichtmitglied, 2 Kinder)“), bei Kindern zusätzlich eine Zeile „Kinder bis 14
+Jahre: 2 (kostenlos)“, den Gesamtbetrag mit Aufstellung, den Zahlungsstand und —
 solange etwas offen ist und die Überweisung eingerichtet ist — einen Absatz
 **Überweisung** mit Empfänger, IBAN, Betrag und Verwendungszweck (mit
 `oeffentliche_adresse` dazu der Hinweis auf den QR-Code auf der Anmeldeseite).

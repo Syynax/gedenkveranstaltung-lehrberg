@@ -1,5 +1,28 @@
 # Änderungen
 
+## 1.4.0
+
+- **Drittes Mengenfeld „Kinder bis 14 Jahre“.** Im Formular steht es unter
+  Mitgliedern und Nichtmitgliedern, mit „kostenlos“ als Preisangabe. Neue
+  Option `preis_kind` (Standard `0` = kostenlos); ist ein Preis eingetragen,
+  steht er dort wie bei den anderen beiden und geht in den Betrag ein.
+- Kinder belegen einen Platz: Sie zählen für `plaetze_gesamt` und
+  `max_personen_pro_anmeldung` mit. Mindestens eine erwachsene Person
+  (Mitglied oder Nichtmitglied) muss dabei sein, sonst kommt „Bitte mindestens
+  eine erwachsene Person angeben.“
+- Der Betrag rechnet auf dem Server weiter in Cent: Mitglieder × Preis +
+  Nichtmitglieder × Preis + Kinder × `preis_kind`. An jeder Anmeldung steht
+  zusätzlich `preis_kind_cent`.
+- Nachgezogen: Bestätigungsseite (Posten „Kind bis 14 Jahre“, bei 0 €
+  „kostenlos“), Änderungsformular, Absageseite, Bestätigungsmail (Zeile
+  „Kinder bis 14 Jahre: 2 (kostenlos)“, nur wenn Kinder angemeldet sind),
+  Verwaltung (M/N/K je Anmeldung und in den Kennzahlen), CSV (neue Spalte
+  `Kinder` nach `Nichtmitglieder`, `Personen` ist die Summe aller drei),
+  Sensor-Attribut `kinder`, Events, Benachrichtigungen, Startseite und
+  Datenschutzvorlage.
+- Anmeldungen aus älteren Fassungen haben kein Feld `kinder` und zählen
+  überall mit 0 Kindern weiter.
+
 ## 1.3.2
 
 - Der Knopf „Teilen“ unter dem QR-Code heißt jetzt „QR-Code an Banking-App

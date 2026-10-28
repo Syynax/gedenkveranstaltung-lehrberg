@@ -171,6 +171,10 @@
       {% if eintrag.nichtmitglieder %}
       <div class="posten"><span>{{ eintrag.nichtmitglieder }} × Nichtmitglied</span><span>{{ (eintrag.nichtmitglieder * eintrag.preis_nichtmitglied_cent) | euro }}</span></div>
       {% endif %}
+      {% if eintrag.kinder %}
+      {% set preis_kind = eintrag.preis_kind_cent or 0 %}
+      <div class="posten"><span>{{ eintrag.kinder }} × Kind bis 14 Jahre</span><span>{% if preis_kind %}{{ (eintrag.kinder * preis_kind) | euro }}{% else %}kostenlos{% endif %}</span></div>
+      {% endif %}
       <div class="posten posten--summe"><span>Gesamt</span><span>{{ geld.betrag | euro }}</span></div>
       {% if not eintrag.abgesagt %}
       <div class="posten"><span>Zahlung</span><span>{% if geld.stand == 'bezahlt' %}bezahlt{% elif geld.stand == 'teilweise' %}{{ geld.bezahlt | euro }} bezahlt{% else %}offen{% endif %}</span></div>

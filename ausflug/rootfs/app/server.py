@@ -91,6 +91,7 @@ STANDARD_OPTIONEN = {
     "datenschutz_hinweis": "Die Angaben werden nur für die Planung des Ausflugs verwendet.",
     "preis_mitglied": "15,00",
     "preis_nichtmitglied": "25,00",
+    "preis_kind": "0",
     "iban": "",
     "kontoinhaber": "",
     "bic": "",
@@ -442,11 +443,12 @@ def _preis_lesen(werte, schluessel):
     return cent
 
 
-def betrag_berechnen(mitglieder, nichtmitglieder, opt):
+def betrag_berechnen(mitglieder, nichtmitglieder, opt, kinder=0):
     """Der Betrag einer Anmeldung in Cent. Er entsteht nur hier, aus den
     Preisen in den Optionen - nie aus dem, was der Browser schickt."""
     return (int(mitglieder) * opt["preis_mitglied_cent"]
-            + int(nichtmitglieder) * opt["preis_nichtmitglied_cent"])
+            + int(nichtmitglieder) * opt["preis_nichtmitglied_cent"]
+            + int(kinder) * opt.get("preis_kind_cent", 0))
 
 
 # Sammelknöpfe im Formular: ein Tipp legt gleich mehrere Stück dazu. In den
@@ -494,6 +496,10 @@ def optionen():
     werte["preisfehler"] = []
     werte["preis_mitglied_cent"] = _preis_lesen(werte, "preis_mitglied")
     werte["preis_nichtmitglied_cent"] = _preis_lesen(werte, "preis_nichtmitglied")
+    # Kinder bis 14 Jahre fahren normalerweise kostenlos mit; leer heißt 0.
+    if not str(werte.get("preis_kind") or "").strip():
+        werte["preis_kind"] = "0"
+    werte["preis_kind_cent"] = _preis_lesen(werte, "preis_kind")
     # Überweisung per GiroCode. Ohne gültige IBAN und ohne Kontoinhaber gibt es
     # sie nicht; beides wird in der Verwaltung gemeldet, statt stillschweigend
     # zu fehlen. Der Kontoinhaber ist Pflicht, weil der GiroCode ihn verlangt.
@@ -812,6 +818,7 @@ def sensor_aktualisieren():
             "anmeldungen": len(angemeldet),
             "mitglieder": sum(int(a.get("mitglieder", 0)) for a in angemeldet),
             "nichtmitglieder": sum(int(a.get("nichtmitglieder", 0)) for a in angemeldet),
+            "kinder": sum(int(a.get("kinder", 0)) for a in angemeldet),
             "anmeldung_offen": stand["offen"],
             # Euro mit zwei Nachkommastellen, für Karten und Automatisierungen.
             # Gerechnet wurde vorher in Cent; geteilt wird erst ganz am Schluss.
@@ -890,17 +897,22 @@ BETREFFE = {
 
 def personen_text(eintrag):
     """"3 Personen (2 Mitglieder, 1 Nichtmitglied)" - für Mail, Seite und
-    Nachrichten. Steht nur eine Gruppe drin, fällt die Klammer weg."""
+    Nachrichten. Steht nur eine Gruppe drin, fällt die Klammer weg. Kinder
+    bis 14 Jahre stehen als eigene Gruppe dabei; ältere Anmeldungen haben
+    das Feld nicht und zählen dann 0 Kinder."""
     mitglieder = int(eintrag.get("mitglieder", 0))
     nicht = int(eintrag.get("nichtmitglieder", 0))
-    personen = int(eintrag.get("personen", mitglieder + nicht))
+    kinder = int(eintrag.get("kinder", 0))
+    personen = int(eintrag.get("personen", mitglieder + nicht + kinder))
     gruppen = []
     if mitglieder:
         gruppen.append(f"{mitglieder} {'Mitglied' if mitglieder == 1 else 'Mitglieder'}")
     if nicht:
         gruppen.append(f"{nicht} {'Nichtmitglied' if nicht == 1 else 'Nichtmitglieder'}")
+    if kinder:
+        gruppen.append(f"{kinder} {'Kind' if kinder == 1 else 'Kinder'}")
     text = f"{personen} {'Person' if personen == 1 else 'Personen'}"
-    if len(gruppen) == 2:
+    if len(gruppen) > 1:
         text += f" ({', '.join(gruppen)})"
     elif gruppen:
         text = gruppen[0]
@@ -914,8 +926,11 @@ def preis_aufstellung(eintrag):
     for anzahl, preis in (
         (eintrag.get("mitglieder", 0), eintrag.get("preis_mitglied_cent", 0)),
         (eintrag.get("nichtmitglieder", 0), eintrag.get("preis_nichtmitglied_cent", 0)),
+        (eintrag.get("kinder", 0), eintrag.get("preis_kind_cent", 0)),
     ):
-        if int(anzahl):
+        # Kostenlose Kinder tauchen in der Rechnung nicht als "× 0,00 €" auf;
+        # in der Mail stehen sie in einer eigenen Zeile.
+        if int(anzahl) and int(preis):
             teile.append(f"{int(anzahl)} × {euro(preis)}")
     return " + ".join(teile)
 
@@ -1068,6 +1083,13 @@ def _mail_inhalt(opt, eintrag, art, adresse):
         inhalt["absaetze"].append(paypal_absatz)
 
     inhalt["angaben"].append(("Angemeldet", personen_text(eintrag)))
+    kinder = int(eintrag.get("kinder", 0))
+    if kinder > 0:
+        preis_kind = int(eintrag.get("preis_kind_cent", 0))
+        inhalt["angaben"].append((
+            "Kinder bis 14 Jahre",
+            f"{kinder} ({'kostenlos' if preis_kind == 0 else 'je ' + euro(preis_kind)})",
+        ))
     if stand["betrag"] > 0:
         betrag = euro(stand["betrag"])
         aufstellung = preis_aufstellung(eintrag)
@@ -1404,6 +1426,7 @@ def _ereignis_daten(eintrag):
         "personen": eintrag["personen"],
         "mitglieder": eintrag.get("mitglieder", 0),
         "nichtmitglieder": eintrag.get("nichtmitglieder", 0),
+        "kinder": eintrag.get("kinder", 0),
         "betrag_cent": stand["betrag"],
         "bezahlt_cent": stand["bezahlt"],
         "offen_cent": stand["offen"],
@@ -1960,16 +1983,19 @@ def _formular_lesen(opt, frei):
         "email": (request.form.get("email") or "").strip()[:120],
         "mitglieder": 0,
         "nichtmitglieder": 0,
+        "kinder": 0,
         "personen": 0,
         "essen": {},
         "getraenke": _auswahl("getraenke", opt["getraenke"]),
     }
-    for feld in ("mitglieder", "nichtmitglieder"):
+    for feld in ("mitglieder", "nichtmitglieder", "kinder"):
         try:
             werte[feld] = _menge(feld)
         except ValueError as problem:
             return werte, Formularfehler(str(problem), "personen")
-    werte["personen"] = werte["mitglieder"] + werte["nichtmitglieder"]
+    erwachsene = werte["mitglieder"] + werte["nichtmitglieder"]
+    # Kinder belegen einen Platz im Bus wie alle anderen.
+    werte["personen"] = erwachsene + werte["kinder"]
     for i, gericht in enumerate(opt["essen"]):
         try:
             anzahl = _menge(f"essen_{i}")
@@ -1984,6 +2010,10 @@ def _formular_lesen(opt, frei):
         return werte, Formularfehler("Bitte tragen Sie einen Namen ein.", "name")
     if personen < 1:
         return werte, Formularfehler("Bitte geben Sie mindestens eine Person an.", "personen")
+    if erwachsene < 1:
+        return werte, Formularfehler(
+            "Bitte mindestens eine erwachsene Person angeben.", "personen"
+        )
     if opt["email_abfragen"]:
         # Pflichtfeld: ohne Adresse gibt es weder Bestätigung noch den Link
         # zum Ändern, Absagen und Bezahlen, und genau daran hängt die Planung.
@@ -1999,7 +2029,7 @@ def _formular_lesen(opt, frei):
         return werte, Formularfehler(
             "Pro Anmeldung sind höchstens "
             f"{opt['max_personen_pro_anmeldung']} Personen möglich, "
-            "Mitglieder und Nichtmitglieder zusammen.",
+            "Mitglieder, Nichtmitglieder und Kinder zusammen.",
             "personen",
         )
     if personen > frei:
@@ -2027,8 +2057,9 @@ def _preise_festhalten(werte, opt):
     später die Optionen, bleibt nachvollziehbar, wie der Betrag zustande kam."""
     werte["preis_mitglied_cent"] = opt["preis_mitglied_cent"]
     werte["preis_nichtmitglied_cent"] = opt["preis_nichtmitglied_cent"]
+    werte["preis_kind_cent"] = opt["preis_kind_cent"]
     werte["betrag_cent"] = betrag_berechnen(
-        werte["mitglieder"], werte["nichtmitglieder"], opt
+        werte["mitglieder"], werte["nichtmitglieder"], opt, werte["kinder"]
     )
     return werte
 
@@ -2546,6 +2577,7 @@ def verwaltung():
         portionen_gesamt=sum(essen_summe.values()),
         mitglieder=sum(int(a.get("mitglieder", 0)) for a in anmeldungen),
         nichtmitglieder=sum(int(a.get("nichtmitglieder", 0)) for a in anmeldungen),
+        kinder=sum(int(a.get("kinder", 0)) for a in anmeldungen),
         geld=geldsummen(alle),
         # Spalten für Essen und Getränke nur, wenn es etwas zu bestellen gibt
         # oder schon bestellt wurde.
@@ -2699,7 +2731,7 @@ def csv_export():
 
     puffer = io.StringIO()
     schreiber = csv.writer(puffer, delimiter=";", lineterminator="\r\n")
-    kopf = (["Status", "Name", "Mitglieder", "Nichtmitglieder", "Personen",
+    kopf = (["Status", "Name", "Mitglieder", "Nichtmitglieder", "Kinder", "Personen",
              "Betrag (€)", "Bezahlt (€)", "Offen (€)", "Zu erstatten (€)",
              "Zahlungsart", "PayPal-Capture-ID", "Bezahlt am"]
             + gerichte + getraenke
@@ -2721,7 +2753,7 @@ def csv_export():
         zeile = (
             ["abgesagt" if a.get("abgesagt") else "angemeldet",
              a.get("name", ""), a.get("mitglieder", 0), a.get("nichtmitglieder", 0),
-             a.get("personen", 0),
+             a.get("kinder", 0), a.get("personen", 0),
              euro_zahl(geld["betrag"]), euro_zahl(geld["bezahlt"]),
              euro_zahl(geld["offen"]), euro_zahl(geld["zuviel"]),
              ", ".join(arten),

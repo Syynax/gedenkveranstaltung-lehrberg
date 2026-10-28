@@ -183,7 +183,7 @@
     <div class="kennzahl">
       <span class="kennzahl__label">Personen</span>
       <span class="kennzahl__wert">{{ belegt }}</span>
-      <span class="kennzahl__zusatz">{{ mitglieder }} Mitgl. · {{ nichtmitglieder }} Nichtmitgl.</span>
+      <span class="kennzahl__zusatz">{{ mitglieder }} Mitgl. · {{ nichtmitglieder }} Nichtmitgl. · {{ kinder }} Kinder</span>
     </div>
     <div class="kennzahl">
       <span class="kennzahl__label">Freie Plätze</span>
@@ -264,7 +264,7 @@
           </td>
           <td data-label="Personen">
             {{ a.personen }}
-            <div class="klein">{{ a.mitglieder or 0 }} M · {{ a.nichtmitglieder or 0 }} N</div>
+            <div class="klein">{{ a.mitglieder or 0 }} M · {{ a.nichtmitglieder or 0 }} N · {{ a.kinder or 0 }} K</div>
           </td>
           <td data-label="Zahlung" class="zahlspalte">
             {% if z.stand == 'frei' %}

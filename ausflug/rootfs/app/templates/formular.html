@@ -49,22 +49,25 @@
     </div>
     {% endif %}
 
-    {# Zwei Mengenfelder statt einer Personenzahl. Die Summe darunter rechnet
+    {# Drei Mengenfelder statt einer Personenzahl. Die Summe darunter rechnet
        das Skript nur zur Anzeige mit - gespeichert wird, was server.py aus
-       den beiden Zahlen und den Preisen in den Optionen rechnet. Ohne
-       Skript steht dort der Betrag zu den Zahlen, mit denen die Seite kam. #}
+       den drei Zahlen und den Preisen in den Optionen rechnet. Ohne
+       Skript steht dort der Betrag zu den Zahlen, mit denen die Seite kam.
+       Ältere Anmeldungen kennen das Feld "kinder" noch nicht, dann gilt 0. #}
     {% set m = eingaben.mitglieder if eingaben.mitglieder is defined else (0 if eintrag else 1) %}
     {% set n = eingaben.nichtmitglieder if eingaben.nichtmitglieder is defined else 0 %}
+    {% set k = eingaben.kinder if eingaben.kinder is defined else 0 %}
     <div class="feld feld--personen">
       <div class="feld__label" id="personen-titel">Wer fährt mit?</div>
-      <div class="feld__hilfe">Den Mitgliederpreis zahlen Mitglieder des Vereins, alle anderen den Preis für Nichtmitglieder.</div>
+      <div class="feld__hilfe">Den Mitgliederpreis zahlen Mitglieder des Vereins, alle anderen den Preis für Nichtmitglieder. Kinder bis 14 Jahre zählen extra{% if not opt.preis_kind_cent %} und fahren kostenlos mit{% endif %}. Mindestens eine erwachsene Person muss dabei sein.</div>
       {{ teile.fehlertext(fehler, 'personen') }}
       <div class="wahl__liste" role="group" aria-labelledby="personen-titel"{{ teile.fehlerattr(fehler, 'personen') }}>
         {% for feld, titel, preis, wert in [
              ('mitglieder', 'Mitglieder', opt.preis_mitglied_cent, m),
-             ('nichtmitglieder', 'Nichtmitglieder', opt.preis_nichtmitglied_cent, n)] %}
+             ('nichtmitglieder', 'Nichtmitglieder', opt.preis_nichtmitglied_cent, n),
+             ('kinder', 'Kinder bis 14 Jahre', opt.preis_kind_cent, k)] %}
         <div class="zeile zeile--menge zeile--preis">
-          <label class="zeile__name" for="{{ feld }}">{{ titel }}<span class="zeile__preis">je {{ preis | euro }}</span></label>
+          <label class="zeile__name" for="{{ feld }}">{{ titel }}<span class="zeile__preis">{% if feld == 'kinder' and not preis %}kostenlos{% else %}je {{ preis | euro }}{% endif %}</span></label>
           <button type="button" class="schritt" data-schritt="-1" data-ziel="{{ feld }}" aria-label="{{ titel }}: eine Person weniger">{{ teile.minus(18) }}</button>
           <input class="menge menge--person" id="{{ feld }}" name="{{ feld }}"
                  type="number" inputmode="numeric" min="0" max="{{ [opt.max_personen_pro_anmeldung, frei] | min }}"
@@ -75,7 +78,7 @@
       </div>
       <div class="summe" aria-live="polite">
         <span class="summe__label">Gesamt</span>
-        <span class="summe__wert" data-summe>{{ (m * opt.preis_mitglied_cent + n * opt.preis_nichtmitglied_cent) | euro }}</span>
+        <span class="summe__wert" data-summe>{{ (m * opt.preis_mitglied_cent + n * opt.preis_nichtmitglied_cent + k * opt.preis_kind_cent) | euro }}</span>
       </div>
       {% if opt.ueberweisung_aktiv and (opt.paypal_aktiv or opt.paypal_me_aktiv or opt.paypal_email_aktiv) %}
       <div class="feld__hilfe">Bezahlt wird nach dem Absenden auf der Bestätigungsseite, per Überweisung (QR-Code) oder PayPal.</div>
@@ -86,7 +89,7 @@
       {% elif opt.zahlung_hinweis %}
       <div class="feld__hilfe">{{ opt.zahlung_hinweis }}</div>
       {% endif %}
-      <div class="feld__hilfe">Höchstens {{ [opt.max_personen_pro_anmeldung, frei] | min }} Personen pro Anmeldung, Mitglieder und Nichtmitglieder zusammen.{% if eintrag and zahlstand(eintrag).bezahlt > 0 %} Bereits bezahlt: {{ zahlstand(eintrag).bezahlt | euro }}. Kommt durch die Änderung etwas dazu, können Sie den Rest danach bezahlen.{% endif %}</div>
+      <div class="feld__hilfe">Höchstens {{ [opt.max_personen_pro_anmeldung, frei] | min }} Personen pro Anmeldung, Mitglieder, Nichtmitglieder und Kinder zusammen.{% if eintrag and zahlstand(eintrag).bezahlt > 0 %} Bereits bezahlt: {{ zahlstand(eintrag).bezahlt | euro }}. Kommt durch die Änderung etwas dazu, können Sie den Rest danach bezahlen.{% endif %}</div>
     </div>
 
     <div class="formular__bestellung">

@@ -10,7 +10,7 @@
    Die Abschnitte sind gegen den Code geprüft: gespeicherte Felder, die
    Kennung im persönlichen Link, die Absage ohne Löschung, Ereignisse und
    Benachrichtigungen an Home Assistant, der CSV-Export und das Protokoll.
-   Dazu für den Ausflug: Mitglied oder nicht, Betrag, Zahlungen und die
+   Dazu für den Ausflug: Mitglied oder nicht, Kinder, Betrag, Zahlungen und die
    Weitergabe an PayPal. Wer daran etwas ändert, muss auch hier nachziehen. #}
 
 {% block inhalt %}
@@ -37,7 +37,7 @@
     <p class="fliess">Einen Datenschutzbeauftragten haben wir nicht benannt.</p>
 
     <h2 class="rechtstext__titel">Zweck und erhobene Daten</h2>
-    <p class="fliess">Wir verarbeiten Ihre Daten ausschließlich, um Ihre Anmeldung zu erfassen, die begrenzten Plätze zu vergeben{% if opt.essen or opt.getraenke %}, Essen und Getränke in der passenden Menge vorzubestellen{% endif %} und den Teilnahmebeitrag abzurechnen. Dafür erheben wir Ihren Namen (Pflichtangabe) und die Zahl der angemeldeten Personen, getrennt nach Vereinsmitgliedern und Nichtmitgliedern, weil sich danach der Preis richtet{% if opt.essen %}, die gewünschte Stückzahl je Gericht{% endif %}{% if opt.getraenke %} und die angekreuzten Getränke{% endif %}.{% if opt.email_abfragen %} Pflichtangabe ist außerdem Ihre E-Mail-Adresse.{% endif %} Freiwillig ist das Anmerkungsfeld.</p>
+    <p class="fliess">Wir verarbeiten Ihre Daten ausschließlich, um Ihre Anmeldung zu erfassen, die begrenzten Plätze zu vergeben{% if opt.essen or opt.getraenke %}, Essen und Getränke in der passenden Menge vorzubestellen{% endif %} und den Teilnahmebeitrag abzurechnen. Dafür erheben wir Ihren Namen (Pflichtangabe) und die Zahl der angemeldeten Personen, getrennt nach Vereinsmitgliedern, Nichtmitgliedern und Kindern bis 14 Jahre, weil sich danach der Preis richtet{% if opt.essen %}, die gewünschte Stückzahl je Gericht{% endif %}{% if opt.getraenke %} und die angekreuzten Getränke{% endif %}.{% if opt.email_abfragen %} Pflichtangabe ist außerdem Ihre E-Mail-Adresse.{% endif %} Freiwillig ist das Anmerkungsfeld.</p>
     <p class="fliess">Dazu kommen Angaben, die die Seite selbst erzeugt: der Zeitpunkt Ihrer Anmeldung, der Zeitpunkt einer späteren Änderung oder Absage, eine zufällige Kennung, über die Ihr persönlicher Link funktioniert, der zu zahlende Betrag und der Zahlungsstand – bei einer Zahlung mit Zeitpunkt und Betrag, über den PayPal-Knopf zusätzlich mit den Kennungen, die PayPal für die Zahlung vergibt.</p>
 
     {% if opt.email_abfragen %}
