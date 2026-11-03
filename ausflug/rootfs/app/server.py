@@ -890,6 +890,10 @@ EMAIL_MUSTER = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]{2,}")
 BETREFFE = {
     "neu": "Ihre Anmeldung: {titel}",
     "geaendert": "Ihre Anmeldung wurde geändert: {titel}",
+    # Änderung durch die Orga in der Verwaltung, auch das Wiederaktivieren
+    # einer abgesagten Anmeldung.
+    "geaendert_orga": "Ihre Anmeldung wurde geändert: {titel}",
+    "reaktiviert": "Ihre Anmeldung gilt wieder: {titel}",
     "abgesagt": "Ihre Absage: {titel}",
     "bezahlt": "Zahlung erhalten: {titel}",
 }
@@ -1013,6 +1017,16 @@ def _mail_inhalt(opt, eintrag, art, adresse):
     elif art == "geaendert":
         inhalt["absaetze"].append(
             f"Ihre Anmeldung zu „{titel}“ wurde geändert. Es gilt jetzt:"
+        )
+    elif art == "geaendert_orga":
+        inhalt["absaetze"].append(
+            f"das Organisationsteam hat Ihre Anmeldung zu „{titel}“ geändert. "
+            "Es gilt jetzt:"
+        )
+    elif art == "reaktiviert":
+        inhalt["absaetze"].append(
+            f"das Organisationsteam hat Ihre abgesagte Anmeldung zu „{titel}“ "
+            "wieder aktiviert. Ihre Plätze sind reserviert. Es gilt jetzt:"
         )
     else:
         inhalt["absaetze"].append(
@@ -1299,13 +1313,18 @@ def _als_html(inhalt, titel):
     )
 
 
-def postausgang_fehlt(opt):
-    """Adressen werden abgefragt, aber es ist kein Postausgang eingerichtet -
-    dann geht bei keiner einzigen Anmeldung eine Bestätigung raus."""
-    return bool(opt.get("email_abfragen")) and not (
+def postausgang_eingerichtet(opt):
+    """Server und Absender sind eingetragen - ohne beides geht keine Mail raus."""
+    return bool(
         (opt.get("smtp_server") or "").strip()
         and (opt.get("smtp_absender") or opt.get("smtp_benutzer") or "").strip()
     )
+
+
+def postausgang_fehlt(opt):
+    """Adressen werden abgefragt, aber es ist kein Postausgang eingerichtet -
+    dann geht bei keiner einzigen Anmeldung eine Bestätigung raus."""
+    return bool(opt.get("email_abfragen")) and not postausgang_eingerichtet(opt)
 
 
 def mailstand_merken(anmeldung_id, art, stand, grund=""):
@@ -1433,9 +1452,13 @@ def _ereignis_daten(eintrag):
     }
 
 
-def _aenderung_melden(eintrag, betrag_vorher):
+def _aenderung_melden(eintrag, betrag_vorher, mail_art="geaendert"):
+    """Nach einer Änderung: Sensor, Event, Nachricht und Mail an den Gast.
+    mail_art None heißt keine Mail - die Orga entscheidet das in der
+    Verwaltung mit einem Kästchen."""
     sensor_aktualisieren()
-    bestaetigung_mailen(eintrag, "geaendert")
+    if mail_art:
+        bestaetigung_mailen(eintrag, mail_art)
     ereignis_senden(
         f"{EREIGNIS}_aenderung",
         dict(
@@ -1460,9 +1483,10 @@ def _aenderung_melden(eintrag, betrag_vorher):
         nachricht_senden(text)
 
 
-def _absage_melden(eintrag):
+def _absage_melden(eintrag, mailen=True):
     sensor_aktualisieren()
-    bestaetigung_mailen(eintrag, "abgesagt")
+    if mailen:
+        bestaetigung_mailen(eintrag, "abgesagt")
     stand = lage()
     geld = zahlstand(eintrag)
     ereignis_senden(
@@ -1969,10 +1993,24 @@ class Formularfehler(str):
         return neu
 
 
-def _formular_lesen(opt, frei):
+def _platzfehler(frei):
+    """Die Meldung, wenn eine Anmeldung mehr Plätze belegen würde, als frei
+    sind. Eine Stelle für das Formular und die zweite Prüfung unter Sperre."""
+    return Formularfehler(
+        (f"Es ist nur noch {frei} Platz frei. " if frei == 1
+         else f"Es sind nur noch {frei} Plätze frei. ")
+        + "Bitte passen Sie die Personenzahl an.",
+        "personen",
+    )
+
+
+def _formular_lesen(opt, frei, hoechstzahl_pruefen=True):
     """Formular auslesen und prüfen. Gibt die Werte und - falls etwas nicht
     stimmt - eine Meldung zurück. "frei" ist die Zahl der Plätze, die diese
-    eine Anmeldung höchstens belegen darf.
+    eine Anmeldung höchstens belegen darf; None heißt, sie belegt keine (eine
+    abgesagte Anmeldung, die abgesagt bleibt). Mit hoechstzahl_pruefen=False
+    gilt die Höchstzahl pro Anmeldung nicht - das darf nur die Orga in der
+    Verwaltung, die Plätze insgesamt zählen trotzdem.
 
     Einen Betrag liest diese Funktion bewusst nicht: Was der Browser als
     Summe anzeigt, ist nur Anzeige. Gerechnet wird beim Speichern, aus den
@@ -2025,20 +2063,15 @@ def _formular_lesen(opt, frei):
                 "Bitte prüfen Sie die Schreibweise.",
                 "email",
             )
-    if personen > opt["max_personen_pro_anmeldung"]:
+    if hoechstzahl_pruefen and personen > opt["max_personen_pro_anmeldung"]:
         return werte, Formularfehler(
             "Pro Anmeldung sind höchstens "
             f"{opt['max_personen_pro_anmeldung']} Personen möglich, "
             "Mitglieder, Nichtmitglieder und Kinder zusammen.",
             "personen",
         )
-    if personen > frei:
-        return werte, Formularfehler(
-            (f"Es ist nur noch {frei} Platz frei. " if frei == 1
-             else f"Es sind nur noch {frei} Plätze frei. ")
-            + "Bitte passen Sie die Personenzahl an.",
-            "personen",
-        )
+    if frei is not None and personen > frei:
+        return werte, _platzfehler(frei)
     if stueck > personen * 10:
         # Die Zahl sind Stück, nicht Portionen je Person - eine Person nimmt
         # durchaus zwei Weißwürste. Die Grenze fängt nur Zahlendreher ab.
@@ -2062,6 +2095,21 @@ def _preise_festhalten(werte, opt):
         werte["mitglieder"], werte["nichtmitglieder"], opt, werte["kinder"]
     )
     return werte
+
+
+def _werte_uebernehmen(gespeichert, werte, vermerk):
+    """Geprüfte Formularwerte samt neu gerechnetem Betrag in eine gespeicherte
+    Anmeldung schreiben und den Zeitpunkt unter "vermerk" festhalten ("geaendert"
+    für den Gast, "geaendert_von_orga" für die Verwaltung). Gibt den Betrag
+    von vorher zurück.
+
+    Was schon bezahlt ist, bleibt in der Zahlungsliste stehen: Ist der neue
+    Betrag höher, ist die Differenz offen und lässt sich nachzahlen; ist er
+    niedriger, zeigt die Verwaltung den Betrag zum Erstatten (zahlstand)."""
+    betrag_vorher = int(gespeichert.get("betrag_cent", 0))
+    gespeichert.update(werte)
+    gespeichert[vermerk] = _jetzt()
+    return betrag_vorher
 
 
 @app.post("/anmeldung")
@@ -2160,10 +2208,8 @@ def aendern_speichern(anmeldung_id):
             ),
             400,
         )
-    # Der Betrag wird neu gerechnet. Was schon bezahlt ist, bleibt in der
-    # Zahlungsliste stehen: Ist der neue Betrag höher, ist die Differenz
-    # offen und lässt sich nachzahlen; ist er niedriger, zeigt die Verwaltung
-    # den Betrag zum Erstatten.
+    # Der Betrag wird neu gerechnet; was mit schon Bezahltem geschieht, steht
+    # bei _werte_uebernehmen.
     _preise_festhalten(werte, opt)
 
     with _lock:
@@ -2176,11 +2222,7 @@ def aendern_speichern(anmeldung_id):
             zu_spaet = True
         else:
             zu_spaet = False
-            betrag_vorher = int(gespeichert.get("betrag_cent", 0))
-            gespeichert.update(werte)
-            gespeichert["geaendert"] = (
-                datetime.now().astimezone().isoformat(timespec="seconds")
-            )
+            betrag_vorher = _werte_uebernehmen(gespeichert, werte, "geaendert")
             _schreiben(daten)
             neu = dict(gespeichert)
 
@@ -2568,8 +2610,11 @@ def verwaltung():
     anmeldungen = aktive(alle)
     abgesagte = [a for a in alle if a.get("abgesagt")]
     essen_summe = portionen(anmeldungen, stand["opt"]["essen"])
+    # Nach dem Bearbeiten steht in der Adresse nur die Kennung, nie der Name.
+    geaendert = _suchen(stand["daten"], request.args.get("geaendert") or "")
     return render_template(
         "verwaltung.html",
+        geaendert=geaendert,
         anmeldungen=anmeldungen,
         abgesagte=abgesagte,
         essen_summe=essen_summe,
@@ -2672,6 +2717,103 @@ def problem_erledigt(anmeldung_id):
         return True
 
     return _zahlungen_aendern(anmeldung_id, aenderung)
+
+
+def _bearbeiten_zeigen(stand, eintrag, eingaben, fehler, mailen, abgesagt):
+    """Das Formular zum Bearbeiten in der Verwaltung. "frei" sind die Plätze,
+    die diese Anmeldung belegen darf: alle freien plus ihre eigenen."""
+    frei = stand["opt"]["plaetze_gesamt"] - belegte_plaetze(
+        stand["daten"], ausser=eintrag["id"]
+    )
+    return render_template(
+        "bearbeiten.html",
+        eintrag=eintrag,
+        eingaben=eingaben,
+        fehler=fehler,
+        mailen=mailen,
+        abgesagt=abgesagt,
+        frei_fuer_diese=max(0, frei),
+        postausgang=postausgang_eingerichtet(stand["opt"]),
+        **stand,
+    )
+
+
+@app.get("/verwaltung/bearbeiten/<anmeldung_id>")
+def bearbeiten(anmeldung_id):
+    stand = lage()
+    eintrag = _suchen(stand["daten"], anmeldung_id)
+    if eintrag is None:
+        return redirect(url_for("verwaltung"))
+    # Vorausgewählt nur, wenn die Mail auch ankommen kann.
+    mailen = bool((eintrag.get("email") or "").strip()) and postausgang_eingerichtet(
+        stand["opt"]
+    )
+    return _bearbeiten_zeigen(
+        stand, eintrag, eintrag, None, mailen, bool(eintrag.get("abgesagt"))
+    )
+
+
+@app.post("/verwaltung/bearbeiten/<anmeldung_id>")
+def bearbeiten_speichern(anmeldung_id):
+    """Die Orga ändert eine Anmeldung. Geprüft wird wie beim Gast, nur die
+    Höchstzahl pro Anmeldung gilt nicht - die Plätze insgesamt schon. Über
+    das Kästchen "abgesagt" lässt sich eine Anmeldung absagen oder wieder
+    aktivieren; beim Aktivieren muss sie wieder Platz finden."""
+    stand = lage()
+    opt = stand["opt"]
+    eintrag = _suchen(stand["daten"], anmeldung_id)
+    if eintrag is None:
+        return redirect(url_for("verwaltung"))
+    absagen = request.form.get("abgesagt") == "1"
+    mailen = request.form.get("mailen") == "1"
+
+    def zurueck(werte, fehler):
+        return _bearbeiten_zeigen(stand, eintrag, werte, fehler, mailen, absagen), 400
+
+    # Eine Anmeldung, die abgesagt ist oder wird, belegt keinen Platz.
+    frei_fuer_diese = None if absagen else opt["plaetze_gesamt"] - belegte_plaetze(
+        stand["daten"], ausser=anmeldung_id
+    )
+    werte, fehler = _formular_lesen(opt, frei_fuer_diese, hoechstzahl_pruefen=False)
+    if fehler:
+        return zurueck(werte, fehler)
+    _preise_festhalten(werte, opt)
+
+    with _lock:
+        daten = _lesen()
+        gespeichert = _suchen(daten, anmeldung_id)
+        if gespeichert is None:
+            return redirect(url_for("verwaltung"))
+        war_abgesagt = bool(gespeichert.get("abgesagt"))
+        # Zweite Prüfung unter Sperre, wie beim Anmelden: inzwischen können
+        # andere die Plätze belegt haben.
+        frei_jetzt = opt["plaetze_gesamt"] - belegte_plaetze(daten, ausser=anmeldung_id)
+        if not absagen and werte["personen"] > frei_jetzt:
+            fehler = _platzfehler(max(0, frei_jetzt))
+        else:
+            betrag_vorher = _werte_uebernehmen(gespeichert, werte, "geaendert_von_orga")
+            if absagen and not war_abgesagt:
+                gespeichert["abgesagt"] = _jetzt()
+            elif not absagen and war_abgesagt:
+                gespeichert.pop("abgesagt", None)
+            _schreiben(daten)
+            neu = dict(gespeichert)
+
+    if fehler:
+        return zurueck(werte, fehler)
+
+    if absagen and not war_abgesagt:
+        _nachbereiten(lambda: _absage_melden(neu, mailen=mailen))
+    elif absagen:
+        # Bleibt abgesagt: keine Plätze, kein Betrag - nur der Sensor, und
+        # keine Mail, die dem Gast eine geänderte Absage melden würde.
+        _nachbereiten(sensor_aktualisieren)
+    else:
+        art = "reaktiviert" if war_abgesagt else "geaendert_orga"
+        _nachbereiten(
+            lambda: _aenderung_melden(neu, betrag_vorher, art if mailen else None)
+        )
+    return redirect(url_for("verwaltung", geaendert=anmeldung_id))
 
 
 @app.post("/verwaltung/loeschen/<anmeldung_id>")

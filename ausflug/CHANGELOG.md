@@ -1,5 +1,29 @@
 # Änderungen
 
+## 1.5.0
+
+- **Anmeldungen in der Verwaltung bearbeiten.** Jede Anmeldung, auch eine
+  abgesagte, hat einen Knopf „Bearbeiten“. Das Formular zeigt alle Angaben
+  (Name, E-Mail, Mitglieder, Nichtmitglieder, Kinder, Essen, Getränke,
+  Anmerkung) mit denselben Mengenfeldern und derselben Live-Summe wie das
+  Anmeldeformular.
+- Geprüft wird wie beim Gast; nur die Höchstzahl pro Anmeldung gilt für die
+  Orga nicht. Die Platzzahl insgesamt gilt weiter, auch in einer zweiten
+  Prüfung beim Speichern.
+- Der Betrag wird neu gerechnet wie bei einer Änderung durch den Gast;
+  Bezahltes bleibt stehen, ein Rest ist offen oder „zu erstatten“.
+- Im selben Formular lässt sich eine Anmeldung absagen oder eine abgesagte
+  wieder aktivieren (mit Platzprüfung).
+- Kästchen „Gast per Mail über die Änderung informieren“, vorausgewählt bei
+  vorhandener Adresse und eingerichtetem Postausgang. Neue Mailtexte für
+  Änderung und Wiederaktivierung durch das Organisationsteam.
+- Nach dem Speichern zeigt die Verwaltung „Anmeldung von … geändert“, an der
+  Anmeldung steht „von der Orga geändert am …“ (neues Feld
+  `geaendert_von_orga`).
+- Intern: Die Mengenfelder, Essen, Getränke und das Skript für die Live-Summe
+  liegen jetzt als Makros in `teile.html` und werden von Anmeldeformular und
+  Verwaltung gemeinsam benutzt.
+
 ## 1.4.0
 
 - **Drittes Mengenfeld „Kinder bis 14 Jahre“.** Im Formular steht es unter

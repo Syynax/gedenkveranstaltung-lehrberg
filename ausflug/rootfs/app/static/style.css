@@ -855,6 +855,9 @@ td .klein, .klein { font-size: 13px; color: var(--grau-3); font-weight: 400; }
   cursor: pointer;
 }
 .mini:hover { background: var(--bronze-hell); border-color: var(--linie); }
+/* "Bearbeiten" ist ein Link, sieht aber aus wie die kleinen Knöpfe. Als
+   inline-flex bleibt er auch in abgesagten Zeilen ungestrichen. */
+a.mini { display: inline-flex; align-items: center; text-decoration: none; font-weight: 400; }
 table { min-width: 900px; }
 @media (max-width: 720px) {
   table { min-width: 0; }

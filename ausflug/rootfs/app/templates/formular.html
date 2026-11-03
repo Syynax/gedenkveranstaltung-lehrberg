@@ -61,25 +61,7 @@
       <div class="feld__label" id="personen-titel">Wer fährt mit?</div>
       <div class="feld__hilfe">Den Mitgliederpreis zahlen Mitglieder des Vereins, alle anderen den Preis für Nichtmitglieder. Kinder bis 14 Jahre zählen extra{% if not opt.preis_kind_cent %} und fahren kostenlos mit{% endif %}. Mindestens eine erwachsene Person muss dabei sein.</div>
       {{ teile.fehlertext(fehler, 'personen') }}
-      <div class="wahl__liste" role="group" aria-labelledby="personen-titel"{{ teile.fehlerattr(fehler, 'personen') }}>
-        {% for feld, titel, preis, wert in [
-             ('mitglieder', 'Mitglieder', opt.preis_mitglied_cent, m),
-             ('nichtmitglieder', 'Nichtmitglieder', opt.preis_nichtmitglied_cent, n),
-             ('kinder', 'Kinder bis 14 Jahre', opt.preis_kind_cent, k)] %}
-        <div class="zeile zeile--menge zeile--preis">
-          <label class="zeile__name" for="{{ feld }}">{{ titel }}<span class="zeile__preis">{% if feld == 'kinder' and not preis %}kostenlos{% else %}je {{ preis | euro }}{% endif %}</span></label>
-          <button type="button" class="schritt" data-schritt="-1" data-ziel="{{ feld }}" aria-label="{{ titel }}: eine Person weniger">{{ teile.minus(18) }}</button>
-          <input class="menge menge--person" id="{{ feld }}" name="{{ feld }}"
-                 type="number" inputmode="numeric" min="0" max="{{ [opt.max_personen_pro_anmeldung, frei] | min }}"
-                 data-preis="{{ preis }}" value="{{ wert or 0 }}">
-          <button type="button" class="schritt" data-schritt="1" data-ziel="{{ feld }}" aria-label="{{ titel }}: eine Person mehr">{{ teile.plus(18) }}</button>
-        </div>
-        {% endfor %}
-      </div>
-      <div class="summe" aria-live="polite">
-        <span class="summe__label">Gesamt</span>
-        <span class="summe__wert" data-summe>{{ (m * opt.preis_mitglied_cent + n * opt.preis_nichtmitglied_cent + k * opt.preis_kind_cent) | euro }}</span>
-      </div>
+      {{ teile.personenfelder(opt, m, n, k, [opt.max_personen_pro_anmeldung, frei] | min, fehler) }}
       {% if opt.ueberweisung_aktiv and (opt.paypal_aktiv or opt.paypal_me_aktiv or opt.paypal_email_aktiv) %}
       <div class="feld__hilfe">Bezahlt wird nach dem Absenden auf der Bestätigungsseite, per Überweisung (QR-Code) oder PayPal.</div>
       {% elif opt.ueberweisung_aktiv %}
@@ -94,50 +76,9 @@
 
     <div class="formular__bestellung">
 
-    {% if opt.essen %}
-    <div class="feld feld--essen">
-      <div class="wahl__kopf">
-        <span class="feld__label" id="essen-titel">Was möchten Sie essen?</span>
-        <span class="wahl__zaehler" data-zaehler></span>
-      </div>
-      <div class="feld__hilfe">Angabe in Stück.{% if opt.essen_knoepfe %} Ein Tipp auf „Paar“ legt zwei dazu.{% endif %}</div>
-      {{ teile.fehlertext(fehler, 'essen') }}
-      <div class="wahl__liste" role="group" aria-labelledby="essen-titel"{{ teile.fehlerattr(fehler, 'essen') }}>
-        {% for gericht in opt.essen %}
-        {% set knopf = (opt.essen_knoepfe or {}).get(gericht) %}
-        <div class="zeile zeile--menge{% if knopf %} zeile--sammel{% endif %}">
-          <label class="zeile__name" for="essen_{{ loop.index0 }}">{{ gericht }}</label>
-          {% if knopf %}
-          {# Ein Tipp statt zweier: Weißwürste bestellt man paarweise. #}
-          <button type="button" class="sammel" data-schritt="{{ knopf.schritt }}" data-ziel="essen_{{ loop.index0 }}"
-                  aria-label="{{ gericht }}: ein {{ knopf.name }} dazu, also {{ knopf.schritt }} Stück">+&nbsp;{{ knopf.name }}</button>
-          {% endif %}
-          <button type="button" class="schritt" data-schritt="-1" data-ziel="essen_{{ loop.index0 }}" aria-label="{{ gericht }}: eine Portion weniger">{{ teile.minus(18) }}</button>
-          <input class="menge" id="essen_{{ loop.index0 }}" name="essen_{{ loop.index0 }}"
-                 type="number" inputmode="numeric" min="0" max="99"
-                 value="{{ (eingaben.essen or {}).get(gericht, 0) }}">
-          <button type="button" class="schritt" data-schritt="1" data-ziel="essen_{{ loop.index0 }}" aria-label="{{ gericht }}: eine Portion mehr">{{ teile.plus(18) }}</button>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
+    {{ teile.essenfeld(opt, eingaben, fehler) }}
 
-    {% if opt.getraenke %}
-    <div class="feld feld--getraenke">
-      <div class="feld__label" id="getraenke-titel">Was möchten Sie trinken?</div>
-      <div class="feld__hilfe">Nur zum groben Überblick – die Menge spielt keine Rolle.</div>
-      <div class="wahl__liste" role="group" aria-labelledby="getraenke-titel">
-        {% for getraenk in opt.getraenke %}
-        <label class="zeile">
-          <input type="checkbox" name="getraenke" value="{{ getraenk }}"
-                 {% if getraenk in (eingaben.getraenke or []) %}checked{% endif %}>
-          <span class="zeile__name">{{ getraenk }}</span>
-        </label>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
+    {{ teile.getraenkefeld(opt, eingaben) }}
 
     </div>
 
@@ -164,91 +105,5 @@
 
 </main>
 
-{% if fehler and fehler.feld %}
-<script>
-// Zum fehlerhaften Feld springen - am Handy liegt es sonst weit unter der Meldung.
-(function () {
-  var falsch = document.querySelector('[aria-invalid="true"]');
-  if (!falsch) return;
-  var ziel = falsch.matches('input, textarea') ? falsch : falsch.querySelector('input');
-  if (ziel) ziel.focus({ preventScroll: true });
-  falsch.closest('.feld').scrollIntoView({ block: 'center' });
-})();
-</script>
-{% endif %}
-
-<script>
-(function () {
-  var formular = document.querySelector('form');
-  var maxPersonen = parseInt(formular.dataset.maxPersonen, 10) || 1;
-  var personen = document.querySelectorAll('.menge--person');
-  var summe = document.querySelector('[data-summe]');
-
-  var anzeige = document.querySelector('[data-zaehler]');
-
-  function zahl(feld) {
-    var wert = parseInt(feld.value, 10);
-    return isNaN(wert) ? 0 : wert;
-  }
-
-  // Nur Anzeige: der Betrag, der zählt, entsteht beim Speichern auf dem
-  // Server. Gerechnet wird in ganzen Cent wie dort.
-  function euro(cent) {
-    var ganz = String(Math.floor(cent / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return ganz + ',' + String(cent % 100).padStart(2, '0') + '\u00a0€';
-  }
-
-  function auffrischen(geaendert) {
-    var stueck = 0;
-    var gesamt = 0;
-    var cent = 0;
-
-    personen.forEach(function (feld) {
-      feld.value = Math.max(0, zahl(feld));
-      gesamt += zahl(feld);
-    });
-    // Zu viele Personen: das gerade geänderte Feld zurücknehmen.
-    if (gesamt > maxPersonen && geaendert && geaendert.classList.contains('menge--person')) {
-      geaendert.value = Math.max(0, zahl(geaendert) - (gesamt - maxPersonen));
-    }
-    personen.forEach(function (feld) {
-      feld.classList.toggle('null', zahl(feld) === 0);
-      cent += zahl(feld) * (parseInt(feld.dataset.preis, 10) || 0);
-    });
-    if (summe) { summe.textContent = euro(cent); }
-
-    document.querySelectorAll('.menge:not(.menge--person)').forEach(function (feld) {
-      feld.value = Math.max(0, zahl(feld));
-      feld.classList.toggle('null', zahl(feld) === 0);
-      stueck += zahl(feld);
-    });
-
-    if (anzeige) {
-      anzeige.textContent = stueck === 0 ? '' : stueck + ' Stück';
-    }
-  }
-
-  formular.addEventListener('click', function (ereignis) {
-    var knopf = ereignis.target.closest('[data-schritt]');
-    if (!knopf) { return; }
-    var feld = document.getElementById(knopf.dataset.ziel);
-    feld.value = zahl(feld) + parseInt(knopf.dataset.schritt, 10);
-    auffrischen(feld);
-  });
-
-  // Erst beim Verlassen des Feldes begrenzen, damit Tippen nicht stört.
-  formular.addEventListener('change', function (ereignis) { auffrischen(ereignis.target); });
-  // Die Summe darf beim Tippen schon mitlaufen.
-  formular.addEventListener('input', function (ereignis) {
-    if (ereignis.target.classList.contains('menge--person')) {
-      var cent = 0;
-      personen.forEach(function (feld) {
-        cent += Math.max(0, zahl(feld)) * (parseInt(feld.dataset.preis, 10) || 0);
-      });
-      if (summe) { summe.textContent = euro(cent); }
-    }
-  });
-  auffrischen();
-})();
-</script>
+{{ teile.mengen_skript(fehler) }}
 {% endblock %}

@@ -1,5 +1,5 @@
 name: Ausflug Anmeldung
-version: "1.4.0"
+version: "1.5.0"
 slug: ausflug
 description: Anmeldeseite für einen Vereinsausflug, mit Preisen für Mitglieder und Nichtmitglieder und Zahlung per Überweisung (GiroCode) oder PayPal
 arch:

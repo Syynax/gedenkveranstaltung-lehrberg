@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% import "teile.html" as teile %}
+
+{% block titel %}Anmeldung bearbeiten – Verwaltung{% endblock %}
+
+{% block inhalt %}
+{# Dasselbe Raster wie das Anmeldeformular: links wer und wie viele, rechts
+   Essen und Getränke. Ohne beides eine Spalte. #}
+<main class="seite seite--formular{% if not (opt.essen or opt.getraenke) %} seite--einspaltig{% endif %}">
+
+  <div class="kopf" style="gap: 6px;">
+    <a class="zurueck" href="{{ url_for('verwaltung') }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+      Zurück zur Verwaltung
+    </a>
+    <div class="kopf__ueber">Verwaltung</div>
+    <h1 class="klein">Anmeldung bearbeiten</h1>
+    <div style="font-size: 15px; color: var(--grau-2);">
+      {{ eintrag.name }}, eingegangen {{ eintrag.zeit | uhrzeit }}{% if eintrag.abgesagt %} · abgesagt {{ eintrag.abgesagt | uhrzeit }}{% endif %}{% if eintrag.geaendert_von_orga %} · zuletzt von der Orga geändert {{ eintrag.geaendert_von_orga | uhrzeit }}{% endif %}
+    </div>
+  </div>
+
+  {% if fehler %}
+  <div class="meldung meldung--fehler" role="alert">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
+    <span>{{ fehler }}</span>
+  </div>
+  {% endif %}
+
+  {# Das Skript begrenzt die Personen nur auf die Plätze, die insgesamt frei
+     sind - die Höchstzahl pro Anmeldung gilt für die Orga nicht. #}
+  <form method="post" action="{{ url_for('bearbeiten_speichern', anmeldung_id=eintrag.id) }}"
+        data-max-personen="{{ frei_fuer_diese if not abgesagt else opt.plaetze_gesamt }}">
+
+    <div class="feld feld--name">
+      <label class="feld__label" for="name">Name</label>
+      <input id="name" name="name" type="text" required maxlength="80"{{ teile.fehlerattr(fehler, 'name') }}
+             autocomplete="off" value="{{ eingaben.name or '' }}">
+      {{ teile.fehlertext(fehler, 'name') }}
+    </div>
+
+    <div class="feld feld--email">
+      <label class="feld__label" for="email">E-Mail{% if not opt.email_abfragen %} <span class="optional">(optional)</span>{% endif %}</label>
+      <input id="email" name="email" type="email" maxlength="120"{% if opt.email_abfragen %} required{% endif %}{{ teile.fehlerattr(fehler, 'email') }}
+             autocomplete="off" inputmode="email" value="{{ eingaben.email or '' }}">
+      {{ teile.fehlertext(fehler, 'email') }}
+    </div>
+
+    {% set m = eingaben.mitglieder if eingaben.mitglieder is defined else 0 %}
+    {% set n = eingaben.nichtmitglieder if eingaben.nichtmitglieder is defined else 0 %}
+    {% set k = eingaben.kinder if eingaben.kinder is defined else 0 %}
+    <div class="feld feld--personen">
+      <div class="feld__label" id="personen-titel">Personen</div>
+      <div class="feld__hilfe">Die Höchstzahl von {{ opt.max_personen_pro_anmeldung }} Personen pro Anmeldung gilt hier nicht. Frei für diese Anmeldung: {{ frei_fuer_diese }} {{ 'Platz' if frei_fuer_diese == 1 else 'Plätze' }} (die eigenen mitgerechnet).</div>
+      {{ teile.fehlertext(fehler, 'personen') }}
+      {{ teile.personenfelder(opt, m, n, k, frei_fuer_diese if not abgesagt else opt.plaetze_gesamt, fehler) }}
+      {% set z = zahlstand(eintrag) %}
+      <div class="feld__hilfe">Der Betrag wird beim Speichern mit den aktuellen Preisen neu gerechnet.{% if z.bezahlt > 0 %} Bereits bezahlt: {{ z.bezahlt | euro }}. Wird es weniger, steht der Rest danach als „zu erstatten“ in der Verwaltung.{% endif %}</div>
+    </div>
+
+    <div class="formular__bestellung">
+    {{ teile.essenfeld(opt, eingaben, fehler, 'Essen') }}
+
+    {{ teile.getraenkefeld(opt, eingaben, 'Getränke') }}
+    </div>
+
+    <div class="feld feld--anmerkung">
+      <label class="feld__label" for="anmerkung">Anmerkung <span class="optional">(optional)</span></label>
+      <textarea id="anmerkung" name="anmerkung" rows="3" maxlength="500">{{ eingaben.anmerkung or '' }}</textarea>
+    </div>
+
+    <div class="feld feld--absenden">
+      <div class="wahl__liste">
+        <label class="zeile">
+          <input type="checkbox" name="abgesagt" value="1"{% if abgesagt %} checked{% endif %}>
+          <span class="zeile__name">Anmeldung ist abgesagt</span>
+        </label>
+        <label class="zeile">
+          <input type="checkbox" name="mailen" value="1"{% if mailen %} checked{% endif %}{% if not postausgang %} disabled{% endif %}>
+          <span class="zeile__name">Gast per Mail über die Änderung informieren</span>
+        </label>
+      </div>
+      <div class="hinweis-klein">
+        Haken weg bei „abgesagt“ aktiviert eine abgesagte Anmeldung wieder – dann muss sie in die freien Plätze passen.
+        {% if not postausgang %}Es ist kein Postausgang eingerichtet, deshalb geht keine Mail raus.{% elif not eintrag.email %}Ohne E-Mail-Adresse geht keine Mail raus.{% endif %}
+      </div>
+      <button type="submit" class="knopf">Änderungen speichern</button>
+      <a class="absage-link" href="{{ url_for('verwaltung') }}">Abbrechen</a>
+    </div>
+
+  </form>
+
+</main>
+
+{{ teile.mengen_skript(fehler) }}
+{% endblock %}

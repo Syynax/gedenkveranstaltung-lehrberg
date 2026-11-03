@@ -23,6 +23,13 @@
     </div>
   </div>
 
+  {% if geaendert %}
+  <div class="meldung meldung--info" role="status">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+    <span>Anmeldung von <b>{{ geaendert.name }}</b> geändert{% if geaendert.abgesagt %} (abgesagt){% endif %}.</span>
+  </div>
+  {% endif %}
+
   {% if manuell_geschlossen %}
   <div class="meldung meldung--info">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2"></circle><path d="M12 7.6v5"></path><path d="M12 16.2h.01"></path></svg>
@@ -255,6 +262,10 @@
             {{ a.name }}
             {% if a.abgesagt %}<span class="merker">abgesagt</span>{% endif %}
             {% if a.email %}<div style="font-weight: 400; font-size: 13px; color: var(--grau-2);">{{ a.email }}</div>{% endif %}
+            {% if a.geaendert_von_orga %}<div class="klein">von der Orga geändert am {{ a.geaendert_von_orga | uhrzeit }}</div>{% endif %}
+            <div class="zahl-aktionen">
+              <a class="mini" href="{{ url_for('bearbeiten', anmeldung_id=a.id) }}" aria-label="Anmeldung von {{ a.name }} bearbeiten">Bearbeiten</a>
+            </div>
             {% if a.mail and a.mail.stand == 'fehlgeschlagen' %}
             <div class="mailfehler">
               <b>Bestätigung nicht zugestellt</b>{% if a.mail.grund %} — {{ a.mail.grund }}{% endif %}
@@ -354,9 +365,10 @@
   {% if abgesagte %}
   <div class="fuss">
     {{ abgesagte | length }} {% if abgesagte | length == 1 %}Absage{% else %}Absagen{% endif %}
-    über den Link in der Bestätigungsmail. Diese Zeilen zählen nicht mehr auf die
-    Plätze und stehen in der CSV mit dem Status „abgesagt“. Bereits Bezahltes
-    bleibt stehen, bis die Erstattung vermerkt ist.
+    über den Link in der Bestätigungsmail oder in der Verwaltung. Diese Zeilen
+    zählen nicht mehr auf die Plätze und stehen in der CSV mit dem Status
+    „abgesagt“. Bereits Bezahltes bleibt stehen, bis die Erstattung vermerkt
+    ist. Über „Bearbeiten“ lässt sich eine Absage wieder aufheben.
   </div>
   {% endif %}
 

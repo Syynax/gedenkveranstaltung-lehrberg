@@ -518,6 +518,34 @@ das Verhalten ist dasselbe.
   Essen und Getränke nur, wenn es die Listen gibt. Beginnt ein Name oder eine
   Anmerkung mit `=`, `+`, `-` oder `@`, steht ein Hochkomma davor, damit Excel
   nichts als Formel ausrechnet.
+* **Bearbeiten** — jede Anmeldung, aktive wie abgesagte, hat den Knopf
+  **Bearbeiten**. Er öffnet ein Formular mit allen Angaben: Name, E-Mail,
+  Mitglieder, Nichtmitglieder, Kinder, Essen und Getränke (wenn die Listen
+  eingerichtet sind) und Anmerkung. Geprüft wird wie beim Gast, mit einer
+  Ausnahme: Die Orga darf `max_personen_pro_anmeldung` überschreiten, etwa für
+  eine Gruppe, die zusammen angemeldet werden soll. `plaetze_gesamt` gilt
+  trotzdem; passt die Anmeldung nicht mehr in die freien Plätze, kommt eine
+  Meldung und es wird nichts gespeichert.
+  * Der Betrag wird beim Speichern mit den aktuellen Preisen neu gerechnet,
+    wie bei einer Änderung durch den Gast. Bereits Bezahltes bleibt stehen:
+    Wird es mehr, ist der Rest offen; wird es weniger, steht der Unterschied
+    als „zu erstatten“ in der Verwaltung.
+  * Das Kästchen **Anmeldung ist abgesagt** sagt eine aktive Anmeldung ab oder
+    aktiviert eine abgesagte wieder. Beim Wiederaktivieren muss sie in die
+    freien Plätze passen.
+  * **Gast per Mail über die Änderung informieren** ist vorausgewählt, wenn
+    eine Adresse da ist und der Postausgang eingerichtet ist. Die Mail nennt
+    die neuen Angaben und den Zahlungsstand („Das Organisationsteam hat Ihre
+    Anmeldung geändert“, nach einer Wiederaktivierung „… wieder aktiviert“,
+    nach einer Absage die gewohnte Absagemail). Ohne Haken geht keine Mail
+    raus. Wird an einer Anmeldung etwas geändert, die abgesagt ist und
+    abgesagt bleibt, geht ebenfalls keine Mail raus.
+  * Sensor, Events (`ausflug_aenderung`, bei einer Absage `ausflug_absage`)
+    und Benachrichtigungen laufen wie bei einer Änderung durch den Gast.
+  * An der Anmeldung steht danach klein „von der Orga geändert am …“ (Feld
+    `geaendert_von_orga`, nur der Zeitpunkt der letzten Änderung, keine
+    Historie). Das Formular ist wie die ganze Verwaltung nur über Home
+    Assistant erreichbar.
 * **Anmeldung schließen** — sofort wirksam, jederzeit wieder zu öffnen.
 * **Nicht zugestellte Bestätigungen** — stehen mit Grund an der Anmeldung.
   Diese Gäste haben keinen Link zum Ändern, Absagen und Bezahlen.
