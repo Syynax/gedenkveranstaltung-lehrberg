@@ -552,6 +552,14 @@ das Verhalten ist dasselbe.
 * **Löschen** — entfernt eine Anmeldung endgültig, samt ihrer Zahlungsdaten.
   Bei bezahlten Anmeldungen vorher die CSV sichern.
 
+## Wer die Verwaltung sieht
+
+Die Verwaltung erscheint in der Seitenleiste für **alle** Home-Assistant-Benutzer,
+auch für solche ohne Admin-Rechte. Die sehen damit die Anmeldungen, aber keine
+Einstellungen, Add-ons oder Geräte. In der Verwaltung selbst dürfen alle
+dasselbe. Wer die Verwaltung gar nicht sehen soll, braucht in Home Assistant
+kein Konto.
+
 ## Benachrichtigungen
 
 In `benachrichtigung_dienst` den Namen eintragen, unter dem dein Handy in Home

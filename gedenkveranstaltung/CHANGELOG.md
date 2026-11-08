@@ -1,5 +1,12 @@
 # Änderungen
 
+## 1.14.0
+
+- **Verwaltung auch für Benutzer ohne Admin-Rechte.** Die Seitenleiste zeigt
+  „Anmeldungen“ jetzt allen Home-Assistant-Benutzern. Einstellungen, Add-ons und
+  Geräte sehen Benutzer ohne Admin-Rechte weiterhin nicht. In der Verwaltung
+  dürfen sie alles, was auch ein Admin dort darf.
+
 ## 1.13.0
 
 - Beim Essen gibt es einen Knopf, der gleich ein Paar dazulegt. Weißwürste

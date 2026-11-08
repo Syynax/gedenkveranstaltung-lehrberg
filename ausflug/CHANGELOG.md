@@ -1,5 +1,12 @@
 # Änderungen
 
+## 1.6.0
+
+- **Verwaltung auch für Benutzer ohne Admin-Rechte.** Die Seitenleiste zeigt
+  „Ausflug“ jetzt allen Home-Assistant-Benutzern. Einstellungen, Add-ons und
+  Geräte sehen Benutzer ohne Admin-Rechte weiterhin nicht. In der Verwaltung
+  dürfen sie alles, was auch ein Admin dort darf.
+
 ## 1.5.0
 
 - **Anmeldungen in der Verwaltung bearbeiten.** Jede Anmeldung, auch eine
