@@ -260,6 +260,14 @@ Zu beachten:
   meistens nicht nötig: Sagt jemand selbst über seinen Link ab, bleibt die
   Zeile durchgestrichen stehen und der Platz ist trotzdem frei.
 
+## Wer die Verwaltung sieht
+
+Die Verwaltung erscheint in der Seitenleiste für **alle** Home-Assistant-Benutzer,
+auch für solche ohne Admin-Rechte. Die sehen damit die Anmeldungen, aber keine
+Einstellungen, Add-ons oder Geräte. In der Verwaltung selbst dürfen alle
+dasselbe. Wer die Verwaltung gar nicht sehen soll, braucht in Home Assistant
+kein Konto.
+
 ## Benachrichtigungen
 
 Zwei Wege, die sich auch kombinieren lassen.

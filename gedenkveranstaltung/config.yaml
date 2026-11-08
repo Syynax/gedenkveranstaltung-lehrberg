@@ -1,5 +1,5 @@
 name: Gedenkveranstaltung Anmeldung
-version: "1.13.0"
+version: "1.14.0"
 slug: gedenkveranstaltung
 description: Anmeldeseite mit begrenzter Platzzahl für eine Gedenkveranstaltung
 arch:
@@ -19,7 +19,9 @@ ingress: true
 ingress_port: 8099
 panel_icon: mdi:candle
 panel_title: Anmeldungen
-panel_admin: true
+# false: auch Benutzer ohne Admin-Rechte sehen die Verwaltung in der
+# Seitenleiste (sonst nichts von Home Assistant).
+panel_admin: false
 
 ports:
   8080/tcp: 8080
